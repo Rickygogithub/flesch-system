@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flesch System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Yu Gothic', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: #f5f7fa;
+        }
+        
+        .header {
+            background: #2c5d92;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            font-size: 1rem;
+            opacity: 0.95;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .intro {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .intro p {
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+        
+        .tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .tool {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #2c5d92;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .tool-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+        
+        .tool-number {
+            display: inline-block;
+            background: #2c5d92;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 32px;
+            font-weight: bold;
+        }
+        
+        .tool-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tool h3 {
+            font-size: 1.1rem;
+            color: #0f1722;
+            margin: 0;
+        }
+        
+        .version-badge {
+            display: inline-block;
+            background: #fff3d6;
+            color: #8a5a00;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 999px;
+        }
+        
+        .tool p {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        
+        .tool ul {
+            margin-left: 1.2rem;
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 1.2rem;
+        }
+        
+        .tool li {
+            margin-bottom: 0.4rem;
+        }
+        
+        .tool-button {
+            display: inline-block;
+            padding: 0.6rem 1.2rem;
+            background: #2c5d92;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .tool-button:hover {
+            background: #1e4564;
+        }
+        
+        .learning-path {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .learning-path h2 {
+            font-size: 1.3rem;
+            color: #0f1722;
+            margin-bottom: 1.5rem;
+        }
+        
+        .path-items {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .path-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .path-number {
+            background: #2c5d92;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .path-content h3 {
+            font-size: 1rem;
+            color: #0f1722;
+            margin: 0 0 0.3rem;
+        }
+        
+        .path-content p {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 0;
+        }
+        
+        .path-arrow {
+            text-align: center;
+            color: #2c5d92;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 900px) {
+            .path-items {
+                flex-direction: column;
+            }
+        }
+        
+        
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 1rem;
+            color: #999;
+            font-size: 0.85rem;
+        }
+        
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .tools {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .tool-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+    <script>
+        function openTool(url) {
+            window.open(url, '_blank');
+        }
+    </script>
+</head>
+<body>
+    <div class="header">
+        <h1>🎻 Flesch System</h1>
+        <p>カール・フレッシュの音程理論に基づいた、メロディ、ハーモニー、リズムの統合的なトレーニング</p>
+    </div>
+    
+    <div class="container">
+        <div class="intro">
+            <p>Flesch Systemは、5つの連続した訓練ツールから構成されています。練習の目的に応じて、各ツールを独立して使用することもできますが、順序に沿って進むことで、より高い学習効果が得られます。スマホでも使用可能ですが、PCや音質の良いオーディオで使用することを強く推奨します。</p>
+            <p>このシステムは、先生の指導を受けながら、自主学習で併用することを想定して設計されています。音程は理論から導き出したガイドラインです。実際の楽曲の演奏では、先生と相談しながら状況に応じて調整してください。</p>
+        </div>
+        
+        <div class="learning-path">
+            <h2>想定学習パス（段階や必要性に応じてどこから着手しても構いません）</h2>
+            <div class="path-items">
+                <div class="path-item">
+                    <div class="path-number">1</div>
+                    <div class="path-content">
+                        <h3>読譜の基本、視唱の初歩</h3>
+                        <p>楽譜を正確に読み取り、理論的な理解を深める</p>
+                    </div>
+                </div>
+                <div class="path-arrow">↓</div>
+                <div class="path-item">
+                    <div class="path-number">2</div>
+                    <div class="path-content">
+                        <h3>視唱、リズム訓練、聴音</h3>
+                        <p>聴覚を開発し、音感を育成する</p>
+                    </div>
+                </div>
+                <div class="path-arrow">↓</div>
+                <div class="path-item">
+                    <div class="path-number">3</div>
+                    <div class="path-content">
+                        <h3>調弦と基本感覚</h3>
+                        <p>完全5度調弦、重音による共鳴を差音を使って確認</p>
+                    </div>
+                </div>
+                <div class="path-arrow">↓</div>
+                <div class="path-item">
+                    <div class="path-number">4</div>
+                    <div class="path-content">
+                        <h3>実践技能</h3>
+                        <p>弦楽器での音程制御を習得。初心者から上級者の確認まで</p>
+                    </div>
+                </div>
+                <div class="path-arrow">↓</div>
+                <div class="path-item">
+                    <div class="path-number">5</div>
+                    <div class="path-content">
+                        <h3>統合実践</h3>
+                        <p>読譜・聴音・音程制御を統合した訓練</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tools">
+            <div class="tool">
+                <div class="tool-header">
+                    <div class="tool-number">1</div>
+                    <div class="tool-title">
+                        <h3>Score Reading</h3>
+                        <span class="version-badge">v1</span>
+                    </div>
+                </div>
+                <p><strong>読譜の基本、視唱の初歩を学ぶ</strong></p>
+                <p>音符や調号を見て回答を思い浮かべ、理論的な理解を深めます。</p>
+                <ul>
+                    <li>単音・和音・度数・調号の読譜</li>
+                    <li>ハ音記号・ト音記号の切り替え</li>
+                    <li>臨時記号の有無設定</li>
+                    <li>正解音の再生機能</li>
+                </ul>
+                <a class="tool-button" onclick="openTool('score_reading_v1.html')">開始</a>
+            </div>
+            
+            <div class="tool">
+                <div class="tool-header">
+                    <div class="tool-number">2</div>
+                    <div class="tool-title">
+                        <h3>Melody Dictation Trainer</h3>
+                        <span class="version-badge">v2</span>
+                    </div>
+                </div>
+                <p><strong>視唱、リズム訓練、聴音</strong></p>
+                <p>聴覚を開発し、音感を耳と声で育成します。</p>
+                <ul>
+                    <li>視唱練習</li>
+                    <li>リズム練習（拍子設定可能）</li>
+                    <li>聴音訓練</li>
+                    <li>メトロノーム機能</li>
+                </ul>
+                <a class="tool-button" onclick="openTool('melody_dictation_trainer_v2.html')">開始</a>
+            </div>
+            
+            <div class="tool">
+                <div class="tool-header">
+                    <div class="tool-number">3</div>
+                    <div class="tool-title">
+                        <h3>Pure Intonation Tuner</h3>
+                        <span class="version-badge">v2</span>
+                    </div>
+                </div>
+                <p><strong>調弦と基本感覚</strong></p>
+                <p>完全5度調弦の習得。各種重音の差音をフラジオにより聞き取る訓練。調弦が狂った状態の音源サンプルもあり。</p>
+                <ul>
+                    <li>完全5度調弦用ツール</li>
+                    <li>フラジオ（ハーモニックス）による差音トレーニング</li>
+                    <li>デチューン機能で「うねり」を体感</li>
+                    <li>3度・4度・6度の重音体験</li>
+                </ul>
+                <a class="tool-button" onclick="openTool('pure_intonation_tuner_v2.html')">開始</a>
+            </div>
+            
+            <div class="tool">
+                <div class="tool-header">
+                    <div class="tool-number">4</div>
+                    <div class="tool-title">
+                        <h3>Beautiful Intonation Training</h3>
+                        <span class="version-badge">v1</span>
+                    </div>
+                </div>
+                <p><strong>音程作りの基礎。初心者から上級者の確認まで</strong></p>
+                <p>弦楽器での音程制御を実践的に習得します。Pure Intonation Tunerで学んだ基本を発展させます。</p>
+                <ul>
+                    <li>調弦（開放弦の完全5度確認）</li>
+                    <li>主音ロングトーン（1オクターブ上との共鳴）</li>
+                    <li>1オクターブ音階（ピタゴラス音律）</li>
+                    <li>分散和音（純正律・長調と短調）</li>
+                    <li>フラジオによる差音トレーニング</li>
+                </ul>
+                <a class="tool-button" onclick="openTool('beautiful_intonation_training_v1.html')">開始</a>
+            </div>
+            
+            <div class="tool">
+                <div class="tool-header">
+                    <div class="tool-number">5</div>
+                    <div class="tool-title">
+                        <h3>Integrated Performance Practice</h3>
+                        <span class="version-badge">v2</span>
+                    </div>
+                </div>
+                <p><strong>読譜・聴音・音程制御を統合した訓練</strong></p>
+                <p>すべての基礎技能を組み合わせた実践訓練です。</p>
+                <ul>
+                    <li>主音ロングトーン</li>
+                    <li>ピタゴラス音階練習</li>
+                    <li>純正律和音体験</li>
+                    <li>分散3度・重音練習</li>
+                    <li>拍子・テンポ設定可能</li>
+                </ul>
+                <a class="tool-button" onclick="openTool('flesch_integrated_performance_practice_v2.html')">開始</a>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Flesch System — カール・フレッシュの音程理論に基づく統合訓練システム</p>
+    </footer>
+</body>
+</html>

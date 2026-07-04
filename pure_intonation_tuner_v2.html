@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pure Intonation Tuner - Flesch System Phase 3</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #f1f3f6;
+    --ink: #14181f;
+    --muted: #3d4654;
+    --accent: #2c5d92;
+    --line: #c9d0da;
+    --card: #fbfbf7;
+    --badge-bg: #fff3d6;
+    --badge-text: #8a5a00;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Yu Gothic', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { padding: 24px 16px 40px; display: flex; justify-content: center; }
+  .wrap { max-width: 540px; width: 100%; }
+
+  header {
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 16px;
+    text-align: center;
+  }
+  .title-container {
+    display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
+  }
+  h1 { font-size: 18px; font-weight: 800; color: #0f1722; margin: 0; }
+  .badge {
+    display: inline-block; background: var(--badge-bg); color: var(--badge-text);
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  }
+  .description { font-size: 12.5px; color: var(--muted); line-height: 1.6; margin-top: 10px; font-weight: 600; text-align: left; }
+
+  section {
+    background-color: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 20px;
+  }
+  h2 { font-size: 14px; font-weight: 800; color: #0f1722; margin-bottom: 12px; }
+
+  .inner-controls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .control-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--ink); gap: 10px; }
+  .control-row label { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; flex: 1; }
+  .control-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+  .control-row input[type="range"] { flex: 1; }
+  .control-row .val { font-weight: 800; min-width: 64px; text-align: right; font-size: 12.5px; }
+
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+  button.tone-btn {
+    font-family: inherit; font-size: 14px; font-weight: 700; background-color: var(--card); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px 6px; cursor: pointer;
+    transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    user-select: none;
+  }
+  button.tone-btn:hover { border-color: var(--accent); background-color: #f4f7fa; }
+  button.tone-btn:active { transform: translateY(1px); }
+  button.tone-btn span.notes { font-size: 15px; font-weight: 800; text-align: center; }
+  button.tone-btn span.freq { font-size: 10.5px; color: var(--muted); font-weight: 600; }
+  button.tone-btn span.ratio { font-size: 10px; color: var(--muted); font-weight: 500; opacity: 0.75; }
+
+  button.tone-btn.active { background-color: var(--accent); border-color: var(--accent); color: var(--bg); }
+  button.tone-btn.active span.freq { color: rgba(255, 255, 255, 0.8); }
+  button.tone-btn.active span.ratio { color: rgba(255, 255, 255, 0.65); }
+
+  .subhead { font-size: 12px; font-weight: 700; color: var(--muted); margin: 14px 0 8px; }
+  .subhead:first-child { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="title-container">
+      <h1>Pure Intonation Tuner<span style="display:inline-block;background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px;">v2</span></h1>
+      
+    </div>
+    <div class="description">
+      完全５度調弦用。フラジオによる「差音」を聞き取るトレーニング。完全5度では、音程のズレを「うねり」で体感するデチューン機能に対応。3度・4度・6度の重音は純正律での理想的な音程を体感する機能を搭載。簡易メトロノーム搭載。<br>
+      <span style="color: var(--accent);">※ボックスを押すと音が鳴り、再度押すと止まります。別のボックスを押すと自動的に音が切り替わります。</span>
+    </div>
+  </header>
+
+  <section>
+    <h2>基本設定</h2>
+    <div class="inner-controls" style="margin-bottom:0;">
+      <div class="control-row">
+        <span style="white-space:nowrap;">基準音 A</span>
+        <input type="range" id="base-freq" min="435" max="446" step="0.5" value="442">
+        <span class="val" id="base-freq-val">442.0 Hz</span>
+      </div>
+      <div class="control-row">
+        <span style="white-space:nowrap;">音量</span>
+        <input type="range" id="master-volume" min="0" max="150" step="5" value="100">
+        <span class="val" id="master-volume-val">100%</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>基準音 A</h2>
+    <div class="grid grid-3">
+      <button class="tone-btn" onclick="toggleATune('single')" id="btn-A-single">
+        <span class="notes">A (単音)</span>
+        <span class="freq" id="freq-A-single">442.0 Hz</span>
+      </button>
+      <button class="tone-btn" onclick="toggleATune('equal')" id="btn-A-equal">
+        <span class="notes">レ・ファ・ラ<br><span style="font-size:11.5px; font-weight:600; color:inherit;">（平均律）</span></span>
+        <span class="freq">🎹 リサイタル調弦演出</span>
+      </button>
+      <button class="tone-btn" onclick="toggleATune('just')" id="btn-A-just">
+        <span class="notes">レ・ファ・ラ<br><span style="font-size:11.5px; font-weight:600; color:inherit;">（純正律）</span></span>
+        <span class="freq">🎹 リサイタル調弦演出</span>
+      </button>
+    </div>
+  </section>
+
+  <div class="description" style="margin-top:-8px; margin-bottom:16px;">
+    重音は、3度・4度は下の音、6度は上の音を「基準音」（開放弦同士の完全5度の連鎖で決まる音）とし、もう一方を基準音から見た純正比（長3度5/4・短3度6/5・完全4度4/3・長6度5/3・短6度8/5）で鳴らします。
+  </div>
+
+  <section>
+    <h2>Viola / Cello 重音チェック</h2>
+
+    <div class="inner-controls">
+      <div class="control-row">
+        <label for="harmonics-mode-vla">
+          <input type="checkbox" id="harmonics-mode-vla" onchange="handleModeChange('vla')">
+          <span>フラジオモード <span style="font-weight:normal; color:var(--muted); font-size:11.5px;">（差音トレ）</span></span>
+        </label>
+      </div>
+      <div class="control-row" style="margin-left: 24px; font-size: 12px;">
+        <label style="display: block; margin-bottom: 6px;">
+          <input type="radio" name="harmonics-octave-vla" value="1" checked disabled id="harmonics-1oct-vla" onchange="updateFreqLabels()">
+          1オクターブ上（標準）
+        </label>
+        <label style="display: block;">
+          <input type="radio" name="harmonics-octave-vla" value="2" disabled id="harmonics-2oct-vla" onchange="updateFreqLabels()">
+          2オクターブ上
+        </label>
+      </div>
+      <div class="control-row">
+        <label for="detune-mode-vla">
+          <input type="checkbox" id="detune-mode-vla" onchange="handleModeChange('vla')" disabled>
+          <span>あえて「うねり」を作る <span style="font-weight:normal; color:var(--muted); font-size:11.5px;">（完全5度のみ対応。下の音を0.5-5Hzずらす）</span></span>
+        </label>
+      </div>
+      <div class="control-row">
+        <span style="white-space:nowrap; font-size:12px; color:var(--muted);">ずらす幅</span>
+        <input type="range" id="detune-amount-vla" min="0.5" max="5" step="0.5" value="1.5">
+        <span class="val" id="detune-val-vla">1.5 Hz</span>
+      </div>
+    </div>
+
+    <details style="cursor: pointer; margin-bottom: 14px;">
+      <summary style="background-color: rgba(44, 93, 146, 0.08); border: 1px solid rgba(44, 93, 146, 0.2); border-radius: 10px; padding: 12px; font-weight: 700; font-size: 13px; color: #2c5d92; list-style: none;">
+        差音についての説明 ▼
+      </summary>
+      <div style="background-color: rgba(44, 93, 146, 0.08); border: 1px solid rgba(44, 93, 146, 0.2); border-top: none; border-radius: 0 0 10px 10px; padding: 12px; margin-top: -1px; font-size: 12.5px; color: #0f1722; line-height: 1.7;">
+        <div style="margin-bottom: 12px;">
+          差音とは2つの音が正確に揃ったとき、周波数の差分に対応する「低い音」が聞こえる現象です。
+        </div>
+        
+        <div style="margin-bottom: 12px; padding-top: 12px; border-top: 1px solid rgba(44, 93, 146, 0.2);">
+          <div style="font-weight: 700; margin-bottom: 8px; font-size: 12px;">各組み合わせの差音周波数：</div>
+          <div style="font-family: 'Courier New', monospace; font-size: 12px; color: #3d4654; line-height: 1.8;">
+            <div>A/D：442 Hz - 294.67 Hz = <strong>147.33 Hz (D)</strong></div>
+            <div>D/G：294.67 Hz - 196.44 Hz = <strong>98.23 Hz (G)</strong></div>
+            <div>G/C：196.44 Hz - 130.96 Hz = <strong>65.48 Hz (C)</strong></div>
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 12px; padding-top: 12px; border-top: 1px solid rgba(44, 93, 146, 0.2); font-size: 12.5px;">
+          実音での差音は周波数が低く聞き取りにくいため、フラジオで1オクターブ上げた差音で体感してください。下の弦の周波数そのものが聞こえます。「この周波数の音が出たら正解」という判定基準になります。
+        </div>
+        
+        <div style="padding-top: 12px; border-top: 1px solid rgba(44, 93, 146, 0.2);">
+          <div style="font-weight: 700; margin-bottom: 8px; font-size: 12px;">その他の度数での差音周波数：</div>
+          <div style="font-size: 12px; color: #3d4654; line-height: 1.8;">
+            <div>完全4度：下の弦から完全5度下の音</div>
+            <div>純正3度：下の弦の1オクターブ下</div>
+            <div>純正6度：下の弦から完全4度上の音</div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <div class="subhead">完全5度（開放弦）</div>
+    <div class="grid grid-3">
+      <button class="tone-btn" onclick="toggleDyad('D', 'A', 'vla')" id="btn-D-A">
+        <span class="notes">D - A</span>
+        <span class="freq" id="freq-D-A"></span>
+        <span class="ratio">(3:2)</span>
+      </button>
+      <button class="tone-btn" onclick="toggleDyad('G', 'D', 'vla')" id="btn-G-D">
+        <span class="notes">G - D</span>
+        <span class="freq" id="freq-G-D"></span>
+        <span class="ratio">(3:2)</span>
+      </button>
+      <button class="tone-btn" onclick="toggleDyad('C', 'G', 'vla')" id="btn-C-G">
+        <span class="notes">C - G</span>
+        <span class="freq" id="freq-C-G"></span>
+        <span class="ratio">(3:2)</span>
+      </button>
+    </div>
+
+    <div class="subhead">3度 — 下の音（開放弦）が基準、上は純正比</div>
+    <div class="grid grid-4">
+      <button class="tone-btn" onclick="toggleInterval('C','third','vla')" id="btn-3rd-C">
+        <span class="notes">C - E</span>
+        <span class="freq" id="freq-3rd-C"></span>
+        <span class="ratio" id="ratio-3rd-C"></span>
+      </button>
+      <button class="tone-btn" onclick="toggleInterval('G','third','vla')" id="btn-3rd-G">
+        <span class="notes">G - B</span>
+        <span class="freq" id="freq-3rd-G"></span>
+        <span class="ratio" id="ratio-3rd-G"></span>
+      </button>
+      <button class="tone-btn" onclick="toggleInterval('D','third','vla')" id="btn-3rd-D">
+        <span class="notes">D - F</span>
+        <span class="freq" id="freq-3rd-D"></span>
+        <span class="ratio" id="ratio-3rd-D"></span>
+      </button>
+      <button class="tone-btn" onclick="toggleInterval('A','third','vla')" id="btn-3rd-A">
+        <span class="notes">A - C</span>
+        <span class="freq" id="freq-3rd-A"></span>
+        <span class="ratio" id="ratio-3rd-A"></span>
+      </button>
+    </div>
+
+    <div class="subhead">4度 — 下の音（開放弦）が基準、上は純正比</div>
+    <div class="grid grid-4">
+      <button class="tone-btn" onclick="toggleInterval('C','fourth','vla')" id="btn-4th-C">
+        <span class="notes">C - F</span>
+        <span class="freq" id="freq-4th-C"></span>
+        <span class="ratio" id="ratio-4th-C"></span>
+      </button>
+      <button class="tone-btn" onclick="toggleInterval('G','fourth','vla')" id="btn-4th-G">
+        <span class="notes">G - C</span>
+        <span class="freq" id="freq-4th-G"></span>
+        <span class="ratio" id="ratio-4th-G"></span>
+      </button>
+      <button class="tone-btn" onclick="toggleInterval('D','fourth','vla')" id="btn-4th-D">
+        <span class="notes">D - G</span>
+        <span class="freq" id="freq-4th-D"></span>
+        <span class="ratio" id="ratio-4th-D"></span>
+      </button>
+      <button class="tone-btn" onclick="toggleInterval('A','fourth','vla')" id="btn-4th-A">
+        <span class="notes">A - D</span>
+        <span class="freq" id="freq-4th-A"></span>
+        <span class="ratio" id="ratio-4th-A"></span>
+      </button>
+    </div>
+
+    <div class="subhead">6度 — 上の音（開放弦）が基準、下は純正比</div>
+    <div class="grid grid-4">
+      <button class="tone-btn" onclick="toggleInterval('C','sixth','vla')" id="btn-6th-C">
+        <span class="notes">E - C</span>
+        <span class="freq" id="freq-6th-C"></span>
+        <span class="ratio" id="ratio-6th-C"></span>
+      </button>
+      <button class="tone-btn" onclick="toggleInterval('G','sixth','vla')" id="btn-6th-G">
+        <span class="notes">B - G</span>
+        <span class="freq" id="freq-6th-G"></span>
+        <span class="ratio" id="ratio-6th-G"></span>
+      </button>
+      <button class="tone-btn" onclick="toggleInterval('D','sixth','vla')" id="btn-6th-D">
+        <span class="notes">F - D</span>
+        <span class="freq" id="freq-6th-D"></span>
+        <span class="ratio" id="ratio-6th-D"></span>
+      </button>
+      <button class="tone-btn" onclick="toggleInterval('A','sixth','vla')" id="btn-6th-A">
+        <span class="notes">C - A</span>
+        <span class="freq" id="freq-6th-A"></span>
+        <span class="ratio" id="ratio-6th-A"></span>
+      </button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Violin 重音チェック</h2>
+
+    <div class="inner-controls">
+      <div class="control-row">
+        <label for="harmonics-mode-vln">
+          <input type="checkbox" id="harmonics-mode-vln" onchange="handleModeChange('vln')">
+          <span>フラジオモード <span style="font-weight:normal; color:var(--muted); font-size:11.5px;">（差音トレ）</span></span>
+        </label>
+      </div>
+      <div class="control-row" style="margin-left: 24px; font-size: 12px;">
+        <label style="display: block; margin-bottom: 6px;">
+          <input type="radio" name="harmonics-octave-vln" value="1" checked disabled id="harmonics-1oct-vln" onchange="updateFreqLabels()">
+          1オクターブ上（標準）
+        </label>
+        <label style="display: block;">
+          <input type="radio" name="harmonics-octave-vln" value="2" disabled id="harmonics-2oct-vln" onchange="updateFreqLabels()">
+          2オクターブ上
+        </label>
+      </div>
+      <div class="control-row">
+        <label for="detune-mode-vln">
+          <input type="checkbox" id="detune-mode-vln" onchange="handleModeChange('vln')" disabled>
+          <span>あえて「うねり」を作る <span style="font-weight:normal; color:var(--muted); font-size:11.5px;">（完全5度のみ対応。下の音を0.5-5Hzずらす）</span></span>
+        </label>
+      </div>
+      <div class="control-row">
+        <span style="white-space:nowrap; font-size:12px; color:var(--muted);">ずらす幅</span>
+        <input type="range" id="detune-amount-vln" min="0.5" max="5" step="0.5" value="1.5">
+        <span class="val" id="detune-val-vln">1.5 Hz</span>
+      </div>
+    </div>
+
+      <div style="background-color: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 14px; font-size: 13px; color: var(--ink); line-height: 1.7;">
+      <div style="font-weight: 700; margin-bottom: 12px; color: var(--accent);">差音周波数</div>
+      <div style="font-size: 12px; color: var(--muted); line-height: 1.8; margin-bottom: 12px;">
+        A/E：663 Hz - 442 Hz = <strong>221 Hz</strong>
+      </div>
+      
+      <div style="font-weight: 700; margin-bottom: 8px; color: var(--accent);">フラジオ差音</div>
+      <div style="font-family: 'Courier New', monospace; font-size: 12px; color: var(--ink); margin-bottom: 12px; border-top: 1px solid var(--line); padding-top: 12px;">
+        A/E：663 Hz × 2 - 442 Hz × 2 = 1326 Hz - 884 Hz = <strong>442 Hz（A）</strong>
+      </div>
+      
+      <div style="font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px;">
+        （その他はViola/Celloと同様）
+      </div>
+    </div>
+
+    <div class="subhead">完全5度（開放弦）</div>
+    <div class="grid">
+      <button class="tone-btn" onclick="toggleDyad('A', 'E', 'vln')" id="btn-A-E">
+        <span class="notes">A - E</span>
+        <span class="freq" id="freq-A-E"></span>
+        <span class="ratio">(3:2)</span>
+      </button>
+    </div>
+
+    <div class="subhead">3度 — 下の音（開放弦）が基準（G・D・A線はビオラと共通）</div>
+    <div class="grid">
+      <button class="tone-btn" onclick="toggleInterval('E','third','vln')" id="btn-3rd-vln-E">
+        <span class="notes">E - G</span>
+        <span class="freq" id="freq-3rd-vln-E"></span>
+        <span class="ratio" id="ratio-3rd-vln-E"></span>
+      </button>
+    </div>
+
+    <div class="subhead">4度 — 下の音（開放弦）が基準（G・D・A線はビオラと共通）</div>
+    <div class="grid">
+      <button class="tone-btn" onclick="toggleInterval('E','fourth','vln')" id="btn-4th-vln-E">
+        <span class="notes">E - A</span>
+        <span class="freq" id="freq-4th-vln-E"></span>
+        <span class="ratio" id="ratio-4th-vln-E"></span>
+      </button>
+    </div>
+
+    <div class="subhead">6度 — 上の音（開放弦）が基準（G・D・A線はビオラと共通）</div>
+    <div class="grid">
+      <button class="tone-btn" onclick="toggleInterval('E','sixth','vln')" id="btn-6th-vln-E">
+        <span class="notes">G - E</span>
+        <span class="freq" id="freq-6th-vln-E"></span>
+        <span class="ratio" id="ratio-6th-vln-E"></span>
+      </button>
+    </div>
+  </section>
+
+  <section>
+    <h2>メトロノーム</h2>
+    <div class="inner-controls" style="margin-bottom:0;">
+      <div class="control-row">
+        <span style="white-space:nowrap;">テンポ</span>
+        <input type="range" id="metro-bpm" min="20" max="240" step="1" value="80">
+        <span class="val" id="metro-bpm-val">80 BPM</span>
+      </div>
+      <div class="control-row">
+        <span style="white-space:nowrap;">拍子</span>
+        <select id="metro-meter" style="flex:1; padding:4px 8px; border-radius:6px; border:1px solid var(--line); font-size:13px; font-weight:600; background:var(--card);">
+          <option value="2">2拍子</option>
+          <option value="3">3拍子</option>
+          <option value="4" selected>4拍子</option>
+          <option value="6">6拍子</option>
+        </select>
+        <span class="val" style="min-width:64px;"></span>
+      </div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:10px;">
+      <button class="tone-btn" id="metro-start" onclick="startMetro()" style="flex:1; padding:12px;">▶ スタート</button>
+      <button class="tone-btn" id="metro-stop" onclick="stopMetro()" style="flex:1; padding:12px;" disabled>■ ストップ</button>
+    </div>
+    <div style="text-align:center; margin-top:10px; font-size:18px; font-weight:800; color:var(--accent); height:28px;" id="metro-beat"></div>
+  </section>
+</div>
+
+<script>
+let audioCtx = null;
+let activeVoices = []; // {osc, gain} のペアで管理（フェードアウトしてから停止するため）
+let pianoTimeouts = [];
+let currentActiveId = null;
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(e => console.error('Audio resume failed:', e));
+  }
+}
+
+function getAFreq() {
+  return Number(document.getElementById('base-freq').value);
+}
+function getMasterVolume() {
+  return Number(document.getElementById('master-volume').value) / 100;
+}
+
+// 完全5度の連鎖（開放弦どうし）。基準音Aから動的に算出する。
+function getBaseFreqs() {
+  const A = getAFreq();
+  return {
+    'A': A,
+    'D': A * (2 / 3),
+    'G': A * (2 / 3) * (2 / 3),
+    'C': A * (2 / 3) * (2 / 3) * (2 / 3),
+    'E': A * (3 / 2)
+  };
+}
+
+// 開放弦ごとの自然な3度の種類（音楽理論上、固定）。
+// true=長3度(5/4) / false=短3度(6/5)
+const THIRD_IS_MAJOR = { 'C': true, 'G': true, 'D': false, 'A': false, 'E': false };
+
+// 度数ごとの純正律比率テキストを返す
+function getRatioText(stringName, type) {
+  const isMajor = THIRD_IS_MAJOR[stringName];
+  if (type === 'third') return isMajor ? '(5:4)' : '(6:5)';
+  if (type === 'fourth') return '(4:3)';
+  if (type === 'sixth') return isMajor ? '(8:5)' : '(5:3)'; // 長3度の弦は短6度、短3度の弦は長6度（複音程の関係）
+  return '';
+}
+
+function getIntervalFreqs(stringName, type) {
+  const baseFreqs = getBaseFreqs();
+  const basisFreq = baseFreqs[stringName];
+  const isMajor = THIRD_IS_MAJOR[stringName];
+  if (type === 'third') {
+    const ratio = isMajor ? 5 / 4 : 6 / 5;
+    return { low: basisFreq, high: basisFreq * ratio };
+  } else if (type === 'sixth') {
+    const ratio = (isMajor ? 5 / 4 : 6 / 5) / 2;
+    return { low: basisFreq * ratio, high: basisFreq };
+  } else {
+    // 完全4度：下（開放弦）が基準、上は4/3。長短の区別なし。
+    return { low: basisFreq, high: basisFreq * (4 / 3) };
+  }
+}
+
+// 背景ピアノ和音：レ・ファ・ラ（Dマイナー、最高音のラがチューニング基準音と共通）
+// 基準Aから完全5度の連鎖で導いたD（開放D線と同じ音）を根音とする。
+function getPianoChordEqual() {
+  const D3 = getBaseFreqs()['D'] / 2;
+  return [D3, D3 * Math.pow(2, 3 / 12), D3 * Math.pow(2, 7 / 12)];
+}
+function getPianoChordJust() {
+  const D3 = getBaseFreqs()['D'] / 2;
+  return [D3, D3 * (6 / 5), D3 * (3 / 2)];
+}
+
+function stopAll() {
+  pianoTimeouts.forEach(t => clearTimeout(t));
+  pianoTimeouts = [];
+
+  const ctx = audioCtx;
+  const now = ctx ? ctx.currentTime : 0;
+  activeVoices.forEach(({ osc, gain }) => {
+    try {
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06); // クリックノイズ防止のフェードアウト
+      osc.stop(now + 0.08);
+    } catch (e) {}
+  });
+  activeVoices = [];
+  currentActiveId = null;
+
+  document.querySelectorAll('.tone-btn').forEach(btn => btn.classList.remove('active'));
+}
+
+// 単一の音を発音させるコアロジック
+// decayMs を指定すると、その時間で減衰してから自動的に止まる（ピアノの余韻用）
+function scheduleTone(freq, startTime, isPiano = false, isLowerString = false, instrumentType = 'vla', decayMs = 3000) {
+  const harmCheckboxId = instrumentType === 'vln' ? 'harmonics-mode-vln' : 'harmonics-mode-vla';
+  const detuneCheckboxId = instrumentType === 'vln' ? 'detune-mode-vln' : 'detune-mode-vla';
+
+  const isHarmonics = document.getElementById(harmCheckboxId) ? document.getElementById(harmCheckboxId).checked : false;
+  const isDetune = document.getElementById(detuneCheckboxId) ? document.getElementById(detuneCheckboxId).checked : false;
+
+  const vol = getMasterVolume();
+  const osc = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  if (isPiano) {
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, startTime);
+    const peak = 0.14 * vol;
+    const decaySec = decayMs / 1000;
+    // 打鍵直後にすぐピークへ（鍵を弾く感触）、そこから減衰
+    gainNode.gain.setValueAtTime(0.0001, startTime);
+    gainNode.gain.exponentialRampToValueAtTime(peak, startTime + 0.012);
+    gainNode.gain.exponentialRampToValueAtTime(peak * 0.35, startTime + 0.3); // 立ち上がり直後の速い減衰
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + decaySec); // その後の余韻
+
+    // 倍音を1つ重ねて、ピアノらしい明るさを補強
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(freq * 2, startTime);
+    gain2.gain.setValueAtTime(0.0001, startTime);
+    gain2.gain.exponentialRampToValueAtTime(peak * 0.3, startTime + 0.012);
+    gain2.gain.exponentialRampToValueAtTime(peak * 0.3 * 0.35, startTime + 0.3);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + decaySec);
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(startTime);
+    osc2.stop(startTime + decaySec + 0.1);
+    activeVoices.push({ osc: osc2, gain: gain2 });
+  } else {
+    osc.type = 'sine';
+    let harmMultiplier = 1;
+    if (isHarmonics) {
+      const octaveRadioName = instrumentType === 'vln' ? 'harmonics-octave-vln' : 'harmonics-octave-vla';
+      const selectedOctave = document.querySelector(`input[name="${octaveRadioName}"]:checked`)?.value || '1';
+      harmMultiplier = selectedOctave === '2' ? 4 : 2;
+    }
+    let finalFreq = freq * harmMultiplier;
+    if (isDetune && isLowerString) {
+      const detuneAmountId = instrumentType === 'vln' ? 'detune-amount-vln' : 'detune-amount-vla';
+      const detuneHz = Number(document.getElementById(detuneAmountId)?.value || 1.5);
+      finalFreq -= detuneHz;
+    }
+
+    osc.frequency.setValueAtTime(finalFreq, startTime);
+    const peak = 0.18 * vol;
+    gainNode.gain.setValueAtTime(0.0001, startTime);
+    gainNode.gain.exponentialRampToValueAtTime(peak, startTime + 0.05);
+  }
+
+  osc.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  osc.start(startTime);
+  if (isPiano) osc.stop(startTime + decayMs / 1000 + 0.1); // start()の後でなければ呼べない
+  activeVoices.push({ osc, gain: gainNode });
+}
+
+// A-Tune セクションのトグル制御
+function toggleATune(mode) {
+  const targetId = `btn-A-${mode}`;
+  if (currentActiveId === targetId) { stopAll(); return; }
+  stopAll();
+  initAudio();
+
+  const now = audioCtx.currentTime;
+  const baseFreqs = getBaseFreqs();
+
+  if (mode === 'single') {
+    // チューニング基準の「A」を最初からずっと伸ばす
+    scheduleTone(baseFreqs['A'], now, false, false, 'vla');
+  } else {
+    const chordFreqs = (mode === 'just') ? getPianoChordJust() : getPianoChordEqual();
+    // レ・ファ・ラを1音ずつ、少し余韻を残しながら弾く（前の音が鳴っている間に次の音を重ねる）
+    scheduleTone(chordFreqs[0], now, true, false, 'vla', 2200);              // レ
+    pianoTimeouts.push(setTimeout(() => {
+      scheduleTone(chordFreqs[1], audioCtx.currentTime, true, false, 'vla', 2200); // ファ
+    }, 500));
+    pianoTimeouts.push(setTimeout(() => {
+      scheduleTone(chordFreqs[2], audioCtx.currentTime, true, false, 'vla', 2200); // ラ
+    }, 1000));
+    // 一瞬の間をおいて、レ・ファ・ラを3和音として同時に弾く
+    pianoTimeouts.push(setTimeout(() => {
+      const t = audioCtx.currentTime;
+      chordFreqs.forEach(f => scheduleTone(f, t, true, false, 'vla', 3000));
+    }, 1850));
+  }
+
+  const targetBtn = document.getElementById(targetId);
+  if (targetBtn) targetBtn.classList.add('active');
+  currentActiveId = targetId;
+}
+
+// 完全5度（重音）のトグル制御
+function toggleDyad(lowNote, highNote, type) {
+  const targetId = `btn-${lowNote}-${highNote}`;
+  if (currentActiveId === targetId) { stopAll(); return; }
+  stopAll();
+  initAudio();
+
+  const now = audioCtx.currentTime;
+  const baseFreqs = getBaseFreqs();
+  scheduleTone(baseFreqs[lowNote], now, false, true, type);
+  scheduleTone(baseFreqs[highNote], now, false, false, type);
+
+  const targetBtn = document.getElementById(targetId);
+  if (targetBtn) targetBtn.classList.add('active');
+  currentActiveId = targetId;
+  
+  // デチューンチェックボックスを有効化（完全5度のみ対応）
+  const detuneCheckboxId = type === 'vln' ? 'detune-mode-vln' : 'detune-mode-vla';
+  const detuneCheckbox = document.getElementById(detuneCheckboxId);
+  if (detuneCheckbox) detuneCheckbox.disabled = false;
+}
+
+// 3度・4度・6度（重音）のトグル制御
+function toggleInterval(stringName, type, instrumentType) {
+  const typeTag = type === 'third' ? '3rd' : (type === 'fourth' ? '4th' : '6th');
+  const targetId = `btn-${typeTag}${instrumentType === 'vln' ? '-vln' : ''}-${stringName}`;
+  if (currentActiveId === targetId) { stopAll(); return; }
+  stopAll();
+  initAudio();
+
+  const now = audioCtx.currentTime;
+  const { low, high } = getIntervalFreqs(stringName, type);
+  // 基準音（3度・4度なら下、6度なら上）をやや大きめ、純正比の相方をやや小さめに
+  const basisIsLow = (type === 'third' || type === 'fourth');
+  scheduleIntervalTone(low, now, !basisIsLow, instrumentType);
+  scheduleIntervalTone(high, now, basisIsLow, instrumentType);
+
+  const targetBtn = document.getElementById(targetId);
+  if (targetBtn) targetBtn.classList.add('active');
+  currentActiveId = targetId;
+  
+  // デチューンチェックボックスを無効化（3度・4度・6度は非対応）
+  const detuneCheckboxId = instrumentType === 'vln' ? 'detune-mode-vln' : 'detune-mode-vla';
+  const detuneCheckbox = document.getElementById(detuneCheckboxId);
+  if (detuneCheckbox) {
+    detuneCheckbox.disabled = true;
+    detuneCheckbox.checked = false;
+  }
+}
+
+function scheduleIntervalTone(freq, startTime, isSoft, instrumentType) {
+  const harmCheckboxId = instrumentType === 'vln' ? 'harmonics-mode-vln' : 'harmonics-mode-vla';
+  const detuneCheckboxId = instrumentType === 'vln' ? 'detune-mode-vln' : 'detune-mode-vla';
+  const detuneAmountId = instrumentType === 'vln' ? 'detune-amount-vln' : 'detune-amount-vla';
+  const isHarmonics = document.getElementById(harmCheckboxId)?.checked || false;
+  const isDetune = document.getElementById(detuneCheckboxId)?.checked || false;
+
+  const vol = getMasterVolume();
+  const osc = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  osc.type = 'sine';
+  let harmMultiplier = 1;
+  if (isHarmonics) {
+    const octaveRadioName = instrumentType === 'vln' ? 'harmonics-octave-vln' : 'harmonics-octave-vla';
+    const selectedOctave = document.querySelector(`input[name="${octaveRadioName}"]:checked`)?.value || '1';
+    harmMultiplier = selectedOctave === '2' ? 4 : 2;
+  }
+  let finalFreq = freq * harmMultiplier;
+  if (isDetune && isSoft) { // isSoft=trueは「基準音でない側」＝下の音（3度・4度）または上の音（6度）
+    const detuneHz = Number(document.getElementById(detuneAmountId)?.value || 1.5);
+    finalFreq -= detuneHz;
+  }
+  osc.frequency.setValueAtTime(finalFreq, startTime);
+  const peak = (isSoft ? 0.12 : 0.18) * vol;
+  gainNode.gain.setValueAtTime(0.0001, startTime);
+  gainNode.gain.exponentialRampToValueAtTime(peak, startTime + 0.05);
+  osc.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  osc.start(startTime);
+  activeVoices.push({ osc, gain: gainNode });
+}
+
+function handleModeChange(type) {
+  if (currentActiveId) {
+    const savedId = currentActiveId;
+    if (savedId.startsWith('btn-') && !savedId.includes('single') && !savedId.includes('equal') && !savedId.includes('just')
+        && !savedId.includes('3rd') && !savedId.includes('4th') && !savedId.includes('6th')) {
+      const parts = savedId.replace('btn-', '').split('-');
+      const currentBtnType = (parts[0] === 'A' && parts[1] === 'E') ? 'vln' : 'vla';
+      if (currentBtnType === type) {
+        currentActiveId = null;
+        toggleDyad(parts[0], parts[1], type);
+      }
+    }
+  }
+  
+  // フラジオラジオボタンの有効/無効を制御
+  if (type === 'vla') {
+    const isHarmChecked = document.getElementById('harmonics-mode-vla').checked;
+    document.getElementById('harmonics-1oct-vla').disabled = !isHarmChecked;
+    document.getElementById('harmonics-2oct-vla').disabled = !isHarmChecked;
+  } else if (type === 'vln') {
+    const isHarmChecked = document.getElementById('harmonics-mode-vln').checked;
+    document.getElementById('harmonics-1oct-vln').disabled = !isHarmChecked;
+    document.getElementById('harmonics-2oct-vln').disabled = !isHarmChecked;
+  }
+  
+  updateFreqLabels();
+}
+
+function updateFreqLabels() {
+  const baseFreqs = getBaseFreqs();
+  
+  // ビオラのフラジオ倍率計算
+  const isHarmVla = document.getElementById('harmonics-mode-vla').checked;
+  let mVla = 1;
+  if (isHarmVla) {
+    const octaveVla = document.querySelector('input[name="harmonics-octave-vla"]:checked')?.value || '1';
+    mVla = octaveVla === '2' ? 4 : 2;
+  }
+
+  document.getElementById('freq-A-single').textContent = `${baseFreqs['A'].toFixed(1)} Hz`;
+  document.getElementById('freq-D-A').textContent = `${(baseFreqs['D']*mVla).toFixed(1)} - ${(baseFreqs['A']*mVla).toFixed(1)} Hz`;
+  document.getElementById('freq-G-D').textContent = `${(baseFreqs['G']*mVla).toFixed(1)} - ${(baseFreqs['D']*mVla).toFixed(1)} Hz`;
+  document.getElementById('freq-C-G').textContent = `${(baseFreqs['C']*mVla).toFixed(1)} - ${(baseFreqs['G']*mVla).toFixed(1)} Hz`;
+
+  ['C','G','D','A'].forEach(s => {
+    const t3 = getIntervalFreqs(s,'third');
+    const t4 = getIntervalFreqs(s,'fourth');
+    const t6 = getIntervalFreqs(s,'sixth');
+    document.getElementById('freq-3rd-'+s).textContent = `${(t3.low*mVla).toFixed(1)} - ${(t3.high*mVla).toFixed(1)} Hz`;
+    document.getElementById('freq-4th-'+s).textContent = `${(t4.low*mVla).toFixed(1)} - ${(t4.high*mVla).toFixed(1)} Hz`;
+    document.getElementById('freq-6th-'+s).textContent = `${(t6.low*mVla).toFixed(1)} - ${(t6.high*mVla).toFixed(1)} Hz`;
+    document.getElementById('ratio-3rd-'+s).textContent = getRatioText(s,'third');
+    document.getElementById('ratio-4th-'+s).textContent = getRatioText(s,'fourth');
+    document.getElementById('ratio-6th-'+s).textContent = getRatioText(s,'sixth');
+  });
+
+  // バイオリンのフラジオ倍率計算
+  const isHarmVln = document.getElementById('harmonics-mode-vln').checked;
+  let mVln = 1;
+  if (isHarmVln) {
+    const octaveVln = document.querySelector('input[name="harmonics-octave-vln"]:checked')?.value || '1';
+    mVln = octaveVln === '2' ? 4 : 2;
+  }
+  
+  document.getElementById('freq-A-E').textContent = `${(baseFreqs['A']*mVln).toFixed(1)} - ${(baseFreqs['E']*mVln).toFixed(1)} Hz`;
+
+  ['E'].forEach(s => {
+    const t3 = getIntervalFreqs(s,'third');
+    const t4 = getIntervalFreqs(s,'fourth');
+    const t6 = getIntervalFreqs(s,'sixth');
+    document.getElementById('freq-3rd-vln-'+s).textContent = `${(t3.low*mVln).toFixed(1)} - ${(t3.high*mVln).toFixed(1)} Hz`;
+    document.getElementById('freq-4th-vln-'+s).textContent = `${(t4.low*mVln).toFixed(1)} - ${(t4.high*mVln).toFixed(1)} Hz`;
+    document.getElementById('freq-6th-vln-'+s).textContent = `${(t6.low*mVln).toFixed(1)} - ${(t6.high*mVln).toFixed(1)} Hz`;
+    document.getElementById('ratio-3rd-vln-'+s).textContent = getRatioText(s,'third');
+    document.getElementById('ratio-4th-vln-'+s).textContent = getRatioText(s,'fourth');
+    document.getElementById('ratio-6th-vln-'+s).textContent = getRatioText(s,'sixth');
+  });
+}
+
+document.getElementById('base-freq').addEventListener('input', (e) => {
+  document.getElementById('base-freq-val').textContent = `${Number(e.target.value).toFixed(1)} Hz`;
+  updateFreqLabels();
+});
+document.getElementById('master-volume').addEventListener('input', (e) => {
+  document.getElementById('master-volume-val').textContent = `${e.target.value}%`;
+});
+
+updateFreqLabels();
+
+// うねりスライダーのラベル更新
+['vla','vln'].forEach(type => {
+  const slider = document.getElementById(`detune-amount-${type}`);
+  const label = document.getElementById(`detune-val-${type}`);
+  if (slider && label) {
+    slider.addEventListener('input', () => {
+      label.textContent = `${Number(slider.value).toFixed(1)} Hz`;
+      handleModeChange(type);
+    });
+  }
+});
+
+// ---- シンプルメトロノーム ----
+let metroTimer = null;
+let metroBeat = 0;
+
+function playClick(time, isAccent) {
+  initAudio();
+  const ctx = audioCtx;
+  const vol = getMasterVolume();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(isAccent ? 880 : 440, time);
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.exponentialRampToValueAtTime((isAccent ? 0.4 : 0.2) * vol, time + 0.003);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.06);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(time); osc.stop(time + 0.08);
+}
+
+function startMetro() {
+  if (metroTimer) stopMetro();
+  initAudio();
+  const bpm = Number(document.getElementById('metro-bpm').value);
+  const meter = Number(document.getElementById('metro-meter').value);
+  const spb = 60 / bpm;
+  metroBeat = 0;
+  let nextTime = audioCtx.currentTime + 0.05;
+
+  document.getElementById('metro-start').disabled = true;
+  document.getElementById('metro-stop').disabled = false;
+
+  function tick() {
+    while (nextTime < audioCtx.currentTime + 0.2) {
+      playClick(nextTime, metroBeat === 0);
+      const beatNum = metroBeat + 1;
+      const scheduledTime = nextTime;
+      setTimeout(() => {
+        const el = document.getElementById('metro-beat');
+        if (el) el.textContent = '♩'.repeat(beatNum === 1 ? 1 : 0) + beatNum;
+      }, Math.max(0, (scheduledTime - audioCtx.currentTime) * 1000));
+      metroBeat = (metroBeat + 1) % meter;
+      nextTime += spb;
+    }
+    metroTimer = setTimeout(tick, 50);
+  }
+  tick();
+}
+
+function stopMetro() {
+  if (metroTimer) { clearTimeout(metroTimer); metroTimer = null; }
+  document.getElementById('metro-start').disabled = false;
+  document.getElementById('metro-stop').disabled = true;
+  document.getElementById('metro-beat').textContent = '';
+}
+
+document.getElementById('metro-bpm').addEventListener('input', e => {
+  document.getElementById('metro-bpm-val').textContent = `${e.target.value} BPM`;
+  if (metroTimer) { stopMetro(); startMetro(); }
+});
+document.getElementById('metro-meter').addEventListener('change', () => {
+  if (metroTimer) { stopMetro(); startMetro(); }
+});
+</script>
+</body>
+</html>

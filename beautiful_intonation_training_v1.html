@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beautiful Intonation Training</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f1f3f6; --ink:#14181f; --muted:#3d4654;
+    --accent:#2c5d92; --good:#1f7a4d; --bad:#b23b3b; --line:#c9d0da; --card:#fbfbf7;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:'Yu Gothic','Hiragino Sans','Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:640px;margin:0 auto;padding:18px 16px 40px}
+  h1{font-size:18px;font-weight:800;margin:6px 0 2px;color:#0f1722}
+  h2{font-size:15px;font-weight:800;margin:0 0 10px;color:#0f1722}
+  .badge{display:inline-block;background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px}
+  .sub{color:var(--muted);font-size:13px;font-weight:600;margin-bottom:18px;line-height:1.7}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px}
+  .opt{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:14px;font-weight:600;color:var(--ink);gap:10px}
+  .opt-label{font-size:14px;font-weight:600;color:var(--ink);padding:8px 0;margin-bottom:4px}
+  .opt-select{margin-bottom:8px}
+  input[type=range]{flex:1}
+  select{font-family:inherit;font-size:13px;font-weight:700;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+  .bpmval{font-weight:800;min-width:60px;text-align:right;font-size:13px}
+  .current-chord{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center;font-size:18px;font-weight:800;color:#0f1722;margin:12px 0;min-height:52px;display:flex;align-items:center;justify-content:center}
+  .controls{display:flex;gap:10px;margin-top:8px}
+  button{font-family:inherit;border:none;border-radius:10px;padding:13px 16px;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent);flex:1}
+  button:active{transform:translateY(1px)}
+  button.stop{background:var(--bad)}
+  button:disabled{background:#c9d0da;cursor:default}
+  .footnote{color:var(--muted);font-size:12.5px;font-weight:600;margin-top:8px;line-height:1.8}
+  .footnote ul{margin:6px 0 6px 1.2em;padding:0}
+  .footnote li{margin-bottom:6px}
+  .hint{color:var(--muted);font-size:12px;font-weight:600;margin:2px 0 6px;line-height:1.6}
+  @media (max-width: 640px) {
+    .opt{flex-wrap:nowrap;gap:8px}
+    .opt span{font-size:12px;white-space:nowrap}
+    .opt-label{font-size:13px;margin-bottom:6px}
+    .opt-select{margin-bottom:6px}
+    select{max-width:100%;font-size:12px;padding:6px 8px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Beautiful Intonation Training<span class="badge">v1</span></h1>
+  <div class="sub">ピタゴラス音律と純正律に基づいた、開放弦との共鳴を感じながら正確な音程を習得するシステム。調弦・主音ロングトーン・1オクターブ音階・分散和音・チューナー機能を搭載。</div>
+
+  <!-- 調弦 -->
+  <section>
+    <h2>調弦</h2>
+    <div class="hint">A=442Hzを基準に、完全5度で開放弦を調弦します。</div>
+
+    <div class="opt-label">調弦する弦の組み合わせ</div>
+    <div class="opt-select">
+      <select id="tuning-pair">
+        <option value="AE">A/E（ヴァイオリン）</option>
+        <option value="AD">A/D（ヴァイオリン・ヴィオラ）</option>
+        <option value="DG">D/G（ヴァイオリン・ヴィオラ）</option>
+        <option value="GC">G/C（ヴィオラ）</option>
+      </select>
+    </div>
+
+    <h3 style="color:#2c5d92;font-size:13px;font-weight:700;margin:12px 0 8px">A = 442 Hz（基準音・単音）</h3>
+    <div class="controls">
+      <button id="tuning-ref-start">▶ A=442Hz再生</button>
+      <button class="stop" id="tuning-ref-stop" disabled>■ 停止</button>
+    </div>
+
+    <h3 style="color:#2c5d92;font-size:13px;font-weight:700;margin:12px 0 8px">開放弦の重音</h3>
+    <p style="font-size:12px;color:#3d4654;margin:6px 0">選択した2つの弦を同時に鳴らします。正確な完全5度の響きを確認してください。</p>
+    
+    <div class="controls">
+      <button id="tuning-normal-start">▶ 開放弦再生</button>
+      <button class="stop" id="tuning-normal-stop" disabled>■ 停止</button>
+    </div>
+    
+    <div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;font-size:12px;">
+      <div style="font-weight:700;color:#0f1722;margin-bottom:8px">周波数の算出（A基準）</div>
+      <div id="freq-list" style="display:grid;gap:6px;color:#3d4654">
+        <div id="freq-A">A = 442 Hz（基準）</div>
+        <div id="freq-E" style="opacity:0.4">E（ミ） = 442 × (3/2) = 663 Hz</div>
+        <div id="freq-D" style="opacity:0.4">D（レ） = 442 × (2/3) = 294.67 Hz</div>
+        <div id="freq-G" style="opacity:0.4">G（ソ） = 442 × (2/3)² = 196.44 Hz</div>
+        <div id="freq-C" style="opacity:0.4">C（ド） = 442 × (2/3)³ = 130.96 Hz</div>
+      </div>
+    </div>
+
+    <h3 style="color:#2c5d92;font-size:13px;font-weight:700;margin:12px 0 8px">フラジオにより（差音）を聞き取る練習</h3>
+    <p style="font-size:12px;color:#3d4654;margin:6px 0">弦の真ん中に軽く指を置いて弾くと、基本音ではなく1オクターブ上の音が聞こえます。実音での差音は周波数が低く聞き取りにくいため、フラジオで上げた差音で体感してください。</p>
+    <div class="controls">
+      <button id="tuning-flag-start">▶ フラジオ再生</button>
+      <button class="stop" id="tuning-flag-stop" disabled>■ 停止</button>
+    </div>
+    <div style="margin-top: 12px; padding: 0 0 0 12px; font-size: 12px;">
+      <label style="display: block; margin-bottom: 6px;">
+        <input type="radio" name="flageolet-octave" value="1" checked>
+        1オクターブ上（標準）
+      </label>
+      <label style="display: block;">
+        <input type="radio" name="flageolet-octave" value="2">
+        2オクターブ上
+      </label>
+    </div>
+    <div class="footnote" style="margin-top: 12px;">
+      <strong>差音について：</strong> 2つの音が正確に揃った時、周波数の差分に対応する「低い音」が聞こえます。これが差音です。
+      <div style="margin-top:12px">
+        <details style="cursor:pointer">
+          <summary style="background:rgba(44, 93, 146, 0.08);border:1px solid rgba(44, 93, 146, 0.2);border-radius:10px;padding:12px;font-weight:700;font-size:13px;color:#2c5d92;list-style:none">
+            差音についての説明 ▼
+          </summary>
+          <div style="background:rgba(44, 93, 146, 0.08);border:1px solid rgba(44, 93, 146, 0.2);border-top:none;border-radius:0 0 10px 10px;padding:12px;margin-top:-1px;font-size:12.5px;color:#0f1722;line-height:1.7">
+            <div style="margin-bottom:12px">
+              差音とは2つの音が正確に揃ったとき、周波数の差分に対応する「低い音」が聞こえる現象です。
+            </div>
+            
+            <div style="margin-bottom:12px;padding-top:12px;border-top:1px solid rgba(44, 93, 146, 0.2)">
+              <strong style="display:block;margin-bottom:8px;font-size:12px;color:#0f1722">各組み合わせの差音周波数：</strong>
+              <div style="font-size:12px;color:#3d4654;line-height:1.8">
+                <div>A/D：442 Hz - 294.67 Hz = <strong>147.33 Hz (D)</strong></div>
+                <div>D/G：294.67 Hz - 196.44 Hz = <strong>98.23 Hz (G)</strong></div>
+                <div>G/C：196.44 Hz - 130.96 Hz = <strong>65.48 Hz (C)</strong></div>
+              </div>
+            </div>
+            
+            <div style="margin-bottom:12px;padding-top:12px;border-top:1px solid rgba(44, 93, 146, 0.2);font-size:12.5px">
+              実音での差音は周波数が低く聞き取りにくいため、フラジオで1オクターブ上げた差音で体感してください。下の弦の周波数そのものが聞こえます。「この周波数の音が出たら正解」という判定基準になります。
+            </div>
+            
+            <div style="padding-top:12px;border-top:1px solid rgba(44, 93, 146, 0.2)">
+              <strong style="display:block;margin-bottom:8px;font-size:12px;color:#0f1722">その他の度数での差音周波数：</strong>
+              <div style="font-size:12px;color:#3d4654;line-height:1.8">
+                <div>完全4度：下の弦から完全5度下の音</div>
+                <div>純正3度：下の弦の1オクターブ下</div>
+                <div>純正6度：下の弦から完全4度上の音</div>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+  </section>
+
+  <!-- ① 主音ロングトーン -->
+  <section>
+    <h2>① 主音ロングトーン</h2>
+    <div class="hint">主音を伸ばし続けます。１オクターブ上の音を弾き、完全に溶け合うようにしてください。重音を弾ける方は、開放弦と合わせてみてください。</div>
+    <div class="opt"><span>弦（主音）</span>
+      <select id="lt-key">
+        <option value="C">C弦（ド）</option>
+        <option value="G" selected>G弦（ソ）</option>
+        <option value="D">D弦（レ）</option>
+        <option value="A">A弦（ラ）</option>
+        <option value="E">E弦（ミ）</option>
+      </select>
+    </div>
+    <div class="controls">
+      <button id="lt-start">スタート</button>
+      <button class="stop" id="lt-stop" disabled>ストップ</button>
+    </div>
+  </section>
+
+  <!-- ② 1オクターブ音階 -->
+  <section>
+    <h2>② 1オクターブ音階（ピタゴラス音律）</h2>
+    <div class="hint">主音から1オクターブ、1音4拍で昇降する音階です。音声を聞く → 一緒にドレミで歌う → 一緒に楽器で弾く → ツールを止めて歌う → 楽器だけで弾く、という順番で練習すると効果的です。合わせて弾く場合は音程をピッタリ合わせ、両方の音が溶け合って聞こえなくなるようにしてください。楽器だけで弾く場合は最高音と、1オクターブ下の開放弦の共鳴による振動を最大にし、重音で弾く場合は一つの音に聞こえるようにしてください。</div>
+    <div class="opt"><span>弦（主音）</span>
+      <select id="sc-key">
+        <option value="C">C弦（ド）</option>
+        <option value="G" selected>G弦（ソ）</option>
+        <option value="D">D弦（レ）</option>
+        <option value="A">A弦（ラ）</option>
+      </select>
+    </div>
+    <div class="opt"><span>テンポ</span>
+      <input type="range" id="sc-bpm" min="10" max="180" value="60">
+      <span class="bpmval" id="sc-bpmval">60 BPM</span>
+    </div>
+    <div class="controls">
+      <button id="sc-start">スタート</button>
+      <button class="stop" id="sc-stop" disabled>ストップ</button>
+    </div>
+  </section>
+
+  <!-- ③ 分散和音 -->
+  <section>
+    <h2>③ 分散和音（純正律）</h2>
+    <div class="hint">『ド-ミ-ソ（長調）』『ド-ミ♭-ソ（短調）』（ハ長調の場合）の2つのグループの分散和音の練習。最初と最後に3和音が鳴るので、そのイメージを思い浮かべながら分散和音を弾いてください。ツールを使わずに弾く際には、最初の音から１オクターブ上の音を弾いている時に開放弦と重音として弾き、１つの音に聞こえるまで音程を合わせてください。</div>
+    <div class="opt"><span>弦（主音）</span>
+      <select id="ar-key">
+        <option value="C">C弦（ド）</option>
+        <option value="G" selected>G弦（ソ）</option>
+        <option value="D">D弦（レ）</option>
+        <option value="A">A弦（ラ）</option>
+      </select>
+    </div>
+    <div class="opt"><span>モード</span>
+      <select id="ar-mode">
+        <option value="single" selected>単音（昇降）</option>
+        <option value="chord">和音</option>
+      </select>
+    </div>
+    <div class="opt"><span>テンポ</span>
+      <input type="range" id="ar-bpm" min="10" max="180" value="60">
+      <span class="bpmval" id="ar-bpmval">60 BPM</span>
+    </div>
+    <div class="current-chord" id="ar-current">スタートで開始します</div>
+    <div class="controls">
+      <button id="ar-start">スタート</button>
+      <button class="stop" id="ar-stop" disabled>ストップ</button>
+    </div>
+    <div class="footnote">
+      <strong>構成音の周波数（純正律、ハ長調の例）：</strong>
+      <ul>
+        <li>C（基本）= 130.96 Hz</li>
+        <li>E（Cの純正3度上、比率5/4）= 130.96 × (5/4) = 163.7 Hz</li>
+        <li>G（Cの完全5度上、比率3/2）= 130.96 × (3/2) = 196.44 Hz</li>
+        <li>C（1オクターブ上）= 130.96 × 2 = 261.92 Hz</li>
+      </ul>
+      <p style="margin-top: 10px; font-size: 0.9em;">※Eの音はCからの純正3度（5/4）で算出しているため、開放E線（Aとの完全5度で調弦）の音程とは異なります。「シントニックコンマ」というズレが生じます。</p>
+    </div>
+  </section>
+
+
+
+</div>
+
+<script>
+  // ============ Audio Context ============
+  let audioContext = null;
+  let oscillators = [];
+
+  function initAudio() {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioContext.state === 'suspended') {
+      audioContext.resume().catch(e => console.error('Audio resume failed:', e));
+    }
+  }
+
+  function stopAll() {
+    if (metronomeTimeout) clearTimeout(metronomeTimeout);
+    oscillators.forEach(osc => {
+      try { osc.stop(); } catch(e) {}
+    });
+    oscillators = [];
+    document.querySelectorAll('button.stop').forEach(b => b.disabled = true);
+    document.querySelectorAll('button:not(.stop)').forEach(b => b.disabled = false);
+  }
+
+  // ============ Pitch Tables ============
+  const A_BASE = 442;
+  const stringFreqs = {
+    C: A_BASE * (2/3) * (2/3) * (2/3),      // (2/3)³ = 130.96 Hz
+    G: A_BASE * (2/3) * (2/3),              // (2/3)² = 196.44 Hz
+    D: A_BASE * (2/3),                      // (2/3)¹ = 294.67 Hz
+    A: A_BASE,                              // 基準 = 442 Hz
+    E: A_BASE * (3/2)                       // (3/2)¹ = 663 Hz
+  };
+
+  const pithagoreanScales = {
+    C: [stringFreqs.C, stringFreqs.C * (9/8), stringFreqs.C * (81/64), stringFreqs.C * (4/3), stringFreqs.C * (3/2), stringFreqs.C * (27/16), stringFreqs.C * (243/128), stringFreqs.C * 2],
+    G: [stringFreqs.G, stringFreqs.G * (9/8), stringFreqs.G * (81/64), stringFreqs.G * (4/3), stringFreqs.G * (3/2), stringFreqs.G * (27/16), stringFreqs.G * (243/128), stringFreqs.G * 2],
+    D: [stringFreqs.D, stringFreqs.D * (9/8), stringFreqs.D * (81/64), stringFreqs.D * (4/3), stringFreqs.D * (3/2), stringFreqs.D * (27/16), stringFreqs.D * (243/128), stringFreqs.D * 2],
+    A: [stringFreqs.A, stringFreqs.A * (9/8), stringFreqs.A * (81/64), stringFreqs.A * (4/3), stringFreqs.A * (3/2), stringFreqs.A * (27/16), stringFreqs.A * (243/128), stringFreqs.A * 2]
+  };
+
+  // 分散和音用純正律スケール（基本、3度上、5度上、1オクターブ上）
+  const justIntonationScales = {
+    C: [stringFreqs.C, stringFreqs.C * (5/4), stringFreqs.C * (3/2), stringFreqs.C * 2],
+    G: [stringFreqs.G, stringFreqs.G * (5/4), stringFreqs.G * (3/2), stringFreqs.G * 2],
+    D: [stringFreqs.D, stringFreqs.D * (5/4), stringFreqs.D * (3/2), stringFreqs.D * 2],
+    A: [stringFreqs.A, stringFreqs.A * (5/4), stringFreqs.A * (3/2), stringFreqs.A * 2]
+  };
+
+  // 3グループの分散和音用周波数
+  const arpeggioGroups = {
+    C: {
+      group1: {
+        name: 'ド-ミ-ソ（ハ長調）',
+        frequencies: [stringFreqs.C, stringFreqs.C * (5/4), stringFreqs.C * (3/2)],
+        noteNames: [
+          { jp: 'ド', de: 'C', freq: stringFreqs.C },
+          { jp: 'ミ', de: 'E', freq: stringFreqs.C * (5/4) },
+          { jp: 'ソ', de: 'G', freq: stringFreqs.C * (3/2) }
+        ]
+      },
+      group2: {
+        name: 'ド-ミ♭-ソ（ハ短調）',
+        frequencies: [stringFreqs.C, stringFreqs.C * (6/5), stringFreqs.C * (3/2)],
+        noteNames: [
+          { jp: 'ド', de: 'C', freq: stringFreqs.C },
+          { jp: 'ミ♭', de: 'Es', freq: stringFreqs.C * (6/5) },
+          { jp: 'ソ', de: 'G', freq: stringFreqs.C * (3/2) }
+        ]
+      }
+    },
+    G: {
+      group1: {
+        name: 'ソ-シ-レ（ト長調）',
+        frequencies: [stringFreqs.G, stringFreqs.G * (5/4), stringFreqs.G * (3/2)],
+        noteNames: [
+          { jp: 'ソ', de: 'G', freq: stringFreqs.G },
+          { jp: 'シ', de: 'H', freq: stringFreqs.G * (5/4) },
+          { jp: 'レ', de: 'D', freq: stringFreqs.G * (3/2) }
+        ]
+      },
+      group2: {
+        name: 'ソ-シ♭-レ（ト短調）',
+        frequencies: [stringFreqs.G, stringFreqs.G * (6/5), stringFreqs.G * (3/2)],
+        noteNames: [
+          { jp: 'ソ', de: 'G', freq: stringFreqs.G },
+          { jp: 'シ♭', de: 'B', freq: stringFreqs.G * (6/5) },
+          { jp: 'レ', de: 'D', freq: stringFreqs.G * (3/2) }
+        ]
+      }
+    },
+    D: {
+      group1: {
+        name: 'レ-ファ♯-ラ（ニ長調）',
+        frequencies: [stringFreqs.D, stringFreqs.D * (5/4), stringFreqs.D * (3/2)],
+        noteNames: [
+          { jp: 'レ', de: 'D', freq: stringFreqs.D },
+          { jp: 'ファ♯', de: 'Fis', freq: stringFreqs.D * (5/4) },
+          { jp: 'ラ', de: 'A', freq: stringFreqs.D * (3/2) }
+        ]
+      },
+      group2: {
+        name: 'レ-ファ-ラ（ニ短調）',
+        frequencies: [stringFreqs.D, stringFreqs.D * (6/5), stringFreqs.D * (3/2)],
+        noteNames: [
+          { jp: 'レ', de: 'D', freq: stringFreqs.D },
+          { jp: 'ファ', de: 'F', freq: stringFreqs.D * (6/5) },
+          { jp: 'ラ', de: 'A', freq: stringFreqs.D * (3/2) }
+        ]
+      }
+    },
+    A: {
+      group1: {
+        name: 'ラ-ド♯-ミ（イ長調）',
+        frequencies: [stringFreqs.A, stringFreqs.A * (5/4), stringFreqs.A * (3/2)],
+        noteNames: [
+          { jp: 'ラ', de: 'A', freq: stringFreqs.A },
+          { jp: 'ド♯', de: 'Cis', freq: stringFreqs.A * (5/4) },
+          { jp: 'ミ', de: 'E', freq: stringFreqs.A * (3/2) }
+        ]
+      },
+      group2: {
+        name: 'ラ-ド-ミ（イ短調）',
+        frequencies: [stringFreqs.A, stringFreqs.A * (6/5), stringFreqs.A * (3/2)],
+        noteNames: [
+          { jp: 'ラ', de: 'A', freq: stringFreqs.A },
+          { jp: 'ド', de: 'C', freq: stringFreqs.A * (6/5) },
+          { jp: 'ミ', de: 'E', freq: stringFreqs.A * (3/2) }
+        ]
+      }
+    }
+  };
+
+  const openStringFreqs = {
+    AE: [stringFreqs.A, stringFreqs.E],
+    AD: [stringFreqs.A, stringFreqs.D],
+    DG: [stringFreqs.D, stringFreqs.G],
+    GC: [stringFreqs.G, stringFreqs.C]
+  };
+
+  // 周波数情報テーブル
+  const tuningInfo = {
+    AE: { names: ['A', 'E'], noteNames: ['ラ', 'ミ'] },
+    AD: { names: ['A', 'D'], noteNames: ['ラ', 'レ'] },
+    DG: { names: ['D', 'G'], noteNames: ['レ', 'ソ'] },
+    GC: { names: ['G', 'C'], noteNames: ['ソ', 'ド'] }
+  };
+
+  // ============ Tuning Section ============
+  document.getElementById('tuning-ref-start').onclick = function() {
+    initAudio();
+    stopAll();
+    this.disabled = true;
+    document.getElementById('tuning-ref-stop').disabled = false;
+    
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.frequency.value = A_BASE;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+    osc.start(audioContext.currentTime);
+    oscillators.push(osc);
+  };
+
+  document.getElementById('tuning-ref-stop').onclick = stopAll;
+
+  document.getElementById('tuning-normal-start').onclick = function() {
+    initAudio();
+    stopAll();
+    this.disabled = true;
+    document.getElementById('tuning-normal-stop').disabled = false;
+    
+    const pair = document.getElementById('tuning-pair').value;
+    const freqs = openStringFreqs[pair];
+    
+    freqs.forEach(freq => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.15, audioContext.currentTime);
+      osc.start(audioContext.currentTime);
+      oscillators.push(osc);
+    });
+  };
+
+  document.getElementById('tuning-normal-stop').onclick = stopAll;
+
+  document.getElementById('tuning-flag-start').onclick = function() {
+    initAudio();
+    stopAll();
+    this.disabled = true;
+    document.getElementById('tuning-flag-stop').disabled = false;
+    
+    const pair = document.getElementById('tuning-pair').value;
+    const freqs = openStringFreqs[pair];
+    
+    // ラジオボタンで選択されたオクターブに応じて倍率を計算
+    const selectedOctave = document.querySelector('input[name="flageolet-octave"]:checked')?.value || '1';
+    const multiplier = selectedOctave === '2' ? 4 : 2;
+    const harmonics = freqs.map(f => f * multiplier);
+    
+    harmonics.forEach(freq => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.15, audioContext.currentTime);
+      osc.start(audioContext.currentTime);
+      oscillators.push(osc);
+    });
+  };
+
+  document.getElementById('tuning-flag-stop').onclick = stopAll;
+
+
+
+  // ============ Long Tone ============
+  let metronomeTimeout = null;
+  function startMetronome(beatDurationSeconds) {
+    const beatDurationMs = beatDurationSeconds * 1000;
+    
+    function playBeat() {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = 1000;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.05, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+      
+      osc.start(audioContext.currentTime);
+      osc.stop(audioContext.currentTime + 0.05);
+      
+      metronomeTimeout = setTimeout(playBeat, beatDurationMs);
+    }
+    
+    playBeat();
+  }
+
+  // BPMスライダーのイベントリスナー
+  document.getElementById('sc-bpm').addEventListener('input', function() {
+    document.getElementById('sc-bpmval').textContent = this.value + ' BPM';
+  });
+
+  document.getElementById('ar-bpm').addEventListener('input', function() {
+    document.getElementById('ar-bpmval').textContent = this.value + ' BPM';
+  });
+
+  document.getElementById('lt-start').onclick = function() {
+    initAudio();
+    // audioContextを確実にresumeさせる（デスクトップブラウザ対応）
+    if (audioContext.state === 'suspended') {
+      audioContext.resume().catch(e => console.error('Audio resume failed:', e));
+    }
+    stopAll();
+    this.disabled = true;
+    document.getElementById('lt-stop').disabled = false;
+    
+    const key = document.getElementById('lt-key').value;
+    const freq = stringFreqs[key];
+    
+    // 主音
+    const osc1 = audioContext.createOscillator();
+    const gain1 = audioContext.createGain();
+    osc1.connect(gain1);
+    gain1.connect(audioContext.destination);
+    osc1.frequency.value = freq;
+    osc1.type = 'sine';
+    gain1.gain.setValueAtTime(0.15, audioContext.currentTime);
+    osc1.start(audioContext.currentTime);
+    oscillators.push(osc1);
+    
+    // 1オクターブ上
+    const osc2 = audioContext.createOscillator();
+    const gain2 = audioContext.createGain();
+    osc2.connect(gain2);
+    gain2.connect(audioContext.destination);
+    osc2.frequency.value = freq * 2;
+    osc2.type = 'sine';
+    gain2.gain.setValueAtTime(0.15, audioContext.currentTime);
+    osc2.start(audioContext.currentTime);
+    oscillators.push(osc2);
+  };
+
+  document.getElementById('lt-stop').onclick = function() {
+    if (metronomeTimeout) clearTimeout(metronomeTimeout);
+    stopAll();
+  };
+
+  // ============ Scale ============
+  document.getElementById('sc-start').onclick = function() {
+    initAudio();
+    // audioContextを確実にresumeさせる（デスクトップブラウザ対応）
+    if (audioContext.state === 'suspended') {
+      audioContext.resume().catch(e => console.error('Audio resume failed:', e));
+    }
+    stopAll();
+    this.disabled = true;
+    document.getElementById('sc-stop').disabled = false;
+    
+    const key = document.getElementById('sc-key').value;
+    const scale = pithagoreanScales[key];
+    const tempo = parseInt(document.getElementById('sc-bpm').value);
+    const beatDuration = (60 / tempo) * 4;
+    
+    let time = audioContext.currentTime;
+    
+    // 上行
+    scale.forEach(freq => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.2, time);
+      gain.gain.setValueAtTime(0.2, time + beatDuration - 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, time + beatDuration);
+      
+      osc.start(time);
+      osc.stop(time + beatDuration);
+      oscillators.push(osc);
+      time += beatDuration;
+    });
+    
+    // 最高音をもう一度再生
+    const highestFreq = scale[scale.length - 1];
+    const osc_high = audioContext.createOscillator();
+    const gain_high = audioContext.createGain();
+    osc_high.connect(gain_high);
+    gain_high.connect(audioContext.destination);
+    osc_high.frequency.value = highestFreq;
+    osc_high.type = 'sine';
+    gain_high.gain.setValueAtTime(0.2, time);
+    gain_high.gain.setValueAtTime(0.2, time + beatDuration - 0.1);
+    gain_high.gain.exponentialRampToValueAtTime(0.01, time + beatDuration);
+    
+    osc_high.start(time);
+    osc_high.stop(time + beatDuration);
+    oscillators.push(osc_high);
+    time += beatDuration;
+    
+    // 下行
+    for (let i = scale.length - 2; i >= 0; i--) {
+      const freq = scale[i];
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.2, time);
+      gain.gain.setValueAtTime(0.2, time + beatDuration - 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, time + beatDuration);
+      
+      osc.start(time);
+      osc.stop(time + beatDuration);
+      oscillators.push(osc);
+      time += beatDuration;
+    }
+  };
+
+  document.getElementById('sc-stop').onclick = function() {
+    if (metronomeTimeout) clearTimeout(metronomeTimeout);
+    stopAll();
+  };
+
+  // ============ Arpeggio ============
+  document.getElementById('ar-start').onclick = function() {
+    initAudio();
+    // audioContextを確実にresumeさせる（デスクトップブラウザ対応）
+    if (audioContext.state === 'suspended') {
+      audioContext.resume().catch(e => console.error('Audio resume failed:', e));
+    }
+    stopAll();
+    this.disabled = true;
+    document.getElementById('ar-stop').disabled = false;
+    
+    const key = document.getElementById('ar-key').value;
+    const groups = arpeggioGroups[key];
+    const tempo = parseInt(document.getElementById('ar-bpm').value);
+    const beatDuration = (60 / tempo) * 4;
+    const mode = document.getElementById('ar-mode').value;
+    
+    let time = audioContext.currentTime;
+    const chordDuration = beatDuration * 2;  // 8拍
+    
+    // 表示更新関数
+    function updateDisplayGroup(groupName) {
+      document.getElementById('ar-current').textContent = groupName;
+    }
+    
+    const startTime = audioContext.currentTime;
+    
+    if (mode === 'single') {
+      // 2つのグループを順番に再生（長調と短調）
+      const groupList = [groups.group1, groups.group2];
+      
+      groupList.forEach((group) => {
+        const freqs = group.frequencies;  // [基本, 3度, 5度]
+        const notes = group.noteNames;    // [基本info, 3度info, 5度info]
+        const groupName = group.name;
+        
+        // ① 3和音を8拍再生
+        const delay1 = (time - startTime) * 1000;
+        setTimeout(() => updateDisplayGroup(groupName), delay1);
+        
+        freqs.forEach((freq) => {
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          osc.connect(gain);
+          gain.connect(audioContext.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          gain.gain.setValueAtTime(0.15, time);
+          gain.gain.setValueAtTime(0.15, time + chordDuration - 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.01, time + chordDuration);
+          
+          osc.start(time);
+          osc.stop(time + chordDuration);
+          oscillators.push(osc);
+        });
+        
+        time += chordDuration;
+        
+        // 休符（beatDuration分）
+        time += beatDuration;
+        
+        // ② 分散和音上昇：基本→3度→5度
+        const arpeggioPattern = [0, 1, 2];
+        
+        arpeggioPattern.forEach((idx) => {
+          const freq = freqs[idx];
+          
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          osc.connect(gain);
+          gain.connect(audioContext.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          gain.gain.setValueAtTime(0.2, time);
+          gain.gain.setValueAtTime(0.2, time + beatDuration - 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.01, time + beatDuration);
+          
+          osc.start(time);
+          osc.stop(time + beatDuration);
+          oscillators.push(osc);
+          time += beatDuration;
+        });
+        
+        // 1オクターブ上（最高音 1拍）
+        const highestNote = { jp: notes[0].jp, de: notes[0].de, freq: freqs[0] * 2 };
+        
+        const osc_high = audioContext.createOscillator();
+        const gain_high = audioContext.createGain();
+        osc_high.connect(gain_high);
+        gain_high.connect(audioContext.destination);
+        osc_high.frequency.value = freqs[0] * 2;
+        osc_high.type = 'sine';
+        gain_high.gain.setValueAtTime(0.2, time);
+        gain_high.gain.setValueAtTime(0.2, time + beatDuration - 0.1);
+        gain_high.gain.exponentialRampToValueAtTime(0.01, time + beatDuration);
+        
+        osc_high.start(time);
+        osc_high.stop(time + beatDuration);
+        oscillators.push(osc_high);
+        time += beatDuration;
+        
+        // ③ 分散和音下降：5度→3度→基本
+        const descendingPattern = [2, 1, 0];
+        
+        descendingPattern.forEach((idx) => {
+          const freq = freqs[idx];
+          
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          osc.connect(gain);
+          gain.connect(audioContext.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          gain.gain.setValueAtTime(0.2, time);
+          gain.gain.setValueAtTime(0.2, time + beatDuration - 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.01, time + beatDuration);
+          
+          osc.start(time);
+          osc.stop(time + beatDuration);
+          oscillators.push(osc);
+          time += beatDuration;
+        });
+        
+        // ④ 3和音を8拍再生
+        const delay5 = (time - startTime) * 1000;
+        setTimeout(() => updateDisplayGroup(groupName), delay5);
+        
+        freqs.forEach((freq) => {
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          osc.connect(gain);
+          gain.connect(audioContext.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          gain.gain.setValueAtTime(0.15, time);
+          gain.gain.setValueAtTime(0.15, time + chordDuration - 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.01, time + chordDuration);
+          
+          osc.start(time);
+          osc.stop(time + chordDuration);
+          oscillators.push(osc);
+        });
+        
+        time += chordDuration;
+        
+        // 次のグループまでの休符（beatDuration分、最後でない場合）
+        if (groupList.indexOf(group) < groupList.length - 1) {
+          time += beatDuration;
+        }
+      });
+    } else {
+      // 和音版
+      const groupList = [groups.group1, groups.group2];
+      const chordDuration_4beat = beatDuration * 4;
+      
+      groupList.forEach((group, idx) => {
+        const freqs = group.frequencies;
+        const groupName = group.name;
+        
+        const delayChord = (time - startTime) * 1000;
+        setTimeout(() => updateDisplayGroup(groupName), delayChord);
+        
+        // 3和音を4拍間再生
+        freqs.forEach((freq) => {
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          osc.connect(gain);
+          gain.connect(audioContext.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          gain.gain.setValueAtTime(0.15, time);
+          gain.gain.setValueAtTime(0.15, time + chordDuration_4beat - 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.01, time + chordDuration_4beat);
+          
+          osc.start(time);
+          osc.stop(time + chordDuration_4beat);
+          oscillators.push(osc);
+        });
+        
+        time += chordDuration_4beat;
+        
+        // グループ間の休符（最後でない場合）
+        if (idx < groupList.length - 1) {
+          time += beatDuration;
+        }
+      });
+    }
+  };
+
+  document.getElementById('ar-stop').onclick = function() {
+    if (metronomeTimeout) clearTimeout(metronomeTimeout);
+    stopAll();
+  };
+
+
+
+  // ============ Frequency Display Updates ============
+  function updateFreqHighlight() {
+    const pair = document.getElementById('tuning-pair').value;
+    
+    // すべてを薄く
+    ['A', 'E', 'D', 'G', 'C'].forEach(note => {
+      const elem = document.getElementById(`freq-${note}`);
+      if (elem) elem.style.opacity = '0.4';
+    });
+    
+    // Aは常に強調
+    document.getElementById('freq-A').style.opacity = '1';
+    document.getElementById('freq-A').style.fontWeight = '700';
+    document.getElementById('freq-A').style.color = '#2c5d92';
+    
+    // 選択に応じて強調
+    const highlights = {
+      'AE': ['E'],
+      'AD': ['D'],
+      'DG': ['G'],
+      'GC': ['C']
+    };
+    
+    (highlights[pair] || []).forEach(note => {
+      const elem = document.getElementById(`freq-${note}`);
+      if (elem) {
+        elem.style.opacity = '1';
+        elem.style.fontWeight = '700';
+        elem.style.color = '#2c5d92';
+      }
+    });
+  }
+  
+  document.getElementById('tuning-pair').addEventListener('change', updateFreqHighlight);
+  updateFreqHighlight();
+
+  // ============ Slider Updates ============
+  ['lt', 'sc', 'ar'].forEach(prefix => {
+    const elem = document.getElementById(`${prefix}-bpm`);
+    if (elem) {
+      elem.addEventListener('input', () => {
+        document.getElementById(`${prefix}-bpmval`).textContent = elem.value + ' BPM';
+      });
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Melody & Dictation Trainer - Flesch System Phase 2</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f1f3f6; --ink:#14181f; --muted:#3d4654;
+    --accent:#2c5d92; --good:#1f7a4d; --bad:#b23b3b; --line:#c9d0da; --card:#fbfbf7;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:'Yu Gothic','Hiragino Sans','Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:680px;margin:0 auto;padding:18px 16px 40px}
+  h1{font-size:18px;font-weight:800;margin:6px 0 2px;color:#0f1722}
+  .sub{color:var(--muted);font-size:13px;font-weight:600;margin-bottom:14px;line-height:1.7}
+  .badge{display:inline-block;background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px}
+  .stats{display:flex;gap:10px;margin-bottom:14px}
+  .stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:center}
+  .stat .v{font-size:20px;font-weight:800;color:#0f1722}
+  .stat .l{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px}
+  .cardarea{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;overflow-x:auto}
+  #score svg{display:block}
+  .controls{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .row{display:flex;gap:10px}
+  button{font-family:inherit;border:none;border-radius:10px;padding:13px 14px;font-size:14px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent);flex:1;min-width:120px}
+  button:active{transform:translateY(1px)}
+  button.alt{background:#5b6472}
+  button.primary{background:var(--good)}
+  button.bad{background:var(--bad)}
+  details{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 14px}
+  summary{cursor:pointer;padding:10px 0;font-size:14px;font-weight:700;color:var(--ink);list-style:none}
+  summary::-webkit-details-marker{display:none}
+  .opt{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-top:1px solid var(--line);font-size:14px;font-weight:600;color:var(--ink);gap:10px}
+  .opt:first-of-type{border-top:none}
+  select,input[type=range]{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-family:inherit;font-size:13.5px;font-weight:600}
+  input[type=range]{padding:0;width:140px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+  .seg button{flex:0 0 auto;min-width:0;border-radius:0;background:#fff;color:var(--muted);padding:7px 12px;font-weight:700;font-size:13px}
+  .seg button.on{background:var(--accent);color:#fff}
+  .footnote{color:var(--muted);font-size:12.5px;font-weight:600;margin-top:16px;line-height:1.75}
+  .reset{margin-top:10px;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:12.5px;font-weight:600;padding:8px 10px;flex:0 0 auto}
+  .bpmrow{display:flex;align-items:center;gap:10px}
+  .bpmval{font-weight:800;min-width:46px;text-align:right}
+  .placeholder{padding:30px 10px;text-align:center;color:var(--muted);font-size:14px;font-weight:600;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Melody Dictation Trainer<span class="badge">v2</span></h1>
+  <div class="sub">▶️ 設定から「音高あり」「リズムのみ」「聴音」のモードを選択。
+  <br>・「音高あり」は楽譜を見て簡易な旋律を歌う練習
+  <br>・「リズムのみ」は拍子・休止小節数のカウントなどを設定し、リズム練習
+  <br>・「聴音」は基準音（A=442）に続いて鳴る単音・和音の聴音練習</div>
+
+  <div class="stats" id="main-stats">
+    <div class="stat"><div class="v" id="s-count">0</div><div class="l">練習したフレーズ数</div></div>
+  </div>
+  <div class="stats" id="dict-stats" style="display:none">
+    <div class="stat"><div class="v" id="dict-total">0</div><div class="l">出題数</div></div>
+    <div class="stat"><div class="v" id="dict-acc">–</div><div class="l">正答率</div></div>
+    <div class="stat"><div class="v" id="dict-time">–</div><div class="l">平均回答時間(秒)</div></div>
+  </div>
+
+  <div class="cardarea"><div id="score"></div></div>
+
+  <div class="controls">
+    <button class="alt" id="click">メトロノームを聴く</button>
+    <button class="primary" id="play">正解を再生</button>
+  </div>
+  <div class="row" id="dict-judge" style="display:none;margin-top:10px">
+    <button class="bad" id="dict-wrong">✗ 間違えた</button>
+    <button class="primary" id="dict-right">✓ 正解</button>
+  </div>
+  <div class="controls">
+    <button id="next">次のフレーズ</button>
+  </div>
+
+  <details open>
+    <summary>▶️ 設定</summary>
+    <div class="opt"><span>モード</span>
+      <span class="seg" id="seg-appmode">
+        <button data-v="pitch" class="on">音高あり</button>
+        <button data-v="rhythm">リズムのみ</button>
+        <button data-v="dictation">聴音</button>
+      </span>
+    </div>
+
+    <div id="pitch-settings">
+      <div class="opt"><span>臨時記号（♯・♭）</span>
+        <span class="seg" id="seg-acc">
+          <button data-v="on" class="on">混ぜる</button>
+          <button data-v="off">なし</button>
+        </span>
+      </div>
+      <div class="opt"><span>音域</span>
+        <select id="range">
+          <option value="48,81">標準（C3–A5）</option>
+          <option value="48,88">高音含む（C3–E6）</option>
+          <option value="53,72">アルト記号中心（F3–C5）</option>
+          <option value="48,77" selected>低～中（C3–F5）</option>
+        </select>
+      </div>
+      <div class="opt"><span>小節数</span>
+        <select id="measures">
+          <option value="1" selected>1小節</option>
+          <option value="2">2小節</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="rhythm-settings" style="display:none">
+      <div class="opt"><span>設定方法</span>
+        <span class="seg" id="seg-rhythm-random">
+          <button data-v="off" class="on">固定</button>
+          <button data-v="on">ランダム</button>
+        </span>
+      </div>
+      <div id="rhythm-manual-settings">
+        <div class="opt"><span>拍子</span>
+          <select id="timesig">
+            <option value="2/4">2/4</option>
+            <option value="3/4">3/4</option>
+            <option value="4/4" selected>4/4</option>
+          </select>
+        </div>
+        <div class="opt"><span>冒頭の全休符小節数</span>
+          <select id="restlen">
+            <option value="0,0" selected>なし</option>
+            <option value="1,2">1〜2小節</option>
+            <option value="3,6">3〜6小節</option>
+          </select>
+        </div>
+        <div class="opt"><span>小節数</span>
+          <select id="rmeasures">
+            <option value="1" selected>1小節</option>
+            <option value="2">2小節</option>
+            <option value="3">3小節</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="dict-settings" style="display:none">
+      <div class="opt"><span>出題</span>
+        <span class="seg" id="seg-dict-type">
+          <button data-v="single" class="on">単音</button>
+          <button data-v="chord">和音</button>
+        </span>
+      </div>
+      <div class="opt"><span>臨時記号（♯・♭）</span>
+        <span class="seg" id="seg-dict-acc">
+          <button data-v="on">混ぜる</button>
+          <button data-v="off" class="on">なし</button>
+        </span>
+      </div>
+      <div class="opt"><span>音域</span>
+        <select id="dict-range">
+          <option value="48,81">標準（C3–A5）</option>
+          <option value="48,88">高音含む（C3–E6）</option>
+          <option value="53,72">アルト記号中心（F3–C5）</option>
+          <option value="48,77" selected>低～中（C3–F5）</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="opt"><span>テンポ</span>
+      <div class="bpmrow">
+        <input type="range" id="bpm" min="40" max="200" value="80">
+        <span class="bpmval" id="bpmval">80 BPM</span>
+      </div>
+    </div>
+    <button class="reset" id="resetstats">記録をリセット</button>
+  </details>
+
+  <div class="footnote">
+    使い方：<br>
+    ・「音高あり」モード：メトロノームによる1小節分のカウントイン（空振り）の後、譜面が始まります。心の中で読む・声に出して歌う → 「メトロノームを聴く」で拍を取りながら練習する → 「正解を再生」で確認 → 「次のフレーズ」で新しい譜面へ。<br>
+    ・「リズムのみ」：「固定」を選択するとメトロノームによる1小節分のカウントイン（空振り）の後、設定した長さの休みが続き、その後に刻むべきリズムが始まります。小節の頭でクリックの音高が変わるので、休みの間も小節の頭を見失わないようにしてください。「ランダム」を選択すると「次のフレーズ」を押すだけで各拍子の課題が自動で生成されます。<br>
+    ・「聴音」モードでは、基準音（A=442）に続いて単音または和音（実在する主和音）が鳴ります。音名を思い浮かべたら「答えを見る」で確認し、「✓ 正解」「✗ 間違えた」を選ぶと出題数・正答率・平均回答時間が記録されます。「🔊 もう一度聴く」で何度でも聴き直せます。
+  </div>
+</div>
+
+<script>
+const LETTERS=['C','D','E','F','G','A','B'];
+const LIDX={C:0,D:1,E:2,F:3,G:4,A:5,B:6};
+const SEMI={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+
+function germanName(letter,acc){
+  if(letter==='B'){ if(acc==='#') return 'His'; if(acc==='b') return 'B'; return 'H'; }
+  if(acc==='#') return letter+'is';
+  if(acc==='b'){ if(letter==='E') return 'Es'; if(letter==='A') return 'As'; return letter+'es'; }
+  return letter;
+}
+
+const SHARP_ORDER=['F','C','G','D','A','E','B'];
+const FLAT_ORDER=['B','E','A','D','G','C','F'];
+const KEYS=[
+  {name:'ハ長調',sharps:0,flats:0,tonic:'C'},
+  {name:'イ短調',sharps:0,flats:0,tonic:'A'},
+  {name:'ト長調',sharps:1,flats:0,tonic:'G'},
+  {name:'ホ短調',sharps:1,flats:0,tonic:'E'},
+  {name:'ニ長調',sharps:2,flats:0,tonic:'D'},
+  {name:'ロ短調',sharps:2,flats:0,tonic:'B'},
+  {name:'イ長調',sharps:3,flats:0,tonic:'A'},
+  {name:'嬰ヘ短調',sharps:3,flats:0,tonic:'F'},
+  {name:'ヘ長調',sharps:0,flats:1,tonic:'F'},
+  {name:'ニ短調',sharps:0,flats:1,tonic:'D'},
+  {name:'変ロ長調',sharps:0,flats:2,tonic:'B'},
+  {name:'ト短調',sharps:0,flats:2,tonic:'G'},
+  {name:'変ホ長調',sharps:0,flats:3,tonic:'E'},
+  {name:'ハ短調',sharps:0,flats:3,tonic:'C'}
+];
+function keySignatureMap(sharps,flats){
+  const acc={}; LETTERS.forEach(l=>acc[l]='');
+  for(let i=0;i<sharps;i++) acc[SHARP_ORDER[i]]='#';
+  for(let i=0;i<flats;i++) acc[FLAT_ORDER[i]]='b';
+  return acc;
+}
+function pickKey(useAcc){
+  if(!useAcc){ const plain=KEYS.filter(k=>k.sharps===0&&k.flats===0); return plain[Math.floor(Math.random()*plain.length)]; }
+  return KEYS[Math.floor(Math.random()*KEYS.length)];
+}
+function buildPitch(letter,octave,acc){
+  const off=acc==='#'?1:acc==='b'?-1:0;
+  const midi=(octave+1)*12+SEMI[letter]+off;
+  const sym=acc==='#'?'♯':acc==='b'?'♭':'';
+  return {letter,octave,acc,midi,nameDoremi:({C:'ド',D:'レ',E:'ミ',F:'ファ',G:'ソ',A:'ラ',B:'シ'})[letter]+sym,nameGerman:germanName(letter,acc)};
+}
+function stepIndex(p){ return (p.octave-4)*7 + LIDX[p.letter]; }
+function diatonicCandidates(lowMidi,highMidi){
+  const out=[];
+  for(let oct=1;oct<=7;oct++) for(const L of LETTERS){
+    const midi=(oct+1)*12+SEMI[L];
+    if(midi>=lowMidi&&midi<=highMidi) out.push({letter:L,octave:oct});
+  }
+  return out;
+}
+
+let appMode='pitch';
+let useAcc=true, lowMidi=48, highMidi=77, measures=1;
+let timeSigLabel='4/4', restMin=0, restMax=0, rMeasures=1, rhythmRandom=false;
+let dictType='single', dictUseAcc=false, dictLowMidi=48, dictHighMidi=77;
+let count=0, currentPhrase=null, audioCtx=null;
+let currentDictNotes=null, currentDictKeyName=null, dictRevealed=false, dictStartTime=0, dictElapsed=0;
+let dictTotal=0, dictCorrect=0, dictTimeSum=0;
+
+/* ---------- 音高あり ---------- */
+function generatePhrase(){
+  const key=pickKey(useAcc);
+  const accMap=keySignatureMap(key.sharps,key.flats);
+  const events=[];
+  for(let m=0;m<measures;m++){
+    for(let b=0;b<4;b++){
+      const r=Math.random();
+      if(r<0.15) events.push({type:'rest',dur:1});
+      else if(r<0.70) events.push({type:'note',dur:1});
+      else { events.push({type:'note',dur:0.5,beam:'start'}); events.push({type:'note',dur:0.5,beam:'end'}); }
+    }
+    if(m<measures-1) events.push({type:'bar'});
+  }
+  events.push({type:'bar'});
+
+  const cand=diatonicCandidates(lowMidi,highMidi);
+  let li=(()=>{ const c=cand[Math.floor(Math.random()*cand.length)]; return LIDX[c.letter]+c.octave*7; })();
+  const steps=[0,1,-1,1,-1,2,-2,1,-1,3,-3];
+  let first=true;
+  events.filter(e=>e.type==='note').forEach(ev=>{
+    if(!first){
+      let chosen=null, tries=0;
+      while(tries<10){
+        const delta=steps[Math.floor(Math.random()*steps.length)];
+        const candLi=li+delta;
+        const letter=LETTERS[((candLi%7)+7)%7]; const octave=Math.floor(candLi/7);
+        const p=buildPitch(letter,octave,accMap[letter]);
+        if(p.midi>=lowMidi&&p.midi<=highMidi){ chosen={li:candLi,p}; break; }
+        tries++;
+      }
+      if(chosen){ li=chosen.li; ev.pitch=chosen.p; }
+      else { const letter=LETTERS[((li%7)+7)%7]; const octave=Math.floor(li/7); ev.pitch=buildPitch(letter,octave,accMap[letter]); }
+    } else {
+      const letter=LETTERS[((li%7)+7)%7]; const octave=Math.floor(li/7);
+      ev.pitch=buildPitch(letter,octave,accMap[letter]);
+      first=false;
+    }
+  });
+  return {events,key};
+}
+
+function ledgerLines(x,y){
+  let s='';
+  for(let ly=84; ly>=y; ly-=12) s+=`<line x1="${x-9}" y1="${ly}" x2="${x+9}" y2="${ly}" stroke="#16202b" stroke-width="1.3"/>`;
+  for(let ly=156; ly<=y; ly+=12) s+=`<line x1="${x-9}" y1="${ly}" x2="${x+9}" y2="${ly}" stroke="#16202b" stroke-width="1.3"/>`;
+  return s;
+}
+
+function drawClef(){
+  return '<g fill="#16202b">'+
+     '<rect x="20" y="96" width="4" height="48"/>'+
+     '<rect x="27" y="96" width="2" height="48"/>'+
+     '<path d="M31,97 C55,97 55,115 33,120 C50,114 47,103 31,103 Z"/>'+
+     '<path d="M31,143 C55,143 55,125 33,120 C50,126 47,137 31,137 Z"/>'+
+     '<circle cx="34" cy="120" r="1.6"/></g>';
+}
+
+function drawScore(phrase){
+  const events=phrase.events;
+  const noteRestCount=events.filter(e=>e.type==='note'||e.type==='rest').length;
+  const barCount=events.filter(e=>e.type==='bar').length;
+  const W=70+noteRestCount*36+barCount*16+30;
+  const H=240;
+  const lines=[96,108,120,132,144];
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+  s+=`<rect width="${W}" height="${H}" fill="#fbfbf7"/>`;
+  for(const y of lines) s+=`<line x1="10" y1="${y}" x2="${W-10}" y2="${y}" stroke="#16202b" stroke-width="1.3"/>`;
+  s+=drawClef();
+  let x=70;
+  let pendingBeamStart=null;
+  events.forEach(ev=>{
+    if(ev.type==='bar'){
+      s+=`<line x1="${x+6}" y1="94" x2="${x+6}" y2="146" stroke="#16202b" stroke-width="1.6"/>`;
+      x+=16;
+      return;
+    }
+    if(ev.type==='rest'){
+      const yMid=120;
+      s+=`<path d="M${x-2},${yMid-9} C${x+6},${yMid-7} ${x-6},${yMid-1} ${x+4},${yMid+1} C${x-4},${yMid+3} ${x+6},${yMid+9} ${x-2},${yMid+11}" stroke="#16202b" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+      x+=36;
+      return;
+    }
+    const p=ev.pitch;
+    const y=120-stepIndex(p)*6;
+    s+=ledgerLines(x,y);
+    if(p.acc){
+      const sym=p.acc==='#'?'♯':'♭';
+      s+=`<text x="${x-16}" y="${y+6}" font-size="19" font-family="serif" fill="#16202b">${sym}</text>`;
+    }
+    s+=`<ellipse cx="${x}" cy="${y}" rx="6.5" ry="4.8" fill="#16202b" transform="rotate(-22 ${x} ${y})"/>`;
+    const stemTopY=y-30;
+    s+=`<line x1="${x+6}" y1="${y-1}" x2="${x+6}" y2="${stemTopY}" stroke="#16202b" stroke-width="1.6"/>`;
+    if(ev.dur===0.5){
+      if(ev.beam==='start'){ pendingBeamStart={x:x+6,y:stemTopY}; }
+      else if(ev.beam==='end' && pendingBeamStart){
+        s+=`<line x1="${pendingBeamStart.x}" y1="${pendingBeamStart.y}" x2="${x+6}" y2="${stemTopY}" stroke="#16202b" stroke-width="4"/>`;
+        pendingBeamStart=null;
+      }
+    }
+    x+=36;
+  });
+  s+='</svg>';
+  document.getElementById('score').innerHTML=s;
+}
+
+function drawDictStack(notes){
+  const W=300,H=240,midY=120,noteX=170;
+  const lines=[96,108,120,132,144];
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+  s+=`<rect width="${W}" height="${H}" fill="#fbfbf7"/>`;
+  for(const y of lines) s+=`<line x1="10" y1="${y}" x2="${W-10}" y2="${y}" stroke="#16202b" stroke-width="1.3"/>`;
+  s+=drawClef();
+  notes.forEach(p=>{
+    const y=midY-stepIndex(p)*6;
+    s+=ledgerLines(noteX,y);
+    if(p.acc){ const sym=p.acc==='#'?'♯':'♭'; s+=`<text x="${noteX-16}" y="${y+6}" font-size="19" font-family="serif" fill="#16202b">${sym}</text>`; }
+    s+=`<ellipse cx="${noteX}" cy="${y}" rx="6.5" ry="4.8" fill="#16202b" transform="rotate(-22 ${noteX} ${y})"/>`;
+  });
+  s+='</svg>';
+  document.getElementById('score').innerHTML=s;
+}
+
+function playPhrase(){
+  if(!currentPhrase) return;
+  const ctx=ensureCtx();
+  const beatSec=60/getBpm();
+  const t0=ctx.currentTime+0.05;
+  for(let i=0;i<4;i++){
+    const t=t0+i*beatSec;
+    const accent=(i===0);
+    const osc=ctx.createOscillator(); osc.type='square'; osc.frequency.value=accent?1200:900;
+    const gain=ctx.createGain();
+    gain.gain.setValueAtTime(accent?0.2:0.15,t);
+    gain.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t+0.06);
+  }
+  let t=t0+4*beatSec;
+  currentPhrase.events.forEach(ev=>{
+    if(ev.type==='bar') return;
+    const dur=ev.dur*beatSec;
+    if(ev.type==='note'){
+      const freq=442*Math.pow(2,(ev.pitch.midi-69)/12);
+      const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
+      const gain=ctx.createGain();
+      gain.gain.setValueAtTime(0.0001,t);
+      gain.gain.exponentialRampToValueAtTime(0.25,t+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001,t+Math.max(dur*0.95,0.04));
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(t); osc.stop(t+dur+0.02);
+    }
+    t+=dur;
+  });
+}
+function playClick(){
+  if(!currentPhrase) return;
+  const ctx=ensureCtx();
+  const beatSec=60/getBpm();
+  const totalBeats=currentPhrase.events.filter(e=>e.type!=='bar').reduce((s,e)=>s+e.dur,0);
+  const beatCount=4+Math.ceil(totalBeats);
+  const t0=ctx.currentTime+0.05;
+  for(let i=0;i<beatCount;i++){
+    const osc=ctx.createOscillator(); osc.type='square'; osc.frequency.value=(i%4===0)?1200:900;
+    const gain=ctx.createGain();
+    const t=t0+i*beatSec;
+    gain.gain.setValueAtTime(0.18,t);
+    gain.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t+0.06);
+  }
+}
+
+/* ---------- リズムのみ ---------- */
+function timeSigInfo(label){
+  const map={'2/4':{beats:2},'3/4':{beats:3},'4/4':{beats:4}};
+  return map[label];
+}
+function genSimpleSlot(remainingUnits, excludeRest, usedUnits){
+  const aligned = (usedUnits%6===0);
+  const opts=[];
+  function add(units,weight,build){ if(units<=remainingUnits) opts.push({units,weight,build}); }
+  if(!excludeRest){
+    add(3,8,()=>[{type:'rest',dur:0.5}]);
+    add(6,10,()=>[{type:'rest',dur:1}]);
+    if(aligned) add(12,4,()=>[{type:'rest',dur:2}]);
+  }
+  add(6,24,()=>[{type:'note',dur:1}]);
+  add(6,18,()=>[{type:'note',dur:0.5,beam:'start'},{type:'note',dur:0.5,beam:'end'}]);
+  if(aligned) add(6,10,()=>[{type:'note',dur:1/3,trip:'start',beam:'start'},{type:'note',dur:1/3,trip:'mid',beam:'mid'},{type:'note',dur:1/3,trip:'end',beam:'end'}]);
+  if(aligned) add(9,8,()=>[{type:'note',dur:1.5}]);
+  if(aligned) add(12,8,()=>[{type:'note',dur:2}]);
+  const total=opts.reduce((s,o)=>s+o.weight,0);
+  let r=Math.random()*total;
+  for(const o of opts){ if(r<o.weight) return {units:o.units, events:o.build()}; r-=o.weight; }
+  return {units:3, events:[{type:'rest',dur:0.5}]};
+}
+function mergeRestsInMeasure(measureEvents){
+  const out=[]; let i=0;
+  while(i<measureEvents.length){
+    if(measureEvents[i].type==='rest'){
+      let sum=0, j=i;
+      while(j<measureEvents.length && measureEvents[j].type==='rest'){ sum+=measureEvents[j].dur; j++; }
+      let remaining=Math.round(sum*6);
+      const tokens=[[12,2],[6,1],[3,0.5]];
+      for(const [units,dur] of tokens){ while(remaining>=units){ out.push({type:'rest',dur}); remaining-=units; } }
+      i=j;
+    } else { out.push(measureEvents[i]); i++; }
+  }
+  return out;
+}
+function generateRhythmOnly(){
+  if(rhythmRandom){
+    const sigs=['2/4','3/4','4/4'];
+    timeSigLabel=sigs[Math.floor(Math.random()*sigs.length)];
+    const restOpts=[[0,0],[1,2],[3,6]];
+    const ro=restOpts[Math.floor(Math.random()*restOpts.length)];
+    restMin=ro[0]; restMax=ro[1];
+    rMeasures=3;
+    document.getElementById('timesig').value=timeSigLabel;
+    document.getElementById('restlen').value=restMin+','+restMax;
+    document.getElementById('rmeasures').value=String(rMeasures);
+  }
+  const info=timeSigInfo(timeSigLabel);
+  const restCount = restMin===restMax ? restMin : (restMin+Math.floor(Math.random()*(restMax-restMin+1)));
+  const events=[];
+  if(restCount>0) events.push({type:'restbar',count:restCount});
+  for(let m=0;m<rMeasures;m++){
+    const totalUnits=info.beats*6;
+    let used=0;
+    let measureEvents=[];
+    let lastWasTriplet=false;
+    while(used<totalUnits){
+      const remaining=totalUnits-used;
+      const slot=genSimpleSlot(remaining, lastWasTriplet, used);
+      measureEvents.push(...slot.events);
+      used+=slot.units;
+      lastWasTriplet=slot.events.some(e=>e.trip);
+    }
+    events.push(...mergeRestsInMeasure(measureEvents));
+    if(m<rMeasures-1) events.push({type:'bar'});
+  }
+  events.push({type:'bar'});
+  return {events,info,restCount,measures:rMeasures,timeSigLabel};
+}
+
+function drawRhythmStaff(phrase){
+  const events=phrase.events;
+  const unitPx=48;
+  let contentW=0, barCount=0, restbarW=0;
+  events.forEach(e=>{
+    if(e.type==='bar') barCount++;
+    else if(e.type==='restbar') restbarW=85;
+    else contentW += Math.max(e.dur*unitPx, 18);
+  });
+  const W=52+(restbarW?restbarW+16:0)+contentW+barCount*14;
+  const H=126;
+  const lineY=76;
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+  s+=`<rect width="${W}" height="${H}" fill="#fbfbf7"/>`;
+  s+=`<line x1="8" y1="${lineY}" x2="${W-8}" y2="${lineY}" stroke="#16202b" stroke-width="1.3"/>`;
+  let x=24;
+  let pendingBeam=null, pendingTriplet=null;
+  events.forEach(ev=>{
+    if(ev.type==='bar'){ s+=`<line x1="${x+5}" y1="${lineY-30}" x2="${x+5}" y2="${lineY+8}" stroke="#16202b" stroke-width="1.4"/>`; x+=11; return; }
+    if(ev.type==='restbar'){
+      const w=restbarW; const midY=lineY-6;
+      s+=`<line x1="${x}" y1="${midY}" x2="${x+w}" y2="${midY}" stroke="#16202b" stroke-width="3.5"/>`;
+      s+=`<line x1="${x}" y1="${midY-7}" x2="${x}" y2="${midY+7}" stroke="#16202b" stroke-width="1.8"/>`;
+      s+=`<line x1="${x+w}" y1="${midY-7}" x2="${x+w}" y2="${midY+7}" stroke="#16202b" stroke-width="1.8"/>`;
+      s+=`<text x="${x+w/2}" y="${midY-12}" font-size="15" font-weight="700" text-anchor="middle" fill="#16202b">${ev.count}</text>`;
+      x+=w+12; return;
+    }
+    const evW=Math.max(ev.dur*unitPx,18);
+    if(ev.type==='rest'){
+      const yMid=lineY;
+      if(ev.dur===0.5){
+        s+=`<path d="M${x},${yMid-6} C${x+6},${yMid-4} ${x-2},${yMid+1} ${x+4},${yMid+4}" stroke="#16202b" stroke-width="1.9" fill="none" stroke-linecap="round"/>`;
+      } else if(ev.dur===2){
+        s+=`<rect x="${x-6}" y="${yMid-8}" width="12" height="6" fill="#16202b"/>`;
+      } else {
+        s+=`<path d="M${x-2},${yMid-7} C${x+5},${yMid-6} ${x-5},${yMid-1} ${x+3},${yMid+1} C${x-3},${yMid+3} ${x+5},${yMid+7} ${x-2},${yMid+9}" stroke="#16202b" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+      }
+      x+=evW; return;
+    }
+    const y=lineY;
+    const isOpen = ev.dur>=2;
+    if(isOpen){
+      s+=`<ellipse cx="${x}" cy="${y}" rx="6" ry="4.4" fill="none" stroke="#16202b" stroke-width="1.7" transform="rotate(-22 ${x} ${y})"/>`;
+    } else {
+      s+=`<ellipse cx="${x}" cy="${y}" rx="5.5" ry="4.1" fill="#16202b" transform="rotate(-22 ${x} ${y})"/>`;
+    }
+    const stemTop=y-25;
+    s+=`<line x1="${x+5}" y1="${y-1}" x2="${x+5}" y2="${stemTop}" stroke="#16202b" stroke-width="1.4"/>`;
+    if(ev.dur===1.5){ s+=`<circle cx="${x+10}" cy="${y}" r="1.9" fill="#16202b"/>`; }
+    if(ev.beam==='start'){ pendingBeam={x:x+5,y:stemTop}; }
+    else if(ev.beam==='mid'){ if(pendingBeam){ s+=`<line x1="${pendingBeam.x}" y1="${pendingBeam.y}" x2="${x+5}" y2="${stemTop}" stroke="#16202b" stroke-width="3.2"/>`; pendingBeam={x:x+5,y:stemTop}; } }
+    else if(ev.beam==='end'){ if(pendingBeam){ s+=`<line x1="${pendingBeam.x}" y1="${pendingBeam.y}" x2="${x+5}" y2="${stemTop}" stroke="#16202b" stroke-width="3.2"/>`; pendingBeam=null; } }
+    if(ev.trip==='start'){ pendingTriplet={x:x}; }
+    if(ev.trip==='end' && pendingTriplet){
+      const midx=(pendingTriplet.x+x)/2;
+      s+=`<path d="M${pendingTriplet.x},${stemTop-5} L${midx-4},${stemTop-8} L${midx+4},${stemTop-8} L${x},${stemTop-5}" stroke="#16202b" stroke-width="1.1" fill="none"/>`;
+      s+=`<text x="${midx}" y="${stemTop-10}" font-size="10.5" text-anchor="middle" fill="#16202b">3</text>`;
+      pendingTriplet=null;
+    }
+    x+=evW;
+  });
+  s+='</svg>';
+  document.getElementById('score').innerHTML=s;
+}
+
+function playRhythmClicks(phrase, withTaps){
+  const ctx=ensureCtx();
+  const bpm=getBpm();
+  const beatSec=60/bpm;
+  const info=phrase.info;
+  const totalMeasures=1+phrase.restCount+phrase.measures;
+  const t0=ctx.currentTime+0.05;
+  for(let i=0;i<info.beats*totalMeasures;i++){
+    const t=t0+i*beatSec;
+    const accent=(i%info.beats===0);
+    const osc=ctx.createOscillator(); osc.type='square'; osc.frequency.value=accent?1300:950;
+    const gain=ctx.createGain();
+    gain.gain.setValueAtTime(accent?0.22:0.16,t);
+    gain.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t+0.06);
+  }
+  if(withTaps){
+    let tt=t0+info.beats*(1+phrase.restCount)*beatSec;
+    phrase.events.forEach(ev=>{
+      if(ev.type==='bar'||ev.type==='restbar') return;
+      const dur=ev.dur*beatSec;
+      if(ev.type==='note'){
+        const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=600;
+        const gain=ctx.createGain();
+        gain.gain.setValueAtTime(0.0001,tt);
+        gain.gain.exponentialRampToValueAtTime(0.3,tt+0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001,tt+Math.max(dur*0.95,0.06));
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(tt); osc.stop(tt+dur+0.05);
+      }
+      tt+=dur;
+    });
+  }
+}
+
+/* ---------- 聴音 ---------- */
+function dictPickAcc(){ if(!dictUseAcc) return ''; const r=Math.random(); if(r<0.6) return ''; return r<0.8?'#':'b'; }
+function dictMakeChord(){
+  const key=pickKey(dictUseAcc);
+  const accMap=keySignatureMap(key.sharps,key.flats);
+  const cand=diatonicCandidates(dictLowMidi,dictHighMidi).filter(x=>x.letter===key.tonic);
+  for(let t=0;t<40;t++){
+    const root=cand.length?cand[Math.floor(Math.random()*cand.length)]:{letter:key.tonic,octave:4};
+    const notes=[]; let li=LIDX[root.letter]+root.octave*7; let ok=true;
+    for(let n=0;n<3;n++){
+      const letter=LETTERS[li%7]; const octave=Math.floor(li/7);
+      const p=buildPitch(letter,octave,accMap[letter]);
+      if(p.midi<dictLowMidi-2||p.midi>dictHighMidi+2){ok=false;break;}
+      notes.push(p); li+=2;
+    }
+    if(ok&&notes.length===3){ notes._key=key.name; return notes; }
+  }
+  return null;
+}
+function playTone(freq,t,dur){
+  const ctx=ensureCtx();
+  const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
+  const gain=ctx.createGain();
+  gain.gain.setValueAtTime(0.0001,t);
+  gain.gain.exponentialRampToValueAtTime(0.26,t+0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(t); osc.stop(t+dur+0.05);
+}
+function playReferenceAndTarget(){
+  if(!currentDictNotes) return;
+  const ctx=ensureCtx();
+  const t0=ctx.currentTime+0.05;
+  playTone(442,t0,0.7);
+  const t1=t0+1.0;
+  currentDictNotes.forEach(p=>{ playTone(442*Math.pow(2,(p.midi-69)/12), t1, 0.9); });
+}
+function newDictNote(){
+  if(dictType==='chord'){
+    let chord=dictMakeChord();
+    if(!chord){ const cand=diatonicCandidates(dictLowMidi,dictHighMidi); const c=cand[Math.floor(Math.random()*cand.length)]; chord=[buildPitch(c.letter,c.octave,'')]; chord._key=null; }
+    currentDictNotes=chord;
+    currentDictKeyName=chord._key||null;
+  } else {
+    const cand=diatonicCandidates(dictLowMidi,dictHighMidi);
+    const c=cand[Math.floor(Math.random()*cand.length)];
+    currentDictNotes=[buildPitch(c.letter,c.octave,dictPickAcc())];
+    currentDictKeyName=null;
+  }
+  dictRevealed=false;
+  document.getElementById('score').innerHTML='<div class="placeholder">🔊 基準音(A)に続いて'+(dictType==='chord'?'和音':'出題音')+'が鳴ります<br>'+(dictType==='chord'?'和音':'音名')+'を思い浮かべたら「答えを見る」</div>';
+  document.getElementById('dict-judge').style.display='none';
+  document.getElementById('play').style.display='';
+  dictStartTime=performance.now();
+  playReferenceAndTarget();
+}
+function revealDict(){
+  if(!currentDictNotes||dictRevealed) return;
+  dictRevealed=true;
+  dictElapsed=(performance.now()-dictStartTime)/1000;
+  if(dictType==='chord') drawDictStack(currentDictNotes);
+  else drawScore({events:[{type:'note',dur:1,pitch:currentDictNotes[0]},{type:'bar'}]});
+  const namesDiv=document.createElement('div');
+  namesDiv.style.textAlign='center';
+  namesDiv.style.marginTop='8px';
+  namesDiv.style.fontSize=(dictType==='chord'?'17px':'22px');
+  namesDiv.style.fontWeight='800';
+  namesDiv.style.color='#0f1722';
+  const doremi=currentDictNotes.map(p=>p.nameDoremi).join(' ');
+  const ger=currentDictNotes.map(p=>p.nameGerman).join(' ');
+  let txt=doremi+'　/　'+ger;
+  if(currentDictKeyName) txt+='　|　'+currentDictKeyName+'の主和音';
+  namesDiv.textContent=txt;
+  document.getElementById('score').appendChild(namesDiv);
+  document.getElementById('play').style.display='none';
+  document.getElementById('dict-judge').style.display='flex';
+}
+function judgeDict(ok){
+  if(!dictRevealed) return;
+  dictTotal++; if(ok) dictCorrect++;
+  dictTimeSum+=dictElapsed;
+  updateDictStats();
+  newDictNote();
+}
+function updateDictStats(){
+  document.getElementById('dict-total').textContent=dictTotal;
+  document.getElementById('dict-acc').textContent=dictTotal?Math.round(dictCorrect/dictTotal*100)+'%':'–';
+  document.getElementById('dict-time').textContent=dictTotal?(dictTimeSum/dictTotal).toFixed(1):'–';
+}
+
+/* ---------- 共通 ---------- */
+function ensureCtx(){ 
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); 
+  if(audioCtx.state==='suspended') audioCtx.resume().catch(e=>console.error('Audio resume failed:',e));
+  return audioCtx; 
+}
+function getBpm(){ return Number(document.getElementById('bpm').value); }
+function updateStats(){ document.getElementById('s-count').textContent=count; }
+
+function newPhrase(){
+  if(appMode==='pitch'){
+    currentPhrase=generatePhrase();
+    drawScore(currentPhrase);
+  } else {
+    currentPhrase=generateRhythmOnly();
+    drawRhythmStaff(currentPhrase);
+  }
+  count++;
+  updateStats();
+}
+
+document.getElementById('next').onclick=()=>{ appMode==='dictation' ? newDictNote() : newPhrase(); };
+document.getElementById('play').onclick=()=>{
+  if(appMode==='pitch') playPhrase();
+  else if(appMode==='rhythm') playRhythmClicks(currentPhrase,true);
+  else revealDict();
+};
+document.getElementById('click').onclick=()=>{
+  if(appMode==='pitch') playClick();
+  else if(appMode==='rhythm') playRhythmClicks(currentPhrase,false);
+  else playReferenceAndTarget();
+};
+document.getElementById('dict-right').onclick=()=>judgeDict(true);
+document.getElementById('dict-wrong').onclick=()=>judgeDict(false);
+document.getElementById('resetstats').onclick=()=>{count=0;dictTotal=0;dictCorrect=0;dictTimeSum=0;updateStats();updateDictStats();};
+
+document.getElementById('seg-appmode').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  appMode=b.dataset.v;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  document.getElementById('pitch-settings').style.display = appMode==='pitch' ? '' : 'none';
+  document.getElementById('rhythm-settings').style.display = appMode==='rhythm' ? '' : 'none';
+  document.getElementById('dict-settings').style.display = appMode==='dictation' ? '' : 'none';
+  document.getElementById('main-stats').style.display = appMode==='dictation' ? 'none' : 'flex';
+  document.getElementById('dict-stats').style.display = appMode==='dictation' ? 'flex' : 'none';
+  document.getElementById('dict-judge').style.display='none';
+  document.getElementById('play').style.display='';
+  if(appMode==='dictation'){
+    document.getElementById('click').textContent='🔊 もう一度聴く';
+    document.getElementById('play').textContent='答えを見る';
+    document.getElementById('next').textContent='次の音';
+    newDictNote();
+  } else {
+    document.getElementById('click').textContent='メトロノームを聴く';
+    document.getElementById('play').textContent='正解を再生';
+    document.getElementById('next').textContent='次のフレーズ';
+    newPhrase();
+  }
+});
+document.getElementById('seg-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;useAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newPhrase();});
+document.getElementById('seg-dict-type').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictType=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
+document.getElementById('seg-dict-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictUseAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
+document.getElementById('range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);lowMidi=lo;highMidi=hi;newPhrase();};
+document.getElementById('dict-range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);dictLowMidi=lo;dictHighMidi=hi;newDictNote();};
+document.getElementById('measures').onchange=e=>{measures=Number(e.target.value);newPhrase();};
+document.getElementById('seg-rhythm-random').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rhythmRandom=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));document.getElementById('rhythm-manual-settings').style.display=rhythmRandom?'none':'';newPhrase();});
+document.getElementById('timesig').onchange=e=>{timeSigLabel=e.target.value;newPhrase();};
+document.getElementById('restlen').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);restMin=lo;restMax=hi;newPhrase();};
+document.getElementById('rmeasures').onchange=e=>{rMeasures=Number(e.target.value);newPhrase();};
+document.getElementById('bpm').oninput=e=>{document.getElementById('bpmval').textContent=e.target.value+' BPM';};
+
+newPhrase();
+</script>
+</body>
+</html>

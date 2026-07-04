@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Score Reading Practice - Flesch System Phase 1</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f1f3f6; --ink:#14181f; --muted:#3d4654;
+    --accent:#2c5d92; --good:#1f7a4d; --bad:#b23b3b; --line:#c9d0da; --card:#fbfbf7;
+  }
+  *{box-sizing:border-box}
+  html{ -webkit-text-size-adjust:100%; }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:'Yu Gothic','Hiragino Sans','Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:640px;margin:0 auto;padding:18px 16px 40px}
+  h1{font-size:19px;font-weight:800;margin:6px 0 2px;color:#0f1722}
+  .sub{color:var(--muted);font-size:13px;font-weight:600;margin-bottom:14px;line-height:1.7}
+  .stats{display:flex;gap:10px;margin-bottom:14px}
+  .stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:center}
+  .stat .v{font-size:20px;font-weight:800;color:#0f1722}
+  .stat .l{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px}
+  .cardarea{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px;display:flex;align-items:center;justify-content:center;min-height:200px}
+  #score{width:100%;max-width:340px}
+  #score svg{display:block;width:100%;height:auto}
+  .answer{margin-top:14px;min-height:64px;text-align:center}
+  .answer .names{font-size:25px;font-weight:800;letter-spacing:.5px;color:#0f1722}
+  .answer .hint{color:var(--muted);font-size:13px;font-weight:600;margin-top:4px}
+  .answer.placeholder{color:var(--muted);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .controls{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  button{font-family:inherit;border:none;border-radius:10px;padding:13px 16px;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent);flex:1;min-width:120px}
+  button:active{transform:translateY(1px)}
+  button.good{background:var(--good)} button.bad{background:var(--bad)} button.alt{background:#5b6472}
+  .row{display:flex;gap:10px}
+  details{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 14px}
+  summary{cursor:pointer;padding:10px 0;font-size:14px;font-weight:700;color:var(--ink);list-style:none}
+  summary::-webkit-details-marker{display:none}
+  .opt{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-top:1px solid var(--line);font-size:14px;font-weight:600;color:var(--ink)}
+  .opt:first-of-type{border-top:none}
+  select{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-family:inherit;font-size:13.5px;font-weight:600}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+  .seg button{flex:0 0 auto;min-width:0;border-radius:0;background:#fff;color:var(--muted);padding:7px 10px;font-weight:700;font-size:13px}
+  .seg button.on{background:var(--accent);color:#fff}
+  .footnote{color:var(--muted);font-size:12.5px;font-weight:600;margin-top:16px;line-height:1.75}
+  .reset{margin-top:10px;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:12.5px;font-weight:600;padding:8px 10px;flex:0 0 auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Score Reading<span style="display:inline-block;background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px;">v1</span></h1>
+  <div class="sub">音符や調号を見て回答を思い浮かべ、「答えを見る」で正解と照合。▶️ 設定からハ音記号・ト音記号を切り替えられます。<br>出題は単音、和音、度数（長三度など）、調号（長調・短調を同時に判定）から選択できます。単音・和音モードでは「🔊 音を聴く」で正解の音を1秒間のロングトーンでA=442基準で確認できます。臨時記号の有無、音域も設定可能。</div>
+
+  <div class="stats">
+    <div class="stat"><div class="v" id="s-total">0</div><div class="l">出題数</div></div>
+    <div class="stat"><div class="v" id="s-acc">–</div><div class="l">正答率</div></div>
+    <div class="stat"><div class="v" id="s-time">–</div><div class="l">平均回答時間(秒)</div></div>
+  </div>
+
+  <div class="cardarea"><div id="score"></div></div>
+  <div class="answer placeholder" id="answer">音符や調号を見て回答を思い浮かべる</div>
+
+  <div class="controls">
+    <button id="reveal">答えを見る</button>
+  </div>
+  <div class="controls" id="audio-controls">
+    <button class="alt" id="playSound">🔊 音を聴く</button>
+  </div>
+  <div class="row" id="judge" style="display:none;margin-top:10px">
+    <button class="bad" id="wrong">✗ 間違えた</button>
+    <button class="good" id="right">✓ 正解</button>
+  </div>
+
+  <details>
+    <summary>▶️ 設定</summary>
+    <div class="opt"><span>音部記号</span>
+      <span class="seg" id="seg-clef">
+        <button data-v="alto" class="on">ハ音記号</button>
+        <button data-v="treble">ト音記号</button>
+      </span>
+    </div>
+    <div class="opt"><span>出題</span>
+      <span class="seg" id="seg-mode">
+        <button data-v="single" class="on">単音</button>
+        <button data-v="chord">和音</button>
+        <button data-v="interval">度数</button>
+        <button data-v="keysig">調号</button>
+      </span>
+    </div>
+    <div class="opt"><span>臨時記号（♯・♭）</span>
+      <span class="seg" id="seg-acc">
+        <button data-v="on" class="on">混ぜる</button>
+        <button data-v="off">なし</button>
+      </span>
+    </div>
+    <div class="opt"><span>音域</span>
+      <select id="range">
+        <option value="48,81">標準（C3–A5）</option>
+        <option value="48,88">高音含む（C3–E6）</option>
+        <option value="53,72">アルト記号中心（F3–C5）</option>
+        <option value="48,77" selected>低～中（C3–F5）</option>
+      </select>
+    </div>
+    <button class="reset" id="resetstats">記録をリセット</button>
+  </details>
+
+  <div class="footnote">
+    <strong>使い方：</strong><br>
+    1) 回答を思い浮かべる → 「答えを見る」 → 合っていれば「✓ 正解」、外れたら「✗ 間違えた」。→楽譜の上に出題数、正答率、平均回答時間(秒)が表示されます。<br>
+    2) 正解を見て、歌う、ボーイングに合わせて楽器で弾いてみる → 正解音を聞いて確認という練習方法も有効です。<br><br>
+    単音・和音モードでは「🔊 音を聴く」で正解の音を1秒間のロングトーンでA=442基準で確認できます（和音は3／4音同時に鳴ります）。歌ってから鳴らして、音程を耳で確認する練習にも使えます。<br>
+    ドイツ音名：B♮=H、B♭=B、♯は語尾 -is（Fis 等）、♭は語尾 -es（Des 等、E♭=Es・A♭=As）。<br>
+    「和音」はその調の主和音（基本形・第一転回・第二転回）に加え、減七・属七の和音（4音）もランダムに出題されます。<br>
+    「度数」は実際の和声かどうかは考慮しません。「🔊 音を聴く」で2音同時に確認できます（変則的な音の組み合わせにも対応、マーラーなど複雑な楽曲対策に活用できます）。<br>
+    「調号」は♯・♭0〜6個の範囲で出題し、同じ調号を持つ長調・短調の両方を答えます。<br>
+    記録はこのセッション内のみ（再読み込みでリセット）。
+  </div>
+</div>
+
+<script>
+const LETTERS=['C','D','E','F','G','A','B'];
+const LIDX={C:0,D:1,E:2,F:3,G:4,A:5,B:6};
+const SEMI={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+const DOREMI={C:'ド',D:'レ',E:'ミ',F:'ファ',G:'ソ',A:'ラ',B:'シ'};
+
+function germanName(letter,acc){
+  if(letter==='B'){ if(acc==='#') return 'His'; if(acc==='b') return 'B'; return 'H'; }
+  if(acc==='#') return letter+'is';
+  if(acc==='b'){ if(letter==='E') return 'Es'; if(letter==='A') return 'As'; return letter+'es'; }
+  return letter;
+}
+
+const SHARP_ORDER=['F','C','G','D','A','E','B'];
+const FLAT_ORDER=['B','E','A','D','G','C','F'];
+const KEYS=[
+  {name:'ハ長調',sharps:0,flats:0,tonic:'C'},
+  {name:'イ短調',sharps:0,flats:0,tonic:'A'},
+  {name:'ト長調',sharps:1,flats:0,tonic:'G'},
+  {name:'ホ短調',sharps:1,flats:0,tonic:'E'},
+  {name:'ニ長調',sharps:2,flats:0,tonic:'D'},
+  {name:'ロ短調',sharps:2,flats:0,tonic:'B'},
+  {name:'イ長調',sharps:3,flats:0,tonic:'A'},
+  {name:'嬰ヘ短調',sharps:3,flats:0,tonic:'F'},
+  {name:'ヘ長調',sharps:0,flats:1,tonic:'F'},
+  {name:'ニ短調',sharps:0,flats:1,tonic:'D'},
+  {name:'変ロ長調',sharps:0,flats:2,tonic:'B'},
+  {name:'ト短調',sharps:0,flats:2,tonic:'G'},
+  {name:'変ホ長調',sharps:0,flats:3,tonic:'E'},
+  {name:'ハ短調',sharps:0,flats:3,tonic:'C'}
+];
+function keySignatureMap(sharps,flats){
+  const acc={}; LETTERS.forEach(l=>acc[l]='');
+  for(let i=0;i<sharps;i++) acc[SHARP_ORDER[i]]='#';
+  for(let i=0;i<flats;i++) acc[FLAT_ORDER[i]]='b';
+  return acc;
+}
+function pickKey(){
+  if(!useAcc){ const plain=KEYS.filter(k=>k.sharps===0&&k.flats===0); return plain[Math.floor(Math.random()*plain.length)]; }
+  return KEYS[Math.floor(Math.random()*KEYS.length)];
+}
+
+const KEYSIG_LIST=[
+  {sharps:0,flats:0,major:'ハ長調',minor:'イ短調',tonicMajor:'C',tonicMinor:'A'},
+  {sharps:1,flats:0,major:'ト長調',minor:'ホ短調',tonicMajor:'G',tonicMinor:'E'},
+  {sharps:2,flats:0,major:'ニ長調',minor:'ロ短調',tonicMajor:'D',tonicMinor:'B'},
+  {sharps:3,flats:0,major:'イ長調',minor:'嬰ヘ短調',tonicMajor:'A',tonicMinor:'F'},
+  {sharps:4,flats:0,major:'ホ長調',minor:'嬰ハ短調',tonicMajor:'E',tonicMinor:'C'},
+  {sharps:5,flats:0,major:'ロ長調',minor:'嬰ト短調',tonicMajor:'B',tonicMinor:'G'},
+  {sharps:6,flats:0,major:'嬰ヘ長調',minor:'嬰ニ短調',tonicMajor:'F',tonicMinor:'D'},
+  {sharps:0,flats:1,major:'ヘ長調',minor:'ニ短調',tonicMajor:'F',tonicMinor:'D'},
+  {sharps:0,flats:2,major:'変ロ長調',minor:'ト短調',tonicMajor:'B',tonicMinor:'G'},
+  {sharps:0,flats:3,major:'変ホ長調',minor:'ハ短調',tonicMajor:'E',tonicMinor:'C'},
+  {sharps:0,flats:4,major:'変イ長調',minor:'ヘ短調',tonicMajor:'A',tonicMinor:'F'},
+  {sharps:0,flats:5,major:'変ニ長調',minor:'変ロ短調',tonicMajor:'D',tonicMinor:'B'},
+  {sharps:0,flats:6,major:'変ト長調',minor:'変ホ短調',tonicMajor:'G',tonicMinor:'E'}
+];
+// ハ音記号（C4が中央線）用の調号の縦位置
+const ALTO_STEP_SHARP={F:3,C:0,G:4,D:1,A:-2,E:2,B:-1};
+const ALTO_STEP_FLAT={B:-1,E:2,A:-2,D:1,G:-3,C:0,F:-4};
+// ト音記号（B4が中央線）用の調号の縦位置（標準的なジグザグ型）
+const TREBLE_STEP_SHARP={F:4,C:1,G:5,D:2,A:-1,E:3,B:0};
+const TREBLE_STEP_FLAT={B:0,E:3,A:-1,D:2,G:-2,C:1,F:-3};
+function germanKeyName(tonicLetter,accMap,isMajor){
+  const ger=germanName(tonicLetter,accMap[tonicLetter]);
+  return isMajor ? (ger+'-Dur') : (ger.charAt(0).toLowerCase()+ger.slice(1)+'-moll');
+}
+function pickKeySig(){
+  const low=KEYSIG_LIST.filter(k=>k.sharps<=3&&k.flats<=3);
+  const high=KEYSIG_LIST.filter(k=>k.sharps>3||k.flats>3);
+  const group = Math.random()<2/3 ? low : high;
+  return group[Math.floor(Math.random()*group.length)];
+}
+
+let clef='alto';
+let mode='single', useAcc=true, lowMidi=48, highMidi=77;
+let total=0, correct=0, timeSum=0;
+let current=null, startTime=0, revealed=false;
+let audioCtx=null;
+
+function diatonicCandidates(){
+  const out=[];
+  for(let oct=1;oct<=7;oct++) for(const L of LETTERS){
+    const midi=(oct+1)*12+SEMI[L];
+    if(midi>=lowMidi&&midi<=highMidi) out.push({letter:L,octave:oct});
+  }
+  return out;
+}
+function pickAcc(){ if(!useAcc) return ''; const r=Math.random(); if(r<0.6) return ''; return r<0.8?'#':'b'; }
+function buildPitch(letter,octave,acc){
+  const off=acc==='#'?1:acc==='b'?-1:0;
+  const midi=(octave+1)*12+SEMI[letter]+off;
+  const sym=acc==='#'?'♯':acc==='b'?'♭':'';
+  return {letter,octave,acc,midi,nameDoremi:DOREMI[letter]+sym,nameGerman:germanName(letter,acc)};
+}
+function makeNote(){ const c=diatonicCandidates(); const b=c[Math.floor(Math.random()*c.length)]; return buildPitch(b.letter,b.octave,pickAcc()); }
+
+// 根音(letter,octave)から、根音を基準にした半音のリスト(intervalSemis)で和音を組み立てる。
+// 文字は3度ずつダイアトニックに進め、実際に必要な半音との差を臨時記号(diff)として付与する。
+// accMapは調号の臨時記号を含む（例：{F:'#', C:'#', ...}）
+function buildStackedChord(rootLetter,rootOctave,intervalSemis,accMap){
+  const li0=LIDX[rootLetter]+rootOctave*7;
+  const rootNatural=(rootOctave+1)*12+SEMI[rootLetter];
+  const notes=[];
+  for(let n=0;n<intervalSemis.length;n++){
+    const li=li0+2*n;
+    const letter=LETTERS[((li%7)+7)%7]; const octave=Math.floor(li/7);
+    const natural=(octave+1)*12+SEMI[letter];
+    
+    // 調号に基づいて、その文字の「デフォルト」の半音値を計算
+    const keyAcc=accMap[letter]||'';
+    const keyDefault=natural+(keyAcc==='#'?1:keyAcc==='b'?-1:0);
+    
+    // 必要な音程と、キーのデフォルトの差分を計算
+    const targetMidi=rootNatural+intervalSemis[n];
+    const diff=targetMidi-keyDefault;
+    
+    if(diff<-1||diff>1) return null; // ダブルシャープ/フラットは今回は使わない
+    
+    // キーのデフォルト臨時記号に、必要な追加臨時記号を加える
+    let finalAcc=keyAcc;
+    if(diff===1){
+      finalAcc=(keyAcc==='b'?'':keyAcc==='#'?'x':'#');
+    } else if(diff===-1){
+      finalAcc=(keyAcc==='#'?'':keyAcc==='b'?'bb':'b');
+    }
+    // diffが0の場合はkeyAccのまま
+    
+    notes.push(buildPitch(letter,octave,finalAcc));
+  }
+  return notes;
+}
+
+// 和音の種類。position: 展開する音の並び替え（0=基本形, 1=第一転回, 2=第二転回）
+const CHORD_TYPES=[
+  {id:'root',    label:'主和音（基本形）',   intervals:[0,4,7],    invertible:true},
+  {id:'inv1',    label:'主和音（第一転回）', intervals:[0,4,7],    invertible:true, forcePos:1},
+  {id:'inv2',    label:'主和音（第二転回）', intervals:[0,4,7],    invertible:true, forcePos:2},
+  {id:'dim7',    label:'減七の和音',        intervals:[0,3,6,9],  invertible:false},
+  {id:'dom7',    label:'属七の和音',        intervals:[-5,-1,2,5],invertible:false} // Vの根音から見た属七(下属からの相対ではなく、Iの完全4度下=属音を根音とする)
+];
+
+// 基準音から「文字を何個進めるか」「半音を何個進めるか」を指定して、正確な音高（文字＋臨時記号）を計算する
+function buildPitchFromMidiStep(baseNote, letterSteps, semitoneSteps){
+  const li=LIDX[baseNote.letter]+baseNote.octave*7+letterSteps;
+  const letter=LETTERS[((li%7)+7)%7]; const octave=Math.floor(li/7);
+  const natural=(octave+1)*12+SEMI[letter];
+  const targetMidi=baseNote.midi+semitoneSteps;
+  const diff=targetMidi-natural;
+  let acc='';
+  if(diff===1) acc='#';
+  else if(diff===-1) acc='b';
+  else if(diff===0) acc='';
+  return {letter, octave, acc, midi:targetMidi};
+}
+
+function makeChord(){
+  const key=pickKey();
+  const accMap=keySignatureMap(key.sharps,key.flats);
+  const c=diatonicCandidates().filter(x=>x.letter===key.tonic);
+  const typeChoice=CHORD_TYPES[Math.floor(Math.random()*CHORD_TYPES.length)];
+
+  for(let t=0;t<80;t++){
+    const tonicPos=c.length?c[Math.floor(Math.random()*c.length)]:{letter:key.tonic,octave:4};
+    let notes=null, typeLabel=typeChoice.label;
+
+    // 基本形の根音を保存（転回形判定用）
+    const fundamentalRootLetter=tonicPos.letter;
+    const fundamentalRootAcc=accMap[fundamentalRootLetter]||'';
+
+    if(typeChoice.id==='dom7'){
+      const li=LIDX[tonicPos.letter]+tonicPos.octave*7+4;
+      const domLetter=LETTERS[((li%7)+7)%7]; const domOctave=Math.floor(li/7);
+      notes=buildStackedChord(domLetter,domOctave,[0,4,7,10],accMap);
+    } else if(typeChoice.id==='dim7'){
+      const li=LIDX[tonicPos.letter]+tonicPos.octave*7-1;
+      const leadLetter=LETTERS[((li%7)+7)%7]; const leadOctave=Math.floor(li/7);
+      notes=buildStackedChord(leadLetter,leadOctave,[0,3,6,9],accMap);
+    } else {
+      notes=buildStackedChord(tonicPos.letter,tonicPos.octave,[0,4,7],accMap);
+      if(notes && typeChoice.forcePos){
+        const pos=typeChoice.forcePos;
+        for(let i=0;i<pos;i++){
+          const low=notes.shift();
+          const raised=buildPitch(low.letter,low.octave+1,low.acc);
+          notes.push(raised);
+        }
+      }
+    }
+
+    if(!notes) continue;
+    if(notes.some(p=>p.midi<lowMidi-2||p.midi>highMidi+2)) continue;
+
+    let tonicLetterForNaming, tonicAccForNaming, actualIsMajor;
+
+    if(typeChoice.id==='dom7'){
+      // 根音（属音）の完全4度上が主音（属七はDur/mollを区別できないため常にDurで表示）
+      const tonicPitch=buildPitchFromMidiStep(notes[0], 3, 5);
+      tonicLetterForNaming=tonicPitch.letter;
+      tonicAccForNaming=tonicPitch.acc;
+      actualIsMajor=true;
+    } else if(typeChoice.id==='dim7'){
+      // 根音（導音）の半音上が主音（減七もDur/mollを区別できないため常にDurで表示）
+      const tonicPitch=buildPitchFromMidiStep(notes[0], 1, 1);
+      tonicLetterForNaming=tonicPitch.letter;
+      tonicAccForNaming=tonicPitch.acc;
+      actualIsMajor=true;
+    } else {
+      // 主和音・転回形：実際に生成された根音の音から判定
+      const rootNoteInChord=notes.find(n=>n.letter===fundamentalRootLetter);
+      tonicLetterForNaming=fundamentalRootLetter;
+      tonicAccForNaming=rootNoteInChord?rootNoteInChord.acc:fundamentalRootAcc;
+      actualIsMajor=determineIsMajorFromNotes(notes, fundamentalRootLetter);
+    }
+    
+    // 日本語の調名を生成
+    const japaneseKeyName=getJapaneseKeyName(tonicLetterForNaming, tonicAccForNaming, actualIsMajor, key.sharps, key.flats);
+    
+    notes._key=japaneseKeyName;
+    notes._keyGerman=germanNameFromRoot(tonicLetterForNaming, tonicAccForNaming) + (actualIsMajor ? '-Dur' : '-moll');
+    notes._chordType=typeLabel;
+    return notes;
+  }
+  return [makeNote()];
+}
+
+function determineIsMajorFromNotes(notes, rootLetter){
+  // notes配列から根音の3度上の音を探して、長調・短調を判定
+  const thirdLetterIndex=(LETTERS.indexOf(rootLetter)+2)%7;
+  const thirdLetter=LETTERS[thirdLetterIndex];
+  
+  // notes配列から3度上の音を探す
+  let rootNote=null, thirdNote=null;
+  for(const note of notes){
+    if(note.letter===rootLetter && !rootNote) rootNote=note;
+    if(note.letter===thirdLetter && !thirdNote) thirdNote=note;
+  }
+  
+  if(!rootNote || !thirdNote) return true; // 見つからない場合はデフォルト
+  
+  // 3度の半音数を計算
+  const semi=thirdNote.midi-rootNote.midi;
+  
+  // 長3度か短3度かを判定（intervalQualityと同じロジック）
+  const majorScale=[0,2,4,5,7,9,11];
+  const base=3; // 3度は固定
+  const expected=majorScale[base-1]+12*Math.floor((base-1)/7);
+  const diff=semi-expected;
+  
+  // diff === 0 なら長3度（長調）、diff === -1 なら短3度（短調）
+  if(diff===0) return true;   // 長3度 = 長調
+  if(diff===-1) return false; // 短3度 = 短調
+  
+  return true; // デフォルト
+}
+
+function getJapaneseKeyName(rootLetter, rootAcc, isMajor, sharps, flats){
+  // 根音・臨時記号・長調短調から直接、日本語の調名を生成する
+  // （KEYSIG_LISTのsharps/flatsは元々ランダムに選ばれたキーのものであり、
+  //  実際に生成された和音の根音とズレることがあるため使用しない）
+  return generateJapaneseKeyNameFromRoot(rootLetter, rootAcc, isMajor);
+}
+
+function generateJapaneseKeyNameFromRoot(letter, acc, isMajor){
+  // ドイツ音名から日本語の調名を生成
+  const gName=germanName(letter, acc);
+  const japaneseRootNames={
+    'C':'ハ','D':'ニ','E':'ホ','F':'ヘ','G':'ト','A':'イ','B':'ロ','H':'ロ',
+    'Cis':'嬰ハ','Dis':'嬰ニ','Eis':'嬰ホ','Fis':'嬰ヘ','Gis':'嬰ト','Ais':'嬰イ','His':'嬰ロ',
+    'Ces':'変ハ','Des':'変ニ','Es':'変ホ','Fes':'変ヘ','Ges':'変ト','As':'変イ','Bes':'変ロ','B':'変ロ'
+  };
+  
+  const rootNameJapanese=japaneseRootNames[gName]||'ハ';
+  return rootNameJapanese + (isMajor ? '長調' : '短調');
+}
+
+function germanNameFromRoot(letter, acc){
+  return germanName(letter, acc);
+}
+
+function intervalQuality(d,semi){
+  const majorScale=[0,2,4,5,7,9,11];
+  const base=((d-1)%7)+1;
+  const expected=majorScale[base-1]+12*Math.floor((d-1)/7);
+  const diff=semi-expected;
+  const perfectType=(base===1||base===4||base===5);
+  if(perfectType){
+    if(diff===0) return '完全';
+    if(diff===-1) return '減';
+    if(diff===1) return '増';
+    return diff<0?'重減':'重増';
+  }
+  if(diff===0) return '長';
+  if(diff===-1) return '短';
+  if(diff===-2) return '減';
+  if(diff===1) return '増';
+  return diff<0?'重減':'重増';
+}
+function makeInterval(){
+  const c=diatonicCandidates();
+  for(let t=0;t<60;t++){
+    const root=c[Math.floor(Math.random()*c.length)];
+    const d=2+Math.floor(Math.random()*9);
+    const li=LIDX[root.letter]+root.octave*7+(d-1);
+    const letter=LETTERS[li%7]; const octave=Math.floor(li/7);
+    const p1=buildPitch(root.letter,root.octave,pickAcc());
+    const p2=buildPitch(letter,octave,pickAcc());
+    if(p1.midi<lowMidi-2||p1.midi>highMidi+2) continue;
+    if(p2.midi<lowMidi-2||p2.midi>highMidi+2) continue;
+    if(d>1 && p2.midi<=p1.midi) continue;
+    const notes=[p1,p2];
+    notes._degree=d;
+    notes._quality=intervalQuality(d,p2.midi-p1.midi);
+    return notes;
+  }
+  return [makeNote()];
+}
+
+function stepIndex(p){
+  const offset = clef==='treble' ? 6 : 0;
+  return (p.octave-4)*7 + LIDX[p.letter] - offset;
+}
+function drawClefGlyph(){
+  if(clef==='treble'){
+    return '<path d="M30,82 C24,82 20,88 24,93 C29,99 27,104 20,106 C9,109 6,118 12,124 C18,130 28,128 27,120 C26,114 16,114 18,121 C20,127 28,130 26,140 C24,148 16,151 12,146 C10,143 13,139 16,141" fill="none" stroke="#16202b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>';
+  }
+  return '<g fill="#16202b">'+
+     '<rect x="19" y="85" width="4" height="50"/>'+
+     '<rect x="26" y="85" width="2" height="50"/>'+
+     '<path d="M30,86 C52,86 52,104 32,110 C48,104 45,92 30,92 Z"/>'+
+     '<path d="M30,134 C52,134 52,116 32,110 C48,116 45,128 30,128 Z"/>'+
+     '<circle cx="32" cy="110" r="1.6"/></g>';
+}
+function drawScore(pitches){
+  const W=300,H=220, midY=110, noteX=170;
+  const lines=[86,98,110,122,134];
+  let s='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+  s+='<rect width="'+W+'" height="'+H+'" fill="#fbfbf7"/>';
+  s+='<g stroke="#16202b" stroke-width="1.3">';
+  for(const y of lines) s+='<line x1="10" y1="'+y+'" x2="288" y2="'+y+'"/>';
+  s+='</g>';
+  s+=drawClefGlyph();
+  for(const p of pitches){
+    const y = midY - stepIndex(p)*6;
+    s+='<g stroke="#16202b" stroke-width="1.3">';
+    for(let ly=74; ly>=y; ly-=12) s+='<line x1="'+(noteX-12)+'" y1="'+ly+'" x2="'+(noteX+12)+'" y2="'+ly+'"/>';
+    for(let ly=146; ly<=y; ly+=12) s+='<line x1="'+(noteX-12)+'" y1="'+ly+'" x2="'+(noteX+12)+'" y2="'+ly+'"/>';
+    s+='</g>';
+    if(p.acc){
+      const sym=p.acc==='#'?'♯':'♭';
+      s+='<text x="'+(noteX-22)+'" y="'+(y+6)+'" font-size="21" font-family="serif" fill="#16202b">'+sym+'</text>';
+    }
+    s+='<ellipse cx="'+noteX+'" cy="'+y+'" rx="7" ry="5" fill="#16202b" transform="rotate(-22 '+noteX+' '+y+')"/>';
+  }
+  s+='</svg>';
+  document.getElementById('score').innerHTML=s;
+}
+
+function drawKeySig(entry){
+  const W=300,H=220, midY=110;
+  const lines=[86,98,110,122,134];
+  let s='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+  s+='<rect width="'+W+'" height="'+H+'" fill="#fbfbf7"/>';
+  s+='<g stroke="#16202b" stroke-width="1.3">';
+  for(const y of lines) s+='<line x1="10" y1="'+y+'" x2="288" y2="'+y+'"/>';
+  s+='</g>';
+  s+=drawClefGlyph();
+  let x=68;
+  const list = entry.sharps>0 ? SHARP_ORDER.slice(0,entry.sharps) : (entry.flats>0 ? FLAT_ORDER.slice(0,entry.flats) : []);
+  const sym = entry.sharps>0 ? '♯' : '♭';
+  const stepTable = clef==='treble'
+    ? (entry.sharps>0 ? TREBLE_STEP_SHARP : TREBLE_STEP_FLAT)
+    : (entry.sharps>0 ? ALTO_STEP_SHARP : ALTO_STEP_FLAT);
+  list.forEach(letter=>{
+    const y = midY - stepTable[letter]*6;
+    s+='<text x="'+x+'" y="'+(y+7)+'" font-size="23" font-family="serif" fill="#16202b">'+sym+'</text>';
+    x+=17;
+  });
+  if(list.length===0){
+    s+='<text x="68" y="'+(midY+6)+'" font-size="13" fill="#3d4654">（臨時記号なし）</text>';
+  }
+  s+='</svg>';
+  document.getElementById('score').innerHTML=s;
+}
+
+function newCard(){
+  if(mode==='keysig'){
+    const entry=pickKeySig();
+    const accMap=keySignatureMap(entry.sharps,entry.flats);
+    current={_isKeysig:true,_major:entry.major,_minor:entry.minor,
+      _majorGerman:germanKeyName(entry.tonicMajor,accMap,true),
+      _minorGerman:germanKeyName(entry.tonicMinor,accMap,false)};
+    revealed=false;
+    drawKeySig(entry);
+  } else {
+    let pitches;
+    if(mode==='single') pitches=[makeNote()];
+    else if(mode==='chord') pitches=makeChord();
+    else pitches=makeInterval();
+    pitches.sort((a,b)=>a.midi-b.midi);
+    current=pitches; revealed=false; drawScore(pitches);
+  }
+  const ans=document.getElementById('answer');
+  ans.className='answer placeholder';
+  ans.textContent = mode==='keysig' ? '長調・短調の両方を思い浮かべてから「答えを見る」' : '音名を思い浮かべてから「答えを見る」';
+  document.getElementById('judge').style.display='none';
+  document.getElementById('reveal').style.display='';
+  document.getElementById('audio-controls').style.display=(mode==='single'||mode==='chord'||mode==='interval')?'flex':'none';
+  startTime=performance.now();
+}
+function reveal(){
+  if(!current||revealed) return;
+  revealed=true; current._elapsed=(performance.now()-startTime)/1000;
+  const ans=document.getElementById('answer');
+  ans.className='answer';
+  if(current._isKeysig){
+    ans.innerHTML='<div class="names">'+current._major+'／'+current._majorGerman+'　／　'+current._minor+'／'+current._minorGerman+'</div>'+
+      '<div class="hint">（同じ調号に長調・短調の2つの可能性があります）</div>';
+  } else {
+    const doremi=current.map(p=>p.nameDoremi).join(' ');
+    const ger=current.map(p=>p.nameGerman).join(' ');
+    let extraTag='';
+    if(current._key) extraTag='　|　'+current._key+'／'+current._keyGerman+'の'+(current._chordType||'主和音');
+    else if(current._degree) extraTag='　|　'+(current._quality||'')+current._degree+'度';
+    ans.innerHTML='<div class="names">'+doremi+'　/　'+ger+'</div>'+
+      '<div class="hint">'+(current.length>1?'（低い音 → 高い音）'+extraTag:'')+'</div>';
+  }
+  document.getElementById('reveal').style.display='none';
+  document.getElementById('judge').style.display='flex';
+}
+function judge(ok){ if(!revealed) return; total++; if(ok) correct++; timeSum+=current._elapsed||0; updateStats(); newCard(); }
+function updateStats(){
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-acc').textContent=total?Math.round(correct/total*100)+'%':'–';
+  document.getElementById('s-time').textContent=total?(timeSum/total).toFixed(1):'–';
+}
+function ensureCtx(){ 
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); 
+  if(audioCtx.state==='suspended') audioCtx.resume().catch(e=>console.error('Audio resume failed:',e));
+  return audioCtx; 
+}
+function playCurrentSound(){
+  if(!current || current._isKeysig) return;
+  const ctx=ensureCtx();
+  const t0=ctx.currentTime+0.05;
+  current.forEach(p=>{
+    const freq=442*Math.pow(2,(p.midi-69)/12);
+    const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
+    const gain=ctx.createGain();
+    gain.gain.setValueAtTime(0.0001,t0);
+    gain.gain.exponentialRampToValueAtTime(0.28,t0+0.05);
+    gain.gain.setValueAtTime(0.28,t0+1.0);
+    gain.gain.exponentialRampToValueAtTime(0.0001,t0+1.2);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0+1.25);
+  });
+}
+
+document.getElementById('reveal').onclick=reveal;
+document.getElementById('right').onclick=()=>judge(true);
+document.getElementById('wrong').onclick=()=>judge(false);
+document.getElementById('playSound').onclick=playCurrentSound;
+document.getElementById('resetstats').onclick=()=>{total=correct=0;timeSum=0;updateStats();};
+document.getElementById('seg-clef').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;clef=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newCard();});
+document.getElementById('seg-mode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;mode=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newCard();});
+document.getElementById('seg-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;useAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newCard();});
+document.getElementById('range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);lowMidi=lo;highMidi=hi;newCard();};
+
+updateStats(); newCard();
+</script>
+</body>
+</html>

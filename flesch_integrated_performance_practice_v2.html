@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Integrated Performance Practice - Flesch System Phase 4</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f1f3f6; --ink:#14181f; --muted:#3d4654;
+    --accent:#2c5d92; --good:#1f7a4d; --bad:#b23b3b; --line:#c9d0da; --card:#fbfbf7;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:'Yu Gothic','Hiragino Sans','Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:640px;margin:0 auto;padding:18px 16px 40px}
+  h1{font-size:18px;font-weight:800;margin:6px 0 2px;color:#0f1722}
+  h2{font-size:15px;font-weight:800;margin:0 0 10px;color:#0f1722}
+  .badge{display:inline-block;background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px}
+  .sub{color:var(--muted);font-size:13px;font-weight:600;margin-bottom:18px;line-height:1.7}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px}
+  .opt{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:14px;font-weight:600;color:var(--ink);gap:10px}
+  input[type=range]{flex:1}
+  select{font-family:inherit;font-size:13px;font-weight:700;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+  .bpmval{font-weight:800;min-width:60px;text-align:right;font-size:13px}
+  .current-chord{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center;font-size:18px;font-weight:800;color:#0f1722;margin:12px 0;min-height:52px;display:flex;align-items:center;justify-content:center}
+  .controls{display:flex;gap:10px;margin-top:8px}
+  button{font-family:inherit;border:none;border-radius:10px;padding:13px 16px;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent);flex:1}
+  button:active{transform:translateY(1px)}
+  button.stop{background:var(--bad)}
+  button:disabled{background:#c9d0da;cursor:default}
+  .footnote{color:var(--muted);font-size:12.5px;font-weight:600;margin-top:8px;line-height:1.8}
+  .footnote ul{margin:6px 0 6px 1.2em;padding:0}
+  .footnote li{margin-bottom:6px}
+  .hint{color:var(--muted);font-size:12px;font-weight:600;margin:2px 0 6px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Integrated Performance Practice<span class="badge">v2</span></h1>
+  <div class="sub">音階練習の効果を上げるための参考音源。主音／音階（ピタゴラス音律）／和音（純正律）／分散3度／半音階／3、4、6、8度重音対応。単に音源に音を合わせるのではなく、楽器を弾く前に調性、旋律、和音を感じ、音楽的な表現を頭に思い浮かべてから弾く練習。「メトロノーム併用（有無）」「テンポ」「拍子」の設定可能。冒頭に1小節のカウントイン（空振り）あり。</div>
+
+  <!-- ① 主音ロングトーン -->
+  <section>
+    <h2>① 主音ロングトーン</h2>
+    <div class="hint">主音を伸ばし続けます。「高音を重ねる」モードは4拍子（２オクターブ用）、6拍子（３オクターブ）和音の練習専用。</div>
+    <div class="opt"><span>調</span>
+      <select id="lt-key">
+        <option value="C" selected>ハ長調（ド）</option>
+        <option value="G">ト長調（ソ）</option>
+        <option value="Am">イ短調（ラ）</option>
+        <option value="Em">ホ短調（ミ）</option>
+      </select>
+    </div>
+    <div class="opt"><span>高音を重ねる</span>
+      <input type="checkbox" id="lt-overlay">
+    </div>
+    <div class="opt"><span>メトロノームを併用</span>
+      <input type="checkbox" id="lt-metro">
+    </div>
+    <div class="opt"><span>テンポ</span>
+      <input type="range" id="lt-bpm" min="10" max="200" value="60">
+      <span class="bpmval" id="lt-bpmval">60 BPM</span>
+    </div>
+    <div class="opt"><span>拍子（1小節の拍数）</span>
+      <select id="lt-meter">
+        <option value="2">2拍子</option>
+        <option value="3">3拍子</option>
+        <option value="4" selected>4拍子</option>
+        <option value="6">6拍子</option>
+      </select>
+    </div>
+    <div class="controls">
+      <button id="lt-start">スタート</button>
+      <button class="stop" id="lt-stop" disabled>ストップ</button>
+    </div>
+  </section>
+
+  <!-- ② 音階 -->
+  <section>
+    <h2>② ピタゴラス音階</h2>
+    <div class="hint">主音から3オクターブ、1音1拍で昇降する、最も基本的な音階です（3拍子・14小節）。短調は旋律的短音階。</div>
+    <div class="opt"><span>調</span>
+      <select id="sc-key">
+        <option value="C" selected>ハ長調</option>
+        <option value="G">ト長調</option>
+        <option value="Am">イ短調</option>
+        <option value="Em">ホ短調</option>
+      </select>
+    </div>
+    <div class="opt"><span>メトロノームを併用</span>
+      <input type="checkbox" id="sc-metro">
+    </div>
+    <div class="opt"><span>ロングトーン確認モード（1音を拍子の拍数の音価分伸ばす）</span>
+      <input type="checkbox" id="sc-longtone">
+    </div>
+    <div class="opt"><span>テンポ</span>
+      <input type="range" id="sc-bpm" min="10" max="180" value="60">
+      <span class="bpmval" id="sc-bpmval">60 BPM</span>
+    </div>
+    <div class="opt"><span>拍子（1小節の拍数）</span>
+      <select id="sc-meter">
+        <option value="2">2拍子</option>
+        <option value="3" selected>3拍子</option>
+        <option value="4">4拍子</option>
+        <option value="6">6拍子</option>
+      </select>
+    </div>
+    <div class="controls">
+      <button id="sc-start">スタート</button>
+      <button class="stop" id="sc-stop" disabled>ストップ</button>
+    </div>
+  </section>
+
+  <!-- ③ 和音 -->
+  <section>
+    <h2>③ 和音</h2>
+    <div class="hint">7つの和音（純正律）が各6拍ずつ順に鳴ります。</div>
+    <div class="opt"><span>調</span>
+      <select id="ch-key">
+        <option value="C" selected>ハ長調・ハ短調</option>
+        <option value="G">ト長調・ト短調</option>
+        <option value="Em">ホ長調・ホ短調</option>
+      </select>
+    </div>
+    <div class="opt"><span>メトロノームを併用</span>
+      <input type="checkbox" id="ch-metro">
+    </div>
+    <div class="opt"><span>テンポ</span>
+      <input type="range" id="ch-bpm" min="10" max="200" value="60">
+      <span class="bpmval" id="ch-bpmval">60 BPM</span>
+    </div>
+    <div class="opt"><span>拍子（1小節の拍数）</span>
+      <select id="ch-meter">
+        <option value="2">2拍子</option>
+        <option value="3">3拍子</option>
+        <option value="4">4拍子</option>
+        <option value="6" selected>6拍子</option>
+      </select>
+    </div>
+    <div class="current-chord" id="ch-current">スタートで開始します</div>
+    <div class="controls">
+      <button id="ch-start">スタート</button>
+      <button class="stop" id="ch-stop" disabled>ストップ</button>
+    </div>
+  </section>
+
+  <!-- ④ 分散3度 -->
+  <section>
+    <h2>④ 分散3度（3度のスケール）</h2>
+    <div class="hint">ド-ミ-レ-ファ-ミ-ソ… の形で昇降。「分散3度」モードは記譜どおり1音ずつ。「下保続＋上を分散3度」モードは下の音を土台に鳴らし、その上に3度上の音を小さめに重ねて確認します（重音３度の準備練習）。</div>
+    <div class="opt"><span>調</span>
+      <select id="th-key">
+        <option value="C" selected>ハ長調</option>
+        <option value="G">ト長調</option>
+        <option value="Am">イ短調</option>
+        <option value="Em">ホ短調</option>
+      </select>
+    </div>
+    <div class="opt"><span>モード</span>
+      <select id="th-mode">
+        <option value="broken" selected>分散3度（単音）</option>
+        <option value="drone">下保続＋上を分散3度</option>
+      </select>
+    </div>
+    <div class="opt"><span>メトロノームを併用</span>
+      <input type="checkbox" id="th-metro">
+    </div>
+    <div class="opt"><span>ロングトーン確認モード（1音を拍子の拍数の音価分伸ばす）</span>
+      <input type="checkbox" id="th-longtone">
+    </div>
+    <div class="opt"><span>テンポ</span>
+      <input type="range" id="th-bpm" min="10" max="180" value="72">
+      <span class="bpmval" id="th-bpmval">72 BPM</span>
+    </div>
+    <div class="opt"><span>拍子（1小節の拍数）</span>
+      <select id="th-meter">
+        <option value="2">2拍子</option>
+        <option value="3">3拍子</option>
+        <option value="4" selected>4拍子</option>
+        <option value="6">6拍子</option>
+      </select>
+    </div>
+    <div class="controls">
+      <button id="th-start">スタート</button>
+      <button class="stop" id="th-stop" disabled>ストップ</button>
+    </div>
+  </section>
+
+  <!-- ⑤ 半音階 -->
+  <section>
+    <h2>⑤ 半音階</h2>
+    <div class="hint">主音から半音階で昇降し、末尾に主音を3拍。</div>
+    <div class="opt"><span>調</span>
+      <select id="cr-key">
+        <option value="C" selected>ハ長調</option>
+        <option value="G">ト長調</option>
+        <option value="Am">イ短調</option>
+        <option value="Em">ホ短調</option>
+      </select>
+    </div>
+    <div class="opt"><span>メトロノームを併用</span>
+      <input type="checkbox" id="cr-metro">
+    </div>
+    <div class="opt"><span>ロングトーン確認モード（1音を拍子の拍数の音価分伸ばす）</span>
+      <input type="checkbox" id="cr-longtone">
+    </div>
+    <div class="opt"><span>テンポ</span>
+      <input type="range" id="cr-bpm" min="10" max="180" value="72">
+      <span class="bpmval" id="cr-bpmval">72 BPM</span>
+    </div>
+    <div class="opt"><span>拍子（1小節の拍数）</span>
+      <select id="cr-meter">
+        <option value="2">2拍子</option>
+        <option value="3" selected>3拍子</option>
+        <option value="4">4拍子</option>
+        <option value="6">6拍子</option>
+      </select>
+    </div>
+    <div class="controls">
+      <button id="cr-start">スタート</button>
+      <button class="stop" id="cr-stop" disabled>ストップ</button>
+    </div>
+  </section>
+
+  <!-- ⑥ 重音3度 -->
+  <section>
+    <h2>⑥ 重音3度</h2>
+    <div class="hint">「基準音のみ」は下声部だけの単旋律、「基準音＋純正3度上（重音）」は2音を同時に鳴らし、実際の重音の響きを確認できます。末尾付近の一部だけ3度の代わりに6度を重ねる箇所があります。</div>
+    <div class="opt"><span>調</span>
+      <select id="tp-key">
+        <option value="C" selected>ハ長調</option>
+        <option value="G">ト長調</option>
+        <option value="Am">イ短調</option>
+        <option value="Em">ホ短調</option>
+      </select>
+    </div>
+    <div class="opt"><span>モード</span>
+      <select id="tp-mode">
+        <option value="single" selected>基準音のみ</option>
+        <option value="double">基準音＋純正3度上（重音）</option>
+      </select>
+    </div>
+    <div class="opt"><span>メトロノームを併用</span>
+      <input type="checkbox" id="tp-metro">
+    </div>
+    <div class="opt"><span>ロングトーン確認モード（1音を拍子の拍数の音価分伸ばす）</span>
+      <input type="checkbox" id="tp-longtone">
+    </div>
+    <div class="opt"><span>テンポ</span>
+      <input type="range" id="tp-bpm" min="10" max="180" value="60">
+      <span class="bpmval" id="tp-bpmval">60 BPM</span>
+    </div>
+    <div class="opt"><span>拍子（1小節の拍数）</span>
+      <select id="tp-meter">
+        <option value="2">2拍子</option>
+        <option value="3">3拍子</option>
+        <option value="4" selected>4拍子</option>
+        <option value="6">6拍子</option>
+      </select>
+    </div>
+    <div class="controls">
+      <button id="tp-start">スタート</button>
+      <button class="stop" id="tp-stop" disabled>ストップ</button>
+    </div>
+  </section>
+
+  <!-- ⑦ 重音6度 -->
+  <section>
+    <h2>⑦ 重音6度</h2>
+    <div class="hint">「基準音のみ」は上声部だけの単旋律、「基準音＋純正6度下（重音）」は2音を同時に鳴らし、実際の重音の響きを確認できます。</div>
+    <div class="opt"><span>調</span>
+      <select id="sx-key">
+        <option value="C" selected>ハ長調</option>
+        <option value="G">ト長調</option>
+        <option value="Am">イ短調</option>
+        <option value="Em">ホ短調</option>
+      </select>
+    </div>
+    <div class="opt"><span>モード</span>
+      <select id="sx-mode">
+        <option value="single" selected>基準音のみ</option>
+        <option value="double">基準音＋純正6度下（重音）</option>
+      </select>
+    </div>
+    <div class="opt"><span>メトロノームを併用</span>
+      <input type="checkbox" id="sx-metro">
+    </div>
+    <div class="opt"><span>ロングトーン確認モード（1音を拍子の拍数の音価分伸ばす）</span>
+      <input type="checkbox" id="sx-longtone">
+    </div>
+    <div class="opt"><span>テンポ</span>
+      <input type="range" id="sx-bpm" min="10" max="180" value="60">
+      <span class="bpmval" id="sx-bpmval">60 BPM</span>
+    </div>
+    <div class="opt"><span>拍子（1小節の拍数）</span>
+      <select id="sx-meter">
+        <option value="2">2拍子</option>
+        <option value="3">3拍子</option>
+        <option value="4" selected>4拍子</option>
+        <option value="6">6拍子</option>
+      </select>
+    </div>
+    <div class="controls">
+      <button id="sx-start">スタート</button>
+      <button class="stop" id="sx-stop" disabled>ストップ</button>
+    </div>
+  </section>
+
+  <!-- ⑧ 重音4度 -->
+  <section>
+    <h2>⑧ 重音4度</h2>
+    <div class="hint">⑥の基準音（下声部）をそのまま使い、3度・6度の代わりに純正な完全4度（4/3）を重ねます。カールフレッシュの教本には無い練習ですが、ご参考までに。</div>
+    <div class="opt"><span>調</span>
+      <select id="fo-key">
+        <option value="C" selected>ハ長調</option>
+        <option value="G">ト長調</option>
+        <option value="Am">イ短調</option>
+        <option value="Em">ホ短調</option>
+      </select>
+    </div>
+    <div class="opt"><span>モード</span>
+      <select id="fo-mode">
+        <option value="single" selected>基準音のみ</option>
+        <option value="double">基準音＋純正4度（重音）</option>
+      </select>
+    </div>
+    <div class="opt"><span>メトロノームを併用</span>
+      <input type="checkbox" id="fo-metro">
+    </div>
+    <div class="opt"><span>ロングトーン確認モード（1音を拍子の拍数の音価分伸ばす）</span>
+      <input type="checkbox" id="fo-longtone">
+    </div>
+    <div class="opt"><span>テンポ</span>
+      <input type="range" id="fo-bpm" min="10" max="180" value="60">
+      <span class="bpmval" id="fo-bpmval">60 BPM</span>
+    </div>
+    <div class="opt"><span>拍子（1小節の拍数）</span>
+      <select id="fo-meter">
+        <option value="2">2拍子</option>
+        <option value="3">3拍子</option>
+        <option value="4" selected>4拍子</option>
+        <option value="6">6拍子</option>
+      </select>
+    </div>
+    <div class="controls">
+      <button id="fo-start">スタート</button>
+      <button class="stop" id="fo-stop" disabled>ストップ</button>
+    </div>
+  </section>
+
+  <!-- ⑨ 重音オクターブ -->
+  <section>
+    <h2>⑨ 重音オクターブ</h2>
+    <div class="hint">⑦の基準音（上声部）をそのまま使い、オクターブを重ねます。</div>
+    <div class="opt"><span>調</span>
+      <select id="oc-key">
+        <option value="C" selected>ハ長調</option>
+        <option value="G">ト長調</option>
+        <option value="Am">イ短調</option>
+        <option value="Em">ホ短調</option>
+      </select>
+    </div>
+    <div class="opt"><span>モード</span>
+      <select id="oc-mode">
+        <option value="single" selected>基準音のみ</option>
+        <option value="double">基準音＋オクターブ（重音）</option>
+      </select>
+    </div>
+    <div class="opt"><span>メトロノームを併用</span>
+      <input type="checkbox" id="oc-metro">
+    </div>
+    <div class="opt"><span>ロングトーン確認モード（1音を拍子の拍数の音価分伸ばす）</span>
+      <input type="checkbox" id="oc-longtone">
+    </div>
+    <div class="opt"><span>テンポ</span>
+      <input type="range" id="oc-bpm" min="10" max="180" value="60">
+      <span class="bpmval" id="oc-bpmval">60 BPM</span>
+    </div>
+    <div class="opt"><span>拍子（1小節の拍数）</span>
+      <select id="oc-meter">
+        <option value="2">2拍子</option>
+        <option value="3">3拍子</option>
+        <option value="4" selected>4拍子</option>
+        <option value="6">6拍子</option>
+      </select>
+    </div>
+    <div class="controls">
+      <button id="oc-start">スタート</button>
+      <button class="stop" id="oc-stop" disabled>ストップ</button>
+    </div>
+  </section>
+
+
+  <div class="footnote">
+    使い方：<br>
+    <b>⑥重音3度</b>：「重音」モードで実際の響きを確認し、「基準音のみ」モードで下声部の音階を鳴らしながら3度の重音練習をします。<br>
+    <b>⑦重音6度</b>：⑥の3度に対して、6度の重音の練習です。基準音は上の音になります。<br>
+    <details><summary>音律の詳細</summary>
+    <ul>
+      <li>各セクションともピタゴラス音律（完全5度を連鎖させた、メロディ向きの音程感の音律）がベースです。主音・基準音はA(442Hz)から実際に5度を連鎖させて求めています。</li>
+      <li>重音は3度なら下の音、6度なら上の音をピタゴラス基準とし、そこに純正比の音程（3度・6度。例外箇所は逆）を重ねます。4度は常に下の音が基準で、長短の区別なく純正比4/3を重ねます。</li>
+      <li>和音の7つの和音一覧（ハ長調の例）：ド/ミ♭/ソ（ハ短調主和音）／ド/ミ/ソ（ハ長調主和音）／ド/ミ/ラ（イ短調・第一転回）／ド/ファ/ラ（へ長調・第二転回）／ド/ファ/ラ♭（へ短調・第二転回）／ド/レ♯/ファ♯/ラ（減七）／ド/ミ/ソ/シ♭（属七）</li>
+      <li>この音程の取り方が唯一の正解ではなく、理論から導き出したガイドラインです。実際の演奏では、状況に応じて調整してください。</li>
+    </ul>
+    </details><br>
+    テンポ・拍子を変えるときは、いったんストップしてから変更し、再度スタートしてください（次の周回から反映）。
+  </div>
+</div>
+
+<script>
+let actx=null;
+function ensureCtx(){ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+function freqOf(midi){ return 442*Math.pow(2,(midi-69)/12); }
+
+const TONIC_LOW=48;        // C3（音階・半音階・低高ロングトーンの低い主音）
+const TONIC_MID=60;        // C4（和音の主音）
+const TONIC_HIGH=TONIC_LOW+36; // C6（3オクターブ上＝高い主音／③④の上限）
+
+/* ---- 純正律（根音基準・オクターブ保持） ---- */
+const JI={0:1, 1:16/15, 2:9/8, 3:6/5, 4:5/4, 5:4/3, 6:7/5, 7:3/2, 8:8/5, 9:5/3, 10:7/4, 11:15/8};
+function jiFreqFromTonic(tonicFreq, tonicMidi, rootMidi, noteMidi){
+  // 和音の根音も、主音と同じ5度連鎖の基準から導く（①②④⑤⑥⑦⑧⑨と一貫させる）。
+  const rootFreq=pythFreqFromTonic(tonicFreq, tonicMidi, rootMidi);
+  const diff=noteMidi-rootMidi;
+  const oct=Math.floor(diff/12);
+  const pc=diff-oct*12;
+  return rootFreq*JI[pc]*Math.pow(2,oct);
+}
+// 既存コードとの互換用：ハ長調固定の簡易版。
+function jiFreq(rootMidi, noteMidi){
+  return jiFreqFromTonic(TONIC_C_MID_FREQ, TONIC_MID, rootMidi, noteMidi);
+}
+
+/* ---- 単発音・クリック（絶対時刻でスケジュール） ---- */
+function playToneAt(time, freq, dur, peak){
+  const ctx=ensureCtx();
+  peak=peak||0.26;
+  const a=Math.min(0.012, dur*0.4);
+  const r=Math.min(0.05, dur*0.4);
+  const xfade=Math.min(0.025, dur*0.35); // 次の音の立ち上がりと少し重ねる（クロスフェード）
+  const sus=Math.max(time+a, time+dur-r);
+  const osc=ctx.createOscillator(); osc.type='sine'; osc.frequency.value=freq;
+  const g=ctx.createGain();
+  g.gain.setValueAtTime(0.0001,time);
+  g.gain.exponentialRampToValueAtTime(peak, time+a);
+  g.gain.setValueAtTime(peak, sus);
+  g.gain.exponentialRampToValueAtTime(0.0001, time+dur+xfade);
+  osc.connect(g); g.connect(ctx.destination);
+  osc.start(time); osc.stop(time+dur+xfade+0.03);
+}
+function playClickAt(time, accent){
+  const ctx=ensureCtx();
+  const osc=ctx.createOscillator(); osc.type='square';
+  osc.frequency.value=accent?2300:1500;
+  const g=ctx.createGain();
+  const peak=accent?0.22:0.11;
+  g.gain.setValueAtTime(peak,time);
+  g.gain.exponentialRampToValueAtTime(0.0001,time+0.045);
+  osc.connect(g); g.connect(ctx.destination);
+  osc.start(time); osc.stop(time+0.06);
+}
+
+/* ---- ピタゴラス音律（5度の連鎖。Cからの「5度の数」で12音を定義） ----
+   昇り：ド・ド♯・レ・レ♯・ミ・ファ・ファ♯・ソ・ソ♯・ラ・シ♭・シ
+   下り：ド・シ・シ♭・ラ・ソ♯・ソ・ファ♯・ファ・ミ・レ♯・レ・ド♯
+   → 異名同音の綴りは昇り・下りで共通（シ♭のみ例外）なので、
+     12音すべてを1つのテーブルで表せる。 */
+const PYTH_FIFTHS={0:0,1:7,2:2,3:9,4:4,5:-1,6:6,7:1,8:8,9:3,10:-2,11:5};
+
+// 各調の主音は、A(442Hz)から実際に5度を連鎖させて求める（チューナーアプリと同じ考え方）。
+// 値は「Aから5度いくつ分か」（上+ / 下-）。
+const TONIC_FIFTHS_FROM_A = { 'C': -3, 'Am': 0, 'G': -2, 'Em': 1 };
+// 5度連鎖で求めた比率を、目的の音域（approxMidiの近く）に正規化する。
+function tonicFreqFromFifths(fifthsFromA, approxMidi){
+  let ratio=Math.pow(1.5, fifthsFromA);
+  let freq=442*ratio;
+  const approxFreq=freqOf(approxMidi);
+  while(freq>approxFreq*Math.SQRT2) freq/=2;
+  while(freq<approxFreq/Math.SQRT2) freq*=2;
+  return freq;
+}
+// 主音そのものの周波数（5度連鎖で確定済み）から、調内の他の音の周波数を求める。
+function pythFreqFromTonic(tonicFreq, tonicMidi, midi){
+  const diff=midi-tonicMidi;
+  const pc=((diff%12)+12)%12;
+  const octave=Math.floor(diff/12);
+  const n=PYTH_FIFTHS[pc];
+  let ratio=Math.pow(1.5,n);
+  while(ratio>=2) ratio/=2;
+  while(ratio<1) ratio*=2;
+  return tonicFreq*ratio*Math.pow(2,octave);
+}
+// 既存コードとの互換用：rootMidiを「ハ長調の主音」とみなした簡易版（①の固定ド用）。
+function pythFreq(rootMidi, midi){
+  const tonicFreq=tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['C'], rootMidi);
+  return pythFreqFromTonic(tonicFreq, rootMidi, midi);
+}
+// ①主音ロングトーン用：ハ長調の主音（ド）の周波数を、5度連鎖で確定（オクターブ違いは単純に2倍・8倍）。
+const TONIC_C_LOW_FREQ = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['C'], TONIC_LOW);
+const TONIC_C_MID_FREQ = TONIC_C_LOW_FREQ * 2;
+const TONIC_C_HIGH_FREQ = TONIC_C_LOW_FREQ * 8;
+// イ短調（ラ）版：①主音ロングトーン用。ラ3=57が低い主音、ラ4=69がオクターブ上、ラ6=93が3オクターブ上。
+const TONIC_AM_LOW_FREQ = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['Am'], 57);
+const TONIC_AM_MID_FREQ = TONIC_AM_LOW_FREQ * 2;
+const TONIC_AM_HIGH_FREQ = TONIC_AM_LOW_FREQ * 8;
+// ト長調（ソ）版：①主音ロングトーン用。ソ3=55が低い主音、ソ4=67がオクターブ上、ソ6=91が3オクターブ上。
+const TONIC_G_LOW_FREQ = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['G'], 55);
+const TONIC_G_MID_FREQ = TONIC_G_LOW_FREQ * 2;
+const TONIC_G_HIGH_FREQ = TONIC_G_LOW_FREQ * 8;
+// ホ短調（ミ）版：①主音ロングトーン用。ミ3=52が低い主音、ミ4=64がオクターブ上、ミ6=88が3オクターブ上。
+const TONIC_EM_LOW_FREQ = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['Em'], 52);
+const TONIC_EM_MID_FREQ = TONIC_EM_LOW_FREQ * 2;
+const TONIC_EM_HIGH_FREQ = TONIC_EM_LOW_FREQ * 8;
+
+/* ---- tonicLow判定ヘルパー ---- */
+function getTonicLow(key){
+  if(key==='Am') return 57;  // ラ3
+  if(key==='G') return 55;   // ソ3
+  if(key==='Em') return 52;  // ミ3
+  return TONIC_LOW;          // ド3(48)
+}
+
+function isMinor(key){
+  return key==='Am' || key==='Em';
+}
+
+// パターン（BARS配列）が書かれている際の「基準」となる仮想主音MIDI値。
+// 全ての長調パターンはド(48)基準、全ての短調パターンはラ(57)基準で書かれているため、
+// pf()にはこの固定値を渡し、tonicFreq側だけを実際の調の主音周波数に差し替えることで、
+// パターンを一切書き換えずに任意の調へ自動転調できる。
+function getRefTonicMidi(key){
+  return isMinor(key) ? 57 : TONIC_LOW;
+}
+
+/* ---- スケール生成 ---- */
+function majorScaleMidis(startMidi, count){
+  const steps=[2,2,1,2,2,2,1];
+  const arr=[startMidi]; let m=startMidi;
+  for(let i=1;i<count;i++){ m+=steps[(i-1)%7]; arr.push(m); }
+  return arr;
+}
+
+/* ================= ③和音（純正律） ================= */
+const CHORDS_BY_KEY = {
+  C: {
+    tonicMidi: TONIC_MID, // ド4(60)
+    finalNote: 65,        // ファ
+    finalLabel: '♪ ファを単音で3拍',
+    chords: [
+      {label:'ド / ミ♭ / ソ（ハ短調主和音）', root:60, notes:[60,63,67]},
+      {label:'ド / ミ / ソ（ハ長調主和音）', root:60, notes:[60,64,67]},
+      {label:'ド / ミ / ラ（イ短調・第一転回）', root:69, notes:[60,64,69]},
+      {label:'ド / ファ / ラ（へ長調・第二転回）', root:65, notes:[60,65,69]},
+      {label:'ド / ファ / ラ♭（へ短調・第二転回）', root:65, notes:[60,65,68]},
+      {label:'ド / レ♯ / ファ♯ / ラ（減七）', root:60, notes:[60,63,66,69]},
+      {label:'ド / ミ / ソ / シ♭（属七）', root:60, notes:[60,64,67,70]}
+    ]
+  },
+  G: {
+    tonicMidi: 67, // ソ4
+    finalNote: 72, // ド（ハ長調版の「ファ」を完全5度分そのまま移調）
+    finalLabel: '♪ ドを単音で3拍',
+    chords: [
+      {label:'ソ / シ♭ / レ（ト短調主和音）', root:67, notes:[67,70,74]},
+      {label:'ソ / シ / レ（ト長調主和音）', root:67, notes:[67,71,74]},
+      {label:'ソ / シ / ミ（ホ短調・第一転回）', root:76, notes:[67,71,76]},
+      {label:'ソ / ド / ミ（ハ長調・第二転回）', root:72, notes:[67,72,76]},
+      {label:'ソ / ド / ミ♭（ハ短調・第二転回）', root:72, notes:[67,72,75]},
+      {label:'ソ / シ♭ / レ♭ / ミ（減七）', root:67, notes:[67,70,73,76]},
+      {label:'ソ / シ / レ / ファ（属七）', root:67, notes:[67,71,74,77]}
+    ]
+  },
+  E: {
+    tonicMidi: 64, // ミ4
+    finalNote: 69, // ラ（ハ長調版の「ファ」を完全3度分そのまま移調）
+    finalLabel: '♪ ラを単音で3拍',
+    chords: [
+      {label:'ミ / ソ / シ♭（ホ短調主和音）', root:64, notes:[64,67,70]},
+      {label:'ミ / ソ♯ / シ（ホ長調主和音）', root:64, notes:[64,68,71]},
+      {label:'ミ / ソ♯ / ド♯（ド♯短調・第一転回）', root:73, notes:[64,68,73]},
+      {label:'ミ / ラ / ド♯（ラ長調・第二転回）', root:69, notes:[64,69,73]},
+      {label:'ミ / ラ / ド（ラ短調・第二転回）', root:69, notes:[64,69,72]},
+      {label:'ミ / ソ / シ♭ / レ♭（減七）', root:64, notes:[64,67,70,73]},
+      {label:'ミ / ソ♯ / シ / レ♯（属七）', root:64, notes:[64,68,71,74]}
+    ]
+  },
+  Em: {
+    tonicMidi: 64, // ミ4（ホ短調）
+    finalNote: 69, // ラ
+    finalLabel: '♪ ラを単音で3拍',
+    chords: [
+      {label:'ミ / ソ / シ♭（ホ短調主和音）', root:64, notes:[64,67,70]},
+      {label:'ミ / ソ♯ / シ（ホ長調主和音）', root:64, notes:[64,68,71]},
+      {label:'ミ / ソ♯ / ド♯（ド♯短調・第一転回）', root:73, notes:[64,68,73]},
+      {label:'ミ / ラ / ド♯（ラ長調・第二転回）', root:69, notes:[64,69,73]},
+      {label:'ミ / ラ / ド（ラ短調・第二転回）', root:69, notes:[64,69,72]},
+      {label:'ミ / ソ / シ♭ / レ♭（減七）', root:64, notes:[64,67,70,73]},
+      {label:'ミ / ソ♯ / シ / レ♯（属七）', root:64, notes:[64,68,71,74]}
+    ]
+  }
+};
+function buildChords(){
+  const key=document.getElementById('ch-key').value;
+  const cfg=CHORDS_BY_KEY[key];
+  const tonicMidi=cfg.tonicMidi;
+  const tonicFreqCh=tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], tonicMidi);
+
+  const noteMap={}, labelMap={}; let step=0;
+  const add=(s,freq,d,p)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p});};
+  cfg.chords.forEach((c,i)=>{
+    labelMap[step]=(i+1)+'. '+c.label;
+    c.notes.forEach(m=>add(step, jiFreqFromTonic(tonicFreqCh,tonicMidi,c.root,m), 6*4, 0.18)); // 6拍＝24×16分
+    step+=6*4;
+  });
+  const finalLabel = cfg.finalLabel;
+  labelMap[step]=finalLabel;
+  add(step, pythFreqFromTonic(tonicFreqCh,tonicMidi,cfg.finalNote), 3*4, 0.30); // 末尾：単音3拍
+  step+=3*4;
+  step+=3*4; // 次のループまで3拍の空振り
+  return {noteMap,labelMap,totalSteps:step};
+}
+
+/* ================= ③分散3度（3オクターブ固定・6小節） ================= */
+function buildThirds(){
+  const key=document.getElementById('th-key').value;
+  const mode=document.getElementById('th-mode').value;
+  const noteMap={}; let step=0;
+  const add=(s,freq,d,p,delay)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p,delaySteps:delay||0});};
+  const tonicLow = getRefTonicMidi(key); // 各調のパターンは全てハ長調(48)／イ短調(57)基準で書かれているため、参照用の固定値を使う
+  const tonicFreq3 = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
+  const pf=(midi)=>pythFreqFromTonic(tonicFreq3, tonicLow, midi);
+  const meter=Number(document.getElementById('th-meter').value);
+  const longTone=document.getElementById('th-longtone').checked;
+  const noteUnitDur=longTone?meter*4:1;     // brokenモード：1音あたりの長さ
+  const pairTotalDur=longTone?meter*4:2;    // droneモード：1組（3度のペア）全体の長さ
+  // 3度：常に下の音=ピタゴラス基準。上は下の音から見た純正比（長3度5/4・短3度6/5）。
+  // ※引数(lo,hi)はすでに臨時記号（Fis/Gisなど）を反映した実MIDI値。
+  const thirdPair=(lo,hi)=>{
+    const lowF=pf(lo);
+    const ratio=(hi-lo===4)?5/4:6/5;
+    return [lowF, lowF*ratio];
+  };
+  const addDyad=(lo,hi,reverse)=>{
+    const [lowF,hiF]=thirdPair(lo,hi);
+    if(mode==='broken'){
+      const first=reverse?hiF:lowF, second=reverse?lowF:hiF;
+      add(step,first,noteUnitDur,0.26); add(step+noteUnitDur,second,noteUnitDur,0.26);
+      step+=2*noteUnitDur;
+    }else{
+      // 音程の基準は常に低い方（thirdPairで計算済み）。鳴らし方（全長・大きめ／後半・小さめ）は
+      // 楽譜に書かれている順番に従う：reverse=false（低い音が先）なら低=全長／高=後半、
+      // reverse=true（高い音が先）なら高=全長／低=後半。
+      const half=pairTotalDur/2;
+      if(reverse){
+        add(step,hiF,pairTotalDur,0.28); add(step+half,lowF,half,0.11);
+      }else{
+        add(step,lowF,pairTotalDur,0.28); add(step+half,hiF,half,0.11);
+      }
+      step+=pairTotalDur;
+    }
+  };
+  // 経過句を2音1組（3度の関係）として読み、addDyadをそのまま再利用する。
+  // 組の中で先に書かれている方が高い音の場合は reverse=true（音程の基準は常に低い方のまま、
+  // 鳴らし方の主従だけ書かれた順に従う）。
+  const addPairs=(arr)=>{
+    for(let i=0;i<arr.length;i+=2){
+      const n1=arr[i], n2=arr[i+1];
+      const lo=Math.min(n1,n2), hi=Math.max(n1,n2);
+      addDyad(lo,hi,n1>n2);
+    }
+  };
+  // 末尾の保持音（単独・1音）：モードに関わらず常に単音（3度は重ねない）で終止する。
+  // ロングトーン確認モードでは、保持音も他の音と同じ拍子の拍数ぶんにする（特別扱いしない）。
+  const addHeldTonic=(m,dur,mainPeak)=>{
+    const total=longTone?meter*4:dur;
+    const lowF=pf(m);
+    add(step,lowF,total,mainPeak);
+    step+=total;
+  };
+
+  if(isMinor(key)){
+    // 短調：2オクターブ・4小節（ハ長調と同じピタゴラス・基準音ルールを適用、内容のみ別。パターンはイ短調(57)基準で固定）
+    // 1小節目：上行8組の3度（ソは2回とも#、ファは2回中1回だけ#）
+    const BAR1=[57,60,59,62,60,64,62,65,64,68,66,69,68,71,69,72];
+    addPairs(BAR1);
+    // 2小節目：頂点の経過句（6組の3度＝12音）＋ラを4分音符ぶん保持（ここはモードに関わらず単音）
+    const BAR2=[71,74,72,76,74,77,76,80,78,81,80,83];
+    addPairs(BAR2);
+    { const d=longTone?meter*4:4; add(step,pf(81),d,0.30); step+=d; }
+    // 3-4小節目：下行16組の3度（最後の音だけGis、それ以外は臨時記号なし）
+    const BAR34=[84,81,83,79,81,77,79,76,77,74,76,72,74,71,72,69,71,67,69,65,67,64,65,62,64,60,62,59,60,57,59,56];
+    addPairs(BAR34);
+    // 5小節目：終止。主音を2拍ぶん保持（長調と同様、ブツ切れで終わらないようにする）
+    addHeldTonic(57,8,0.30);
+  }else{
+    const scale=majorScaleMidis(tonicLow, 24);
+    const dyads=[];
+    for(let k=0;k<16;k++) dyads.push([scale[k],scale[k+2]]);
+
+    // 1-2小節目：上行（16個の3度）
+    for(let k=0;k<16;k++) addDyad(dyads[k][0],dyads[k][1],false);
+
+    // 3小節目：頂点の経過句（ミソファラソシラドシレ＝5組の3度）＋ドを単音で保持（重ねない）
+    const TOP_TURN=[76,79,77,81,79,83,81,84,83,86];
+    addPairs(TOP_TURN);
+    { const d=longTone?meter*4:6; add(step,pf(84),d,0.30); step+=d; } // ここだけモードに関わらず単音
+
+    // 4小節目：経過句（ミドレシドラシソラファソミファレミド＝8組の3度）
+    const BAR4=[88,84,86,83,84,81,83,79,81,77,79,76,77,74,76,72];
+    addPairs(BAR4);
+
+    // 5小節目：経過句（レシドラシソラファソミファレミドレシ＝8組の3度）
+    const BAR5=[74,71,72,69,71,67,69,65,67,64,65,62,64,60,62,59];
+    addPairs(BAR5);
+
+    // 6小節目：終わりの経過句（ドラシソラファソミファレ＝5組の3度）＋ドを付点4分音符ぶん保持
+    const BAR6=[60,57,59,55,57,53,55,52,53,50];
+    addPairs(BAR6);
+    addHeldTonic(48,6,0.30);
+  }
+
+  step+=meter*4; // 次のループまで1小節の空振り
+
+  return {noteMap,totalSteps:step};
+}
+
+/* ================= ④半音階（3オクターブ固定） ================= */
+function buildChromatic(){
+  const key=document.getElementById('cr-key').value;
+  const tonicLow = getRefTonicMidi(key); // 全パターンはハ長調(48)／イ短調(57)基準で書かれているため、参照用の固定値を使う
+  const octaves = 3; // 長調・短調とも3オクターブに統一（以前は短調のみ2オクターブだった）
+  const top=tonicLow+12*octaves;
+  const noteMap={}; let step=0;
+  const add=(s,freq,d,p)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p});};
+  const tonicFreq4 = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
+  const pf=(midi)=>pythFreqFromTonic(tonicFreq4, tonicLow, midi);
+  const meter=Number(document.getElementById('cr-meter').value);
+  const longTone=document.getElementById('cr-longtone').checked;
+  const unitDur=longTone?meter*4:1;        // 通常は16分音符1個、ロングトーン確認モードは拍子の拍数ぶん
+  const finalDur=longTone?meter*4:3*4;     // 末尾の主音も同じ扱い（特別扱いしない）
+  for(let m=tonicLow;m<=top;m++){ add(step,pf(m),unitDur,0.26); step+=unitDur; }      // 上行
+  for(let m=top-1;m>tonicLow;m--){ add(step,pf(m),unitDur,0.26); step+=unitDur; }    // 下行（最後の主音手前まで）
+  add(step,pf(tonicLow),finalDur,0.30); step+=finalDur;                             // 末尾：主音
+  step+=meter*4; // 次のループまで1小節の空振り
+  return {noteMap,totalSteps:step};
+}
+
+/* ================= ⑥重音3度（実際の楽譜の下声部・8小節） ================= */
+function buildThirdsPrep(){
+  const key=document.getElementById('tp-key').value;
+  const mode=document.getElementById('tp-mode').value; // 'single' or 'double'
+  const tonicLow = getRefTonicMidi(key); // パターンはハ長調(48)／イ短調(57)基準で固定
+  const tonicFreq5 = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
+  const pf=(m)=>pythFreqFromTonic(tonicFreq5, tonicLow, m);
+  const fullScale=majorScaleMidis(24,50); // 広めの自然音階ラダー（ハ長調・イ短調共通の白鍵7音）
+
+  let BARS, gSharpKey;
+  if(isMinor(key)){
+    // 短調：2オクターブ・8小節。臨時記号は「ソは常に#（Gis）、それ以外は一切つかない」（パターンはイ短調基準で固定）。
+    // 保持音の例外は4小節目・8小節目の2箇所だけ。
+    BARS=[
+      {notes:[57,56,57,59,60,62,64,65,68,65,64,62,60,59,57,56]},
+      {notes:[57,59,60,62,64,65,68,69,71,69,68,65,64,62,60,59]},
+      {notes:[60,62,64,65,68,69,71,72,74,72,71,69,68,65,64,62]},
+      {notes:[64,65,68,69,71,72,74,71,72], heldLast:true, sixthIdx:[7,8]}, // シ・ド(保持)だけ6度上
+      {notes:[77,76,74,72,71,69,68,65,64,65,68,69,71,72,74,76]},
+      {notes:[74,72,71,69,68,65,64,62,60,62,64,65,68,69,71,72]},
+      {notes:[71,69,68,65,64,62,60,59,57,59,60,62,64,65,68,69]},
+      {notes:[68,65,64,62,60,59,57,56,57], heldLast:true} // 末尾はソ#ファミレドシラソ#＋ラ(保持、主音で終止)
+    ];
+    gSharpKey=true;
+  }else{
+    BARS=[
+      {notes:[48,47,48,50,52,53,55,57,59,57,55,53,52,50,48,47]},
+      {notes:[48,50,52,53,55,57,59,60,62,60,59,57,55,53,52,50]},
+      {notes:[52,53,55,57,59,60,62,64,65,64,62,60,59,57,55,53]},
+      {notes:[55,57,59,60,62,64,65,62,64], heldLast:true, sixthIdx:[7,8]}, // レ・ミ(保持)だけ6度
+      {notes:[69,67,65,64,62,60,59,57,55,57,59,60,62,64,65,67]},
+      {notes:[65,64,62,60,59,57,55,53,52,53,55,57,59,60,62,64]},
+      {notes:[62,60,59,57,55,53,52,50,48,50,52,53,55,57,59,60]},
+      {notes:[59,57,55,53,52,50,48,47,48], heldLast:true} // 末尾ド：通常の3度（ミ）
+    ];
+    gSharpKey=false;
+  }
+
+  // ラダー：イ短調はソだけ常に#（Gis）。ハ長調は自然音のまま。
+  const ladder = gSharpKey ? fullScale.map(m=>{ const pc=((m%12)+12)%12; return pc===7?m+1:m; }) : fullScale;
+  function thirdOrSixthRatio(lowMidi, useSixth){
+    let idx=ladder.indexOf(lowMidi);
+    if(idx<0) idx=ladder.indexOf(lowMidi-1); // 臨時記号音の救済
+    const target=ladder[idx+(useSixth?5:2)];
+    const semis=target-lowMidi;
+    if(useSixth) return (semis===9)?5/3:8/5;
+    return (semis===4)?5/4:6/5;
+  }
+
+  const noteMap={}; let step=0;
+  const add=(s,freq,d,p)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p});};
+  const meterTp=Number(document.getElementById('tp-meter').value);
+  const longTone=document.getElementById('tp-longtone').checked;
+
+  BARS.forEach((bar,bi)=>{
+    const n=bar.notes.length;
+    bar.notes.forEach((m,i)=>{
+      const isLast=(i===n-1);
+      const dur=longTone?meterTp*4:((bar.heldLast&&isLast)?8:1); // ロングトーン確認モードは保持音も特別扱いしない
+      const useSixth=!!(bar.sixthIdx&&bar.sixthIdx.includes(i));
+      const lowF=pf(m);
+      if(mode==='single'){
+        add(step,lowF,dur,0.30);
+      }else{
+        const ratio=thirdOrSixthRatio(m,useSixth);
+        add(step,lowF,dur,0.22);
+        add(step,lowF*ratio,dur,0.22);
+      }
+      step+=dur;
+    });
+  });
+  step+=meterTp*4; // 次のループまで1小節の空振り
+  return {noteMap,totalSteps:step};
+}
+
+/* ================= ⑧重音4度（⑥の旋律を再利用・純正4度=4/3固定・長短の区別なし） ================= */
+function buildFourths(){
+  const key=document.getElementById('fo-key').value;
+  const mode=document.getElementById('fo-mode').value; // 'single' or 'double'
+  const tonicLow = getRefTonicMidi(key);
+  const tonicFreq6 = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
+  const pf=(m)=>pythFreqFromTonic(tonicFreq6, tonicLow, m);
+
+  // ⑥と同じ基準音（Karman版から確認済みの素材）をそのまま再利用する（パターンはハ長調(48)／イ短調(57)基準で固定）
+  let BARS;
+  if(isMinor(key)){
+    BARS=[
+      {notes:[57,56,57,59,60,62,64,65,68,65,64,62,60,59,57,56]},
+      {notes:[57,59,60,62,64,65,68,69,71,69,68,65,64,62,60,59]},
+      {notes:[60,62,64,65,68,69,71,72,74,72,71,69,68,65,64,62]},
+      {notes:[64,65,68,69,71,72,74,71,72], heldLast:true},
+      {notes:[77,76,74,72,71,69,68,65,64,65,68,69,71,72,74,76]},
+      {notes:[74,72,71,69,68,65,64,62,60,62,64,65,68,69,71,72]},
+      {notes:[71,69,68,65,64,62,60,59,57,59,60,62,64,65,68,69]},
+      {notes:[68,65,64,62,60,59,57,56,57], heldLast:true}
+    ];
+  }else{
+    BARS=[
+      {notes:[48,47,48,50,52,53,55,57,59,57,55,53,52,50,48,47]},
+      {notes:[48,50,52,53,55,57,59,60,62,60,59,57,55,53,52,50]},
+      {notes:[52,53,55,57,59,60,62,64,65,64,62,60,59,57,55,53]},
+      {notes:[55,57,59,60,62,64,65,62,64], heldLast:true},
+      {notes:[69,67,65,64,62,60,59,57,55,57,59,60,62,64,65,67]},
+      {notes:[65,64,62,60,59,57,55,53,52,53,55,57,59,60,62,64]},
+      {notes:[62,60,59,57,55,53,52,50,48,50,52,53,55,57,59,60]},
+      {notes:[59,57,55,53,52,50,48,47,48], heldLast:true}
+    ];
+  }
+  const FOURTH_RATIO = 4/3; // 純正な完全4度。長短の区別はない。
+
+  const noteMap={}; let step=0;
+  const add=(s,freq,d,p)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p});};
+  const meterFo=Number(document.getElementById('fo-meter').value);
+  const longTone=document.getElementById('fo-longtone').checked;
+
+  BARS.forEach(bar=>{
+    const n=bar.notes.length;
+    bar.notes.forEach((m,i)=>{
+      const isLast=(i===n-1);
+      const dur=longTone?meterFo*4:((bar.heldLast&&isLast)?8:1);
+      const lowF=pf(m);
+      if(mode==='single'){
+        add(step,lowF,dur,0.30);
+      }else{
+        add(step,lowF,dur,0.22);
+        add(step,lowF*FOURTH_RATIO,dur,0.22);
+      }
+      step+=dur;
+    });
+  });
+  step+=meterFo*4; // 次のループまで1小節の空振り
+  return {noteMap,totalSteps:step};
+}
+
+/* ================= ②音階（ドレミファソラシド・3オクターブ） ================= */
+function buildScale(){
+  const key=document.getElementById('sc-key').value;
+  const tonicLow = getRefTonicMidi(key); // 度数パターンはハ長調(48)／イ短調(57)基準で固定。実際の調の周波数はtonicFreqSc側で反映する
+  const tonicFreqSc = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
+  const pf=(midi)=>pythFreqFromTonic(tonicFreqSc, tonicLow, midi);
+
+  // 度数パターン（1=主音...7=導音）。22番目（index21）でちょうど3オクターブの主音に到達し、そこから対称に下る。
+  const groupsDeg=[
+    [1,2,3],[4,5,6],[7,1,2],[3,4,5],[6,7,1],[2,3,4],[5,6,7],
+    [1,7,6],[5,4,3],[2,1,7],[6,5,4],[3,2,1],[7,6,5],[4,3,2]
+  ];
+  const allDeg=[].concat(...groupsDeg);
+  allDeg.push(1); // 末尾の保持音（主音）
+
+  const LETTER_BY_DEG_MAJOR={1:'ド',2:'レ',3:'ミ',4:'ファ',5:'ソ',6:'ラ',7:'シ'};
+  const LETTER_BY_DEG_MINOR={1:'ラ',2:'シ',3:'ド',4:'レ',5:'ミ',6:'ファ',7:'ソ'};
+  const LETTER_BY_DEG = isMinor(key) ? LETTER_BY_DEG_MINOR : LETTER_BY_DEG_MAJOR;
+
+  const LETTER_DEG={'ド':0,'レ':1,'ミ':2,'ファ':3,'ソ':4,'ラ':5,'シ':6};
+  const SEMI=[0,2,4,5,7,9,11];
+  function degToMidiNatural(absDegree){
+    const o=Math.floor(absDegree/7); const d=((absDegree%7)+7)%7; return 48+12*o+SEMI[d]; // 基準は常に固定の48（ド）。長調はド(0)、短調はラ(5)から開始する参照パターン（実際の調への転調はpf()側のtonicFreqScで行う）。
+  }
+  let absDeg = isMinor(key) ? 5 : 0; // ラ=5（短調の参照開始位置）／ド=0（長調の参照開始位置）
+  function stepOne(letter){
+    const t=LETTER_DEG[letter];
+    const pm=((absDeg%7)+7)%7;
+    let dl=((t-pm+7)%7);
+    const da=dl-7;
+    if(Math.abs(da)<Math.abs(dl)) dl=da;
+    absDeg+=dl;
+    return degToMidiNatural(absDeg);
+  }
+
+  const midis=[];
+  allDeg.forEach((deg,idx)=>{
+    const letter=LETTER_BY_DEG[deg];
+    let midi=stepOne(letter);
+    if(isMinor(key)){
+      const ascendingPhase = idx<21; // 上行域だけ、ファ・ソ（第6・7音）を半音上げる（メロディックマイナー）
+      if(ascendingPhase && (letter==='ファ'||letter==='ソ')) midi+=1;
+    }
+    midis.push(midi);
+  });
+
+  const noteMap={}; let step=0;
+  const add=(s,freq,d,p)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p});};
+  const meterSc=Number(document.getElementById('sc-meter').value);
+  const longTone=document.getElementById('sc-longtone').checked;
+
+  midis.forEach((m,i)=>{
+    const isLast=(i===midis.length-1);
+    const dur = longTone ? meterSc*4 : (isLast?8:4); // 通常は1音=1拍（4ステップ）。末尾だけ2分音符（8ステップ）。
+    add(step,pf(m),dur,isLast?0.30:0.26);
+    step+=dur;
+  });
+  step+=meterSc*4; // 次のループまで1小節の空振り
+  return {noteMap,totalSteps:step};
+}
+
+/* ================= ⑨重音オクターブ（⑥の旋律を再利用・比率は常に2固定） ================= */
+function buildOctaves(){
+  const key=document.getElementById('oc-key').value;
+  const mode=document.getElementById('oc-mode').value; // 'single' or 'double'
+  const tonicLow = getRefTonicMidi(key);
+  const tonicFreq7 = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
+  const pf=(m)=>pythFreqFromTonic(tonicFreq7, tonicLow, m);
+
+  // ⑦と同じ基準音（上声部・Karman版から確認済みの素材）をそのまま再利用する（パターンはハ長調(48)／イ短調(57)基準で固定）
+  let BARS;
+  if(isMinor(key)){
+    BARS=[
+      {notes:[57,59,60,62,64,65,68,69,71,69,68,65,64,62,60,59]},
+      {notes:[60,62,64,65,68,69,71,72,74,72,71,69,68,65,64,62]},
+      {notes:[64,65,68,69,71,72,74,76,77,76,74,72,71,69,68,65]},
+      {notes:[68,69,71,72,74,76,77,80,81], heldLast:true},
+      {notes:[81,80,77,76,74,72,71,69,68,69,71,72,74,76,77,80]},
+      {notes:[77,76,74,72,71,69,68,65,64,65,68,69,71,72,74,76]},
+      {notes:[74,72,71,69,68,65,64,62,60,62,64,65,68,69,71,72]},
+      {notes:[71,69,68,65,64,62,60,59,57], heldLast:true}
+    ];
+  }else{
+    BARS=[
+      {notes:[48,50,52,53,55,57,59,60,62,60,59,57,55,53,52,50]},
+      {notes:[52,53,55,57,59,60,62,64,65,64,62,60,59,57,55,53]},
+      {notes:[55,57,59,60,62,64,65,67,69,67,65,64,62,60,59,57]},
+      {notes:[59,60,62,64,65,67,69,71,72], heldLast:true},
+      {notes:[72,71,69,67,65,64,62,60,59,60,62,64,65,67,69,71]},
+      {notes:[69,67,65,64,62,60,59,57,55,57,59,60,62,64,65,67]},
+      {notes:[65,64,62,60,59,57,55,53,52,53,55,57,59,60,62,64]},
+      {notes:[62,60,59,57,55,53,52,50,48], heldLast:true}
+    ];
+  }
+  // オクターブは常に比率2（長短や音律の影響を一切受けない）。
+  // 重ねる方向は調によって変える：長調は基準音の1オクターブ下、短調は1オクターブ上。
+  const OCTAVE_RATIO = isMinor(key) ? 2 : 0.5;
+
+  const noteMap={}; let step=0;
+  const add=(s,freq,d,p)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p});};
+  const meterOc=Number(document.getElementById('oc-meter').value);
+  const longTone=document.getElementById('oc-longtone').checked;
+
+  BARS.forEach(bar=>{
+    const n=bar.notes.length;
+    bar.notes.forEach((m,i)=>{
+      const isLast=(i===n-1);
+      const dur=longTone?meterOc*4:((bar.heldLast&&isLast)?8:1);
+      const lowF=pf(m);
+      if(mode==='single'){
+        add(step,lowF,dur,0.30);
+      }else{
+        add(step,lowF,dur,0.22);
+        add(step,lowF*OCTAVE_RATIO,dur,0.22);
+      }
+      step+=dur;
+    });
+  });
+  step+=meterOc*4; // 次のループまで1小節の空振り
+  return {noteMap,totalSteps:step};
+}
+
+/* ================= ⑦重音6度（基準音は上の音・8小節） ================= */
+function buildSixths(){
+  const key=document.getElementById('sx-key').value;
+  const mode=document.getElementById('sx-mode').value; // 'single' or 'double'
+  const tonicLow = getRefTonicMidi(key);
+  const tonicFreq8 = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
+  const pf=(m)=>pythFreqFromTonic(tonicFreq8, tonicLow, m);
+  const fullScale=majorScaleMidis(24,50);
+
+  let BARS, gSharpKey;
+  if(isMinor(key)){
+    // 短調：臨時記号は「ソは常に#（Gis）、それ以外は一切つかない」（重音＝和声的短音階的な発想。パターンはイ短調基準で固定）
+    BARS=[
+      {notes:[57,59,60,62,64,65,68,69,71,69,68,65,64,62,60,59]},
+      {notes:[60,62,64,65,68,69,71,72,74,72,71,69,68,65,64,62]},
+      {notes:[64,65,68,69,71,72,74,76,77,76,74,72,71,69,68,65]},
+      {notes:[68,69,71,72,74,76,77,80,81], heldLast:true},
+      {notes:[81,80,77,76,74,72,71,69,68,69,71,72,74,76,77,80]},
+      {notes:[77,76,74,72,71,69,68,65,64,65,68,69,71,72,74,76]},
+      {notes:[74,72,71,69,68,65,64,62,60,62,64,65,68,69,71,72]},
+      {notes:[71,69,68,65,64,62,60,59,57], heldLast:true}
+    ];
+    gSharpKey=true;
+  }else{
+    BARS=[
+      {notes:[48,50,52,53,55,57,59,60,62,60,59,57,55,53,52,50]},
+      {notes:[52,53,55,57,59,60,62,64,65,64,62,60,59,57,55,53]},
+      {notes:[55,57,59,60,62,64,65,67,69,67,65,64,62,60,59,57]},
+      {notes:[59,60,62,64,65,67,69,71,72], heldLast:true},
+      {notes:[72,71,69,67,65,64,62,60,59,60,62,64,65,67,69,71]},
+      {notes:[69,67,65,64,62,60,59,57,55,57,59,60,62,64,65,67]},
+      {notes:[65,64,62,60,59,57,55,53,52,53,55,57,59,60,62,64]},
+      {notes:[62,60,59,57,55,53,52,50,48], heldLast:true}
+    ];
+    gSharpKey=false;
+  }
+
+  // ラダー：イ短調はソだけ常に#（Gis）。ハ長調は自然音のまま。
+  const ladder = gSharpKey ? fullScale.map(m=>{ const pc=((m%12)+12)%12; return pc===7?m+1:m; }) : fullScale;
+  // 基準音（上の音）から見た「3度上の比率」をそのままオクターブ下げると、6度下の比率になる
+  function sixthBelowRatio(basisMidi){
+    let idx=ladder.indexOf(basisMidi);
+    if(idx<0) idx=ladder.indexOf(basisMidi-1); // 臨時記号音の救済
+    const target=ladder[idx+2];
+    const semis=target-basisMidi;
+    const thirdRatio=(semis===4)?5/4:6/5;
+    return thirdRatio/2;
+  }
+
+  const noteMap={}; let step=0;
+  const add=(s,freq,d,p)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p});};
+  const meterSx=Number(document.getElementById('sx-meter').value);
+  const longTone=document.getElementById('sx-longtone').checked;
+
+  BARS.forEach((bar,bi)=>{
+    const n=bar.notes.length;
+    bar.notes.forEach((m,i)=>{
+      const isLast=(i===n-1);
+      const dur=longTone?meterSx*4:((bar.heldLast&&isLast)?8:1); // ロングトーン確認モードは保持音も特別扱いしない
+      const basisF=pf(m); // 基準音＝上の音
+      if(mode==='single'){
+        add(step,basisF,dur,0.30);
+      }else{
+        const ratio=sixthBelowRatio(m);
+        add(step,basisF,dur,0.22);
+        add(step,basisF*ratio,dur,0.22);
+      }
+      step+=dur;
+    });
+  });
+  step+=meterSx*4; // 次のループまで1小節の空振り
+  return {noteMap,totalSteps:step};
+}
+
+/* ================= 先読みスケジューラ（カウントイン対応） ================= */
+function makeController(buildFn, els){
+  return {
+    running:false,timer:null,stepIndex:0,nextStepTime:0,bpm:60,meter:4,metroOn:false,built:null,
+    start(){
+      if(this.running)return;
+      const ctx=ensureCtx(); if(ctx.state==='suspended')ctx.resume().catch(e=>console.error('Audio resume failed:',e));
+      this.running=true;
+      this.bpm=Number(els.bpm.value); this.meter=Number(els.meter.value);
+      this.metroOn=els.metro.checked;
+      this.built=buildFn();
+      this.stepIndex=this.metroOn ? -(this.meter*4) : 0; // メトロノーム時のみ1小節カウントイン
+      this.nextStepTime=ctx.currentTime+0.12;
+      els.start.disabled=true; els.stop.disabled=false;
+      this.tick();
+    },
+    tick(){
+      if(!this.running)return;
+      const ctx=ensureCtx();
+      const sixteenth=()=>(60/this.bpm)/4;
+      while(this.nextStepTime < ctx.currentTime+0.13){
+        const step=this.stepIndex, b=this.built;
+        if(this.metroOn && (((step%4)+4)%4)===0){
+          const beat=step/4;
+          playClickAt(this.nextStepTime, (((beat%this.meter)+this.meter)%this.meter)===0);
+        }
+        if(step>=0){
+          const ns=b.noteMap[step];
+          if(ns) ns.forEach(n=>playToneAt(this.nextStepTime+(n.delaySteps||0)*sixteenth(),n.freq,n.durSteps*sixteenth(),n.peak));
+          if(b.labelMap && b.labelMap[step]!==undefined && els.label){
+            const txt=b.labelMap[step], d=(this.nextStepTime-ctx.currentTime)*1000;
+            setTimeout(()=>{ if(this.running&&els.label) els.label.textContent=txt; },Math.max(0,d));
+          }
+        }
+        this.stepIndex++;
+        this.nextStepTime+=sixteenth();
+        if(this.stepIndex>=b.totalSteps){
+          this.stepIndex=0;
+          this.bpm=Number(els.bpm.value); this.meter=Number(els.meter.value);
+          this.built=buildFn();
+        }
+      }
+      this.timer=setTimeout(()=>this.tick(),25);
+    },
+    stop(){
+      this.running=false;
+      if(this.timer){clearTimeout(this.timer);this.timer=null;}
+      els.start.disabled=false; els.stop.disabled=true;
+    }
+  };
+}
+
+/* ---- ①主音ロングトーン（主音保続＋「高音を重ねる」時はサイクル頂点で高音を重ねる、カウントイン対応） ---- */
+let lt={active:false,osc:null,gain:null,hiOsc:null,hiGain:null,timer:null,startTimer:null,overlayTimer:null};
+// 「高音を重ねる」は6拍子専用：1小節（6拍）を1サイクルとし、4拍目だけ高音
+const LT_OVERLAY_CYCLE_BEATS=6, LT_OVERLAY_PEAK_BEAT=4;
+function startLT(){
+  if(lt.active)return;
+  const ctx=ensureCtx(); if(ctx.state==='suspended')ctx.resume().catch(e=>console.error('Audio resume failed:',e));
+  lt.active=true;
+  const metro=document.getElementById('lt-metro').checked;
+  const meter=Number(document.getElementById('lt-meter').value);
+  const key=document.getElementById('lt-key').value;
+  const overlay=document.getElementById('lt-overlay').checked && meter===6;
+  const bpm=Number(document.getElementById('lt-bpm').value);
+  const spb=60/bpm;
+  let startDelay=0.06;
+  if(metro){
+    for(let i=0;i<meter;i++) playClickAt(ctx.currentTime+0.06+i*spb, i===0);
+    startDelay=0.06+meter*spb;
+  }
+  const startTime=ctx.currentTime+startDelay;
+  const LOW_FREQ = 
+    key==='Am' ? TONIC_AM_LOW_FREQ : 
+    key==='G' ? TONIC_G_LOW_FREQ : 
+    key==='Em' ? TONIC_EM_LOW_FREQ : 
+    TONIC_C_LOW_FREQ;
+  const HIGH_FREQ = 
+    key==='Am' ? TONIC_AM_HIGH_FREQ : 
+    key==='G' ? TONIC_G_HIGH_FREQ : 
+    key==='Em' ? TONIC_EM_HIGH_FREQ : 
+    TONIC_C_HIGH_FREQ;
+  const baseFreq = LOW_FREQ; // 「高音を重ねる」のオン・オフに関わらず、常に低い方の主音（ヴィオラで弾ける一番低いド／ラ）
+  const osc=ctx.createOscillator(); osc.type='sine'; osc.frequency.setValueAtTime(baseFreq,startTime);
+  const g=ctx.createGain();
+  g.gain.setValueAtTime(0.0001,startTime);
+  g.gain.exponentialRampToValueAtTime(0.3,startTime+0.012);
+  osc.connect(g); g.connect(ctx.destination); osc.start(startTime);
+  lt.osc=osc; lt.gain=g;
+
+  if(overlay){
+    // 高音用の常時鳴っているオシレーター（ゲインだけ周期的に持ち上げる）
+    const hiOsc=ctx.createOscillator(); hiOsc.type='sine'; hiOsc.frequency.setValueAtTime(HIGH_FREQ,startTime);
+    const hiGain=ctx.createGain();
+    hiGain.gain.setValueAtTime(0.0001,startTime);
+    hiOsc.connect(hiGain); hiGain.connect(ctx.destination); hiOsc.start(startTime);
+    lt.hiOsc=hiOsc; lt.hiGain=hiGain;
+
+    let cycleStart=startTime;
+    const scheduleCycle=()=>{
+      if(!lt.active)return;
+      const peakStart=cycleStart+(LT_OVERLAY_PEAK_BEAT-1)*spb;
+      const a=Math.min(0.02,spb*0.15); // 素早い立ち上がり
+      const decayEnd=peakStart+spb+spb/3; // 5拍目の最初の3連符の音まで使って0まで減衰
+      try{
+        lt.hiGain.gain.setValueAtTime(0.0001,peakStart);
+        lt.hiGain.gain.exponentialRampToValueAtTime(0.3,peakStart+a); // ピーク（低音と同じ音量）
+        lt.hiGain.gain.exponentialRampToValueAtTime(0.0001,decayEnd); // そこから完全な無音まで自然に減衰
+      }catch(e){}
+      cycleStart+=LT_OVERLAY_CYCLE_BEATS*spb;
+      const delayMs=(cycleStart-ensureCtx().currentTime)*1000-60;
+      lt.overlayTimer=setTimeout(scheduleCycle, Math.max(0,delayMs));
+    };
+    const firstDelay=(cycleStart-ctx.currentTime)*1000;
+    lt.overlayTimer=setTimeout(scheduleCycle, Math.max(0,firstDelay));
+  }
+
+  if(metro){
+    const beginMs=(startTime-ctx.currentTime)*1000;
+    lt.startTimer=setTimeout(()=>{
+      if(!lt.active)return;
+      let beat=0;
+      playClickAt(ensureCtx().currentTime+0.01,true);
+      lt.timer=setInterval(()=>{ if(!lt.active)return; beat=(beat+1)%meter; playClickAt(ensureCtx().currentTime+0.01,beat===0); }, spb*1000);
+    }, Math.max(0,beginMs));
+  }
+  document.getElementById('lt-start').disabled=true;
+  document.getElementById('lt-stop').disabled=false;
+}
+function stopLT(){
+  if(!lt.active)return; lt.active=false;
+  const ctx=ensureCtx();
+  if(lt.gain){ try{ lt.gain.gain.cancelScheduledValues(ctx.currentTime); lt.gain.gain.setValueAtTime(Math.max(0.0001,lt.gain.gain.value),ctx.currentTime); lt.gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.15); lt.osc.stop(ctx.currentTime+0.2); }catch(e){} }
+  if(lt.hiGain){ try{ lt.hiGain.gain.cancelScheduledValues(ctx.currentTime); lt.hiGain.gain.setValueAtTime(Math.max(0.0001,lt.hiGain.gain.value),ctx.currentTime); lt.hiGain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.1); lt.hiOsc.stop(ctx.currentTime+0.15); }catch(e){} }
+  lt.osc=null; lt.gain=null; lt.hiOsc=null; lt.hiGain=null;
+  if(lt.timer){clearInterval(lt.timer);lt.timer=null;}
+  if(lt.startTimer){clearTimeout(lt.startTimer);lt.startTimer=null;}
+  if(lt.overlayTimer){clearTimeout(lt.overlayTimer);lt.overlayTimer=null;}
+  document.getElementById('lt-start').disabled=false;
+  document.getElementById('lt-stop').disabled=true;
+}
+
+
+/* ---- 配線 ---- */
+const chCtl=makeController(buildChords,{
+  bpm:document.getElementById('ch-bpm'),meter:document.getElementById('ch-meter'),
+  metro:document.getElementById('ch-metro'),
+  start:document.getElementById('ch-start'),stop:document.getElementById('ch-stop'),
+  label:document.getElementById('ch-current')
+});
+const thCtl=makeController(buildThirds,{
+  bpm:document.getElementById('th-bpm'),meter:document.getElementById('th-meter'),
+  metro:document.getElementById('th-metro'),
+  start:document.getElementById('th-start'),stop:document.getElementById('th-stop')
+});
+const crCtl=makeController(buildChromatic,{
+  bpm:document.getElementById('cr-bpm'),meter:document.getElementById('cr-meter'),
+  metro:document.getElementById('cr-metro'),
+  start:document.getElementById('cr-start'),stop:document.getElementById('cr-stop')
+});
+const tpCtl=makeController(buildThirdsPrep,{
+  bpm:document.getElementById('tp-bpm'),meter:document.getElementById('tp-meter'),
+  metro:document.getElementById('tp-metro'),
+  start:document.getElementById('tp-start'),stop:document.getElementById('tp-stop')
+});
+const sxCtl=makeController(buildSixths,{
+  bpm:document.getElementById('sx-bpm'),meter:document.getElementById('sx-meter'),
+  metro:document.getElementById('sx-metro'),
+  start:document.getElementById('sx-start'),stop:document.getElementById('sx-stop')
+});
+const foCtl=makeController(buildFourths,{
+  bpm:document.getElementById('fo-bpm'),meter:document.getElementById('fo-meter'),
+  metro:document.getElementById('fo-metro'),
+  start:document.getElementById('fo-start'),stop:document.getElementById('fo-stop')
+});
+const ocCtl=makeController(buildOctaves,{
+  bpm:document.getElementById('oc-bpm'),meter:document.getElementById('oc-meter'),
+  metro:document.getElementById('oc-metro'),
+  start:document.getElementById('oc-start'),stop:document.getElementById('oc-stop')
+});
+const scCtl=makeController(buildScale,{
+  bpm:document.getElementById('sc-bpm'),meter:document.getElementById('sc-meter'),
+  metro:document.getElementById('sc-metro'),
+  start:document.getElementById('sc-start'),stop:document.getElementById('sc-stop')
+});
+
+document.getElementById('lt-start').onclick=startLT;
+document.getElementById('lt-stop').onclick=stopLT;
+function syncLtOverlayAvailability(){
+  const meterEl=document.getElementById('lt-meter');
+  const overlayEl=document.getElementById('lt-overlay');
+  const enabled = Number(meterEl.value)===6;
+  overlayEl.disabled = !enabled;
+  if(!enabled) overlayEl.checked=false;
+}
+document.getElementById('lt-meter').addEventListener('change', syncLtOverlayAvailability);
+syncLtOverlayAvailability();
+document.getElementById('ch-start').onclick=()=>chCtl.start();
+document.getElementById('ch-stop').onclick=()=>chCtl.stop();
+document.getElementById('th-start').onclick=()=>thCtl.start();
+document.getElementById('th-stop').onclick=()=>thCtl.stop();
+document.getElementById('cr-start').onclick=()=>crCtl.start();
+document.getElementById('cr-stop').onclick=()=>crCtl.stop();
+document.getElementById('tp-start').onclick=()=>tpCtl.start();
+document.getElementById('tp-stop').onclick=()=>tpCtl.stop();
+document.getElementById('sx-start').onclick=()=>sxCtl.start();
+document.getElementById('sx-stop').onclick=()=>sxCtl.stop();
+document.getElementById('fo-start').onclick=()=>foCtl.start();
+document.getElementById('fo-stop').onclick=()=>foCtl.stop();
+document.getElementById('oc-start').onclick=()=>ocCtl.start();
+document.getElementById('oc-stop').onclick=()=>ocCtl.stop();
+document.getElementById('sc-start').onclick=()=>scCtl.start();
+document.getElementById('sc-stop').onclick=()=>scCtl.stop();
+
+document.getElementById('lt-bpm').oninput=e=>document.getElementById('lt-bpmval').textContent=e.target.value+' BPM';
+document.getElementById('ch-bpm').oninput=e=>document.getElementById('ch-bpmval').textContent=e.target.value+' BPM';
+document.getElementById('th-bpm').oninput=e=>document.getElementById('th-bpmval').textContent=e.target.value+' BPM';
+document.getElementById('cr-bpm').oninput=e=>document.getElementById('cr-bpmval').textContent=e.target.value+' BPM';
+document.getElementById('tp-bpm').oninput=e=>document.getElementById('tp-bpmval').textContent=e.target.value+' BPM';
+document.getElementById('sx-bpm').oninput=e=>document.getElementById('sx-bpmval').textContent=e.target.value+' BPM';
+document.getElementById('fo-bpm').oninput=e=>document.getElementById('fo-bpmval').textContent=e.target.value+' BPM';
+document.getElementById('oc-bpm').oninput=e=>document.getElementById('oc-bpmval').textContent=e.target.value+' BPM';
+document.getElementById('sc-bpm').oninput=e=>document.getElementById('sc-bpmval').textContent=e.target.value+' BPM';
+</script>
+</body>
+</html>
