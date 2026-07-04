@@ -49,6 +49,8 @@
         <option value="G">ト長調（ソ）</option>
         <option value="Am">イ短調（ラ）</option>
         <option value="Em">ホ短調（ミ）</option>
+        <option value="F">ヘ長調（ファ）</option>
+        <option value="Dm">ニ短調（レ）</option>
       </select>
     </div>
     <div class="opt"><span>高音を重ねる</span>
@@ -85,6 +87,8 @@
         <option value="G">ト長調</option>
         <option value="Am">イ短調</option>
         <option value="Em">ホ短調</option>
+        <option value="F">ヘ長調</option>
+        <option value="Dm">ニ短調</option>
       </select>
     </div>
     <div class="opt"><span>メトロノームを併用</span>
@@ -120,6 +124,8 @@
         <option value="C" selected>ハ長調・ハ短調</option>
         <option value="G">ト長調・ト短調</option>
         <option value="Em">ホ長調・ホ短調</option>
+        <option value="F">ヘ長調・ヘ短調</option>
+        <option value="A">イ長調・イ短調</option>
       </select>
     </div>
     <div class="opt"><span>メトロノームを併用</span>
@@ -154,6 +160,8 @@
         <option value="G">ト長調</option>
         <option value="Am">イ短調</option>
         <option value="Em">ホ短調</option>
+        <option value="F">ヘ長調</option>
+        <option value="Dm">ニ短調</option>
       </select>
     </div>
     <div class="opt"><span>モード</span>
@@ -196,6 +204,8 @@
         <option value="G">ト長調</option>
         <option value="Am">イ短調</option>
         <option value="Em">ホ短調</option>
+        <option value="F">ヘ長調</option>
+        <option value="Dm">ニ短調</option>
       </select>
     </div>
     <div class="opt"><span>メトロノームを併用</span>
@@ -232,6 +242,8 @@
         <option value="G">ト長調</option>
         <option value="Am">イ短調</option>
         <option value="Em">ホ短調</option>
+        <option value="F">ヘ長調</option>
+        <option value="Dm">ニ短調</option>
       </select>
     </div>
     <div class="opt"><span>モード</span>
@@ -274,6 +286,8 @@
         <option value="G">ト長調</option>
         <option value="Am">イ短調</option>
         <option value="Em">ホ短調</option>
+        <option value="F">ヘ長調</option>
+        <option value="Dm">ニ短調</option>
       </select>
     </div>
     <div class="opt"><span>モード</span>
@@ -316,6 +330,8 @@
         <option value="G">ト長調</option>
         <option value="Am">イ短調</option>
         <option value="Em">ホ短調</option>
+        <option value="F">ヘ長調</option>
+        <option value="Dm">ニ短調</option>
       </select>
     </div>
     <div class="opt"><span>モード</span>
@@ -358,6 +374,8 @@
         <option value="G">ト長調</option>
         <option value="Am">イ短調</option>
         <option value="Em">ホ短調</option>
+        <option value="F">ヘ長調</option>
+        <option value="Dm">ニ短調</option>
       </select>
     </div>
     <div class="opt"><span>モード</span>
@@ -469,7 +487,7 @@ const PYTH_FIFTHS={0:0,1:7,2:2,3:9,4:4,5:-1,6:6,7:1,8:8,9:3,10:-2,11:5};
 
 // 各調の主音は、A(442Hz)から実際に5度を連鎖させて求める（チューナーアプリと同じ考え方）。
 // 値は「Aから5度いくつ分か」（上+ / 下-）。
-const TONIC_FIFTHS_FROM_A = { 'C': -3, 'Am': 0, 'G': -2, 'Em': 1 };
+const TONIC_FIFTHS_FROM_A = { 'C': -3, 'Am': 0, 'G': -2, 'Em': 1, 'F': -4, 'Dm': -1, 'A': 0 };
 // 5度連鎖で求めた比率を、目的の音域（approxMidiの近く）に正規化する。
 function tonicFreqFromFifths(fifthsFromA, approxMidi){
   let ratio=Math.pow(1.5, fifthsFromA);
@@ -511,17 +529,27 @@ const TONIC_G_HIGH_FREQ = TONIC_G_LOW_FREQ * 8;
 const TONIC_EM_LOW_FREQ = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['Em'], 52);
 const TONIC_EM_MID_FREQ = TONIC_EM_LOW_FREQ * 2;
 const TONIC_EM_HIGH_FREQ = TONIC_EM_LOW_FREQ * 8;
+// ヘ長調（ファ）版：①主音ロングトーン用。ファ3=53が低い主音、ファ4=65がオクターブ上、ファ6=89が3オクターブ上。
+const TONIC_F_LOW_FREQ = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['F'], 53);
+const TONIC_F_MID_FREQ = TONIC_F_LOW_FREQ * 2;
+const TONIC_F_HIGH_FREQ = TONIC_F_LOW_FREQ * 8;
+// ニ短調（レ）版：①主音ロングトーン用。レ3=50が低い主音、レ4=62がオクターブ上、レ6=86が3オクターブ上。
+const TONIC_DM_LOW_FREQ = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['Dm'], 50);
+const TONIC_DM_MID_FREQ = TONIC_DM_LOW_FREQ * 2;
+const TONIC_DM_HIGH_FREQ = TONIC_DM_LOW_FREQ * 8;
 
 /* ---- tonicLow判定ヘルパー ---- */
 function getTonicLow(key){
   if(key==='Am') return 57;  // ラ3
   if(key==='G') return 55;   // ソ3
   if(key==='Em') return 52;  // ミ3
+  if(key==='F') return 53;   // ファ3
+  if(key==='Dm') return 50;  // レ3
   return TONIC_LOW;          // ド3(48)
 }
 
 function isMinor(key){
-  return key==='Am' || key==='Em';
+  return key==='Am' || key==='Em' || key==='Dm';
 }
 
 // パターン（BARS配列）が書かれている際の「基準」となる仮想主音MIDI値。
@@ -596,6 +624,34 @@ const CHORDS_BY_KEY = {
       {label:'ミ / ラ / ド（ラ短調・第二転回）', root:69, notes:[64,69,72]},
       {label:'ミ / ソ / シ♭ / レ♭（減七）', root:64, notes:[64,67,70,73]},
       {label:'ミ / ソ♯ / シ / レ♯（属七）', root:64, notes:[64,68,71,74]}
+    ]
+  },
+  F: {
+    tonicMidi: 65, // ファ4
+    finalNote: 70, // シ♭
+    finalLabel: '♪ シ♭を単音で3拍',
+    chords: [
+      {label:'ファ / ラ♭ / ド（ヘ短調主和音）', root:65, notes:[65,68,72]},
+      {label:'ファ / ラ / ド（ヘ長調主和音）', root:65, notes:[65,69,72]},
+      {label:'ファ / ラ / レ（ニ短調・第一転回）', root:74, notes:[65,69,74]},
+      {label:'ファ / シ♭ / レ（変ロ長調・第二転回）', root:70, notes:[65,70,74]},
+      {label:'ファ / シ♭ / レ♭（変ロ短調・第二転回）', root:70, notes:[65,70,73]},
+      {label:'ファ / ラ♭ / シ / レ（減七）', root:65, notes:[65,68,71,74]},
+      {label:'ファ / ラ / ド / ミ♭（属七）', root:65, notes:[65,69,72,75]}
+    ]
+  },
+  A: {
+    tonicMidi: 69, // ラ4
+    finalNote: 74, // レ
+    finalLabel: '♪ レを単音で3拍',
+    chords: [
+      {label:'ラ / ド / ミ（イ短調主和音）', root:69, notes:[69,72,76]},
+      {label:'ラ / ド♯ / ミ（イ長調主和音）', root:69, notes:[69,73,76]},
+      {label:'ラ / ド♯ / ファ♯（嬰ヘ短調・第一転回）', root:78, notes:[69,73,78]},
+      {label:'ラ / レ / ファ♯（ニ長調・第二転回）', root:74, notes:[69,74,78]},
+      {label:'ラ / レ / ファ（ニ短調・第二転回）', root:74, notes:[69,74,77]},
+      {label:'ラ / ド / レ♯ / ファ♯（減七）', root:69, notes:[69,72,75,78]},
+      {label:'ラ / ド♯ / ミ / ソ（属七）', root:69, notes:[69,73,76,79]}
     ]
   }
 };
@@ -1151,11 +1207,15 @@ function startLT(){
     key==='Am' ? TONIC_AM_LOW_FREQ : 
     key==='G' ? TONIC_G_LOW_FREQ : 
     key==='Em' ? TONIC_EM_LOW_FREQ : 
+    key==='F' ? TONIC_F_LOW_FREQ :
+    key==='Dm' ? TONIC_DM_LOW_FREQ :
     TONIC_C_LOW_FREQ;
   const HIGH_FREQ = 
     key==='Am' ? TONIC_AM_HIGH_FREQ : 
     key==='G' ? TONIC_G_HIGH_FREQ : 
     key==='Em' ? TONIC_EM_HIGH_FREQ : 
+    key==='F' ? TONIC_F_HIGH_FREQ :
+    key==='Dm' ? TONIC_DM_HIGH_FREQ :
     TONIC_C_HIGH_FREQ;
   const baseFreq = LOW_FREQ; // 「高音を重ねる」のオン・オフに関わらず、常に低い方の主音（ヴィオラで弾ける一番低いド／ラ）
   const osc=ctx.createOscillator(); osc.type='sine'; osc.frequency.setValueAtTime(baseFreq,startTime);

@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flesch System</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
     <style>
         * {
             margin: 0;
@@ -397,8 +404,47 @@
         </div>
     </div>
     
+    <div class="container" style="margin-top: 30px;">
+        <details style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <summary style="cursor: pointer; font-weight: 700; font-size: 1.1rem; color: #0f1722; user-select: none;">📋 アップデート履歴</summary>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #c9d0da; font-size: 0.95rem; line-height: 2; color: #555;">
+                <p><strong>2026年7月4日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>iOS（iPhone）で音が出ない問題を修正（全5ツール共通）</li>
+                    <li>Score Reading：度数モードにも音声確認機能を追加</li>
+                    <li>Pure Intonation Tuner：フラジオモードに「2オクターブ上」オプションを追加（プロ向けダブルハーモニクス対応）</li>
+                    <li>Pure Intonation Tuner：各重音ボタンに周波数比率（3:2、5:4など）を表示</li>
+                    <li>Pure Intonation Tuner：デチューン（うねり）機能を完全5度のみに限定し誤解を防止</li>
+                    <li>Beautiful Intonation Training：フラジオに「2オクターブ上」オプションを追加</li>
+                    <li>Beautiful Intonation Training：音階練習に合奏時の共鳴の目安を追記</li>
+                    <li>Integrated Performance Practice：ヘ長調・ニ短調・イ長調・イ短調を全セクションに追加</li>
+                    <li>Android端末で「開始」ボタンが正しく新規タブで開くよう修正</li>
+                    <li>Google Analyticsを導入</li>
+                    <li>Netlifyのクレジット制限を回避するため、GitHub Pagesに移行</li>
+                </ul>
+            </div>
+        </details>
+    </div>
+    
     <footer>
         <p>Flesch System — カール・フレッシュの音程理論に基づく統合訓練システム</p>
+        <p style="margin-top: 12px; font-size: 0.85rem; color: #999;">
+            訪問回数: <span id="visit-count" style="font-weight: 700;">計測中...</span>
+        </p>
+        <script>
+            // アクセスカウンター（localStorage使用）
+            function updateVisitCount() {
+                let count = localStorage.getItem('fleschSystemVisits');
+                if (!count) {
+                    count = 1;
+                } else {
+                    count = parseInt(count) + 1;
+                }
+                localStorage.setItem('fleschSystemVisits', count);
+                document.getElementById('visit-count').textContent = count;
+            }
+            updateVisitCount();
+        </script>
     </footer>
 </body>
 </html>
