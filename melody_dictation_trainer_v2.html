@@ -1146,7 +1146,7 @@ function applyModeVisibility(){
   document.getElementById('dict-stats').style.display = appMode==='dictation' ? 'flex' : 'none';
   document.getElementById('warmup-stats').style.display = appMode==='warmup' ? 'flex' : 'none';
 
-  document.getElementById('pitch-rhythm-controls').style.display = (appMode==='pitch'||appMode==='rhythm') ? 'flex' : 'none';
+  document.getElementById('pitch-rhythm-controls').style.display = (appMode==='pitch'||appMode==='rhythm'||appMode==='dictation') ? 'flex' : 'none';
   document.getElementById('pr-judge').style.display = (appMode==='pitch'||appMode==='rhythm') ? 'flex' : 'none';
   document.getElementById('warmup-controls').style.display = appMode==='warmup' ? 'flex' : 'none';
   document.getElementById('warmup-metro-opt').style.display = appMode==='warmup' ? 'flex' : 'none';
