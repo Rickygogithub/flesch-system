@@ -386,10 +386,10 @@ const DOREMI_BASE={C:'ド',D:'レ',E:'ミ',F:'ファ',G:'ソ',A:'ラ',B:'シ'};
 function warmupPrepNote(p,x,hollow,dotted){
   const y=120-stepIndex(p)*6;
   let s=ledgerLines(x,y);
-  if(p.acc){ const sym=p.acc==='#'?'♯':(p.acc==='b'?'♭':'♮'); s+=`<text x="${x-14}" y="${y+6}" font-size="17" font-family="serif" fill="#16202b">${sym}</text>`; }
+  if(p.acc){ const sym=p.acc==='#'?'♯':(p.acc==='b'?'♭':'♮'); s+=`<text x="${x-12}" y="${y+5}" font-size="15" font-family="serif" fill="#16202b">${sym}</text>`; }
   s+=`<ellipse cx="${x}" cy="${y}" rx="6" ry="4.4" fill="${hollow?'none':'#16202b'}" stroke="${hollow?'#16202b':'none'}" stroke-width="${hollow?'1.6':'0'}" transform="rotate(-22 ${x} ${y})"/>`;
   if(dotted) s+=drawAugDot(x,y);
-  s+=`<text x="${x}" y="168" font-size="11" font-family="sans-serif" fill="#3d4654" text-anchor="middle">${DOREMI_BASE[p.letter]}</text>`;
+  s+=`<text x="${x}" y="${y+30}" font-size="11" font-family="sans-serif" fill="#3d4654" text-anchor="middle">${DOREMI_BASE[p.letter]}</text>`;
   return {svg:s, x, y, stemTopBase:y-26};
 }
 // 連桁（ビーム）でつながれた16分音符のグループを描画（最大4個/1拍ごと）
@@ -433,80 +433,116 @@ function drawWarmupScore(){
   const pat=WARMUP_PATTERNS[warmupKey];
   const {asc,desc,hasHold,noteDur}=warmupGetSeq();
   const ascP=asc.map(warmupBuildPitch), descP=desc.map(warmupBuildPitch);
-  const totalCount=ascP.length+descP.length+(hasHold?1:0);
-  const W=70+totalCount*30+140, H=190;
+  const H=225;
   const lines=[96,108,120,132,144];
-  const heads=[], stems=[];
-  let x=70;
   const measureUnits = (warmupType==='chroma') ? 6 : 8; // 半音階は3拍子(6)、その他は4拍子(8)。単位=8分音符1個
-  let cumUnits=0, nextBar=measureUnits;
-  const barlines=[]; // {x, double}
 
-  function checkBar(unitsAdded){
-    cumUnits+=unitsAdded;
-    while(cumUnits>=nextBar){
-      barlines.push({x:x+8, double:false});
-      x+=16;
-      nextBar+=measureUnits;
-    }
+  // ---- Step1: 小節ごとに「アイテム」を構築（x座標はまだ決めない） ----
+  const measures=[]; // measures[i] = {items:[...], widthMul:1}
+  let curItems=[];
+  let beamIdCounter=0;
+  function pushNote(pitch,hollow,dotted,beamId,duration){
+    curItems.push({pitch,hollow:!!hollow,dotted:!!dotted,isRest:false,beamId,duration});
   }
+  function pushRest(){ curItems.push({isRest:true}); }
+  function endMeasure(widthMul){ measures.push({items:curItems, widthMul:widthMul||1}); curItems=[]; }
 
-  let lastScaleNoteInfo=null;
   if(noteDur==='arp'){
     [ascP,descP].forEach(seqP=>{
-      // 先頭14個：8分音符、2個ずつ7グループ（1拍ごと）、最後1個は4分音符（旗なし）
       const first14=seqP.slice(0,14), lastOne=seqP[14];
-      for(let i=0;i<first14.length;i+=2){
-        const infos=first14.slice(i,i+2).map(p=>{ const info=warmupPrepNote(p,x,false); heads.push(info.svg); x+=30; return info; });
-        stems.push(warmupDrawBeamGroup(infos));
-        checkBar(2);
-      }
-      const quarterInfo=warmupPrepNote(lastOne,x,false); heads.push(quarterInfo.svg); x+=30;
-      stems.push(warmupDrawStem(quarterInfo)); // 4分音符は旗なし
-      checkBar(2);
-      x+=16;
+      for(let i=0;i<8;i+=2){ const bId=beamIdCounter++; pushNote(first14[i],false,false,bId,'8th'); pushNote(first14[i+1],false,false,bId,'8th'); }
+      endMeasure();
+      for(let i=8;i<14;i+=2){ const bId=beamIdCounter++; pushNote(first14[i],false,false,bId,'8th'); pushNote(first14[i+1],false,false,bId,'8th'); }
+      pushNote(lastOne,false,false,null,'4th'); // 単独、旗なし
+      endMeasure();
     });
   } else {
-    [ascP,descP].forEach(seqP=>{
-      for(let i=0;i<seqP.length;i+=2){
-        const infos=seqP.slice(i,i+2).map(p=>{ const info=warmupPrepNote(p,x,false); heads.push(info.svg); x+=30; return info; });
-        stems.push(warmupDrawBeamGroup(infos));
-        lastScaleNoteInfo=infos[infos.length-1];
-        checkBar(2);
+    const seq=[...ascP,...descP];
+    let idx=0;
+    while(idx<seq.length){
+      const remain=seq.length-idx;
+      const count=Math.min(measureUnits,remain);
+      for(let i=0;i<count;i+=2){
+        if(i+1<count){
+          const bId=beamIdCounter++;
+          pushNote(seq[idx+i],false,false,bId,'8th');
+          pushNote(seq[idx+i+1],false,false,bId,'8th');
+        } else {
+          pushNote(seq[idx+i],false,false,null,'8th'); // 奇数で余った1音は、単独の8分音符（旗付き）
+        }
       }
-      x+=16;
-    });
+      idx+=count;
+      endMeasure();
+    }
   }
 
+  let tieFromLastMeasure=false;
   if(hasHold){
     const rootP=warmupBuildPitch(pat.root);
-    const isChroma=(warmupType==='chroma');
-    const info=warmupPrepNote(rootP,x,true,isChroma); // 半音階は6拍＝付点全音符相当
-    heads.push(info.svg);
-    stems.push(warmupDrawStem(info));
-    if(warmupType==='scale' && lastScaleNoteInfo){
-      stems.push(warmupDrawTie(lastScaleNoteInfo,info)); // 最後の8分音符と保続音をタイで結ぶ
-    }
-    x+=isChroma?40:34;
-    if(isChroma){
-      // 半音階：主音を6拍まるごと伸ばす（休符なし）
-      checkBar(12);
-    } else {
-      // 音階：主音を4拍（全音符）伸ばし、4拍分の休符（全休符）
-      checkBar(8);
-      heads.push(drawHalfRestGlyph(x,120));
-      x+=34;
-      checkBar(8);
+    if(warmupType==='scale'){
+      pushNote(rootP,true,false,null,'hold');
+      endMeasure();
+      tieFromLastMeasure=true;
+      pushRest();
+      endMeasure();
+    } else if(warmupType==='chroma'){
+      pushNote(rootP,true,true,null,'hold');
+      endMeasure(2); // 6拍分＝2小節分の幅
     }
   }
 
-  // 最後は必ず終止線（ダブルバー）で終える
-  if(barlines.length && (x-barlines[barlines.length-1].x)<20){
-    barlines[barlines.length-1].double=true;
-  } else {
-    barlines.push({x:x+8, double:true});
-    x+=16;
-  }
+  // ---- Step2: 小節ごとに固定幅を割り当て、その中で均等配置 ----
+  const MEASURE_WIDTH=168, MEASURE_MARGIN=20;
+  let x=70;
+  const barlines=[]; // {x, double}
+  const heads=[], stems=[];
+  const beamGroups={};
+  let tieTargetInfo=null, tieSourceInfo=null;
+
+  measures.forEach((measure,mIdx)=>{
+    const mWidth=MEASURE_WIDTH*measure.widthMul;
+    const n=measure.items.length;
+    const innerWidth=mWidth-2*MEASURE_MARGIN;
+    let lastNoteInfoInThisMeasure=null;
+    measure.items.forEach((item,i)=>{
+      const itemX = (n===1) ? x+mWidth/2 : x+MEASURE_MARGIN+innerWidth*i/(n-1);
+      if(item.isRest){
+        heads.push(drawHalfRestGlyph(itemX,120));
+      } else {
+        const info=warmupPrepNote(item.pitch,itemX,item.hollow,item.dotted);
+        heads.push(info.svg);
+        lastNoteInfoInThisMeasure=info;
+        if(item.beamId!==null && item.beamId!==undefined){
+          (beamGroups[item.beamId]=beamGroups[item.beamId]||[]).push(info);
+        } else if(item.duration==='4th'){
+          stems.push(warmupDrawStem(info));
+        } else if(item.duration==='8th'){
+          stems.push(warmupDrawEighthFlag(info));
+        } else if(item.duration==='hold'){
+          stems.push(warmupDrawStem(info));
+          if(tieFromLastMeasure===false && warmupType==='scale' && mIdx===measures.length-2){
+            tieTargetInfo=info; // 音階：保続音（タイの着地点）
+          }
+          if(warmupType==='chroma'){ /* 半音階はタイなし */ }
+        }
+      }
+    });
+    // 音階：直前の小節の最後の音（タイの出発点）を記録
+    if(warmupType==='scale' && mIdx===measures.length-3 && lastNoteInfoInThisMeasure){
+      tieSourceInfo=lastNoteInfoInThisMeasure;
+    }
+    x+=mWidth;
+    if(mIdx<measures.length-1){
+      barlines.push({x:x+8, double:false});
+      x+=16;
+    }
+  });
+  // 最後は必ず終止線（ダブルバー）
+  barlines.push({x:x+8, double:true});
+  x+=16;
+
+  Object.values(beamGroups).forEach(infos=>{ stems.push(warmupDrawBeamGroup(infos)); });
+  if(tieSourceInfo && tieTargetInfo){ stems.push(warmupDrawTie(tieSourceInfo,tieTargetInfo)); }
 
   let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${x+20}" height="${H}" viewBox="0 0 ${x+20} ${H}">`;
   s+=`<rect width="${x+20}" height="${H}" fill="#fbfbf7"/>`;

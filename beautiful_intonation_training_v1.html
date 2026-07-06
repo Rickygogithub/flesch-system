@@ -164,9 +164,9 @@
       <summary style="cursor:pointer">▶️ ボーイングの安定性を測る（右手・弓のベンチマーク）</summary>
       <div style="padding:10px 0;font-size:13px;color:#3d4654;line-height:1.8;font-weight:600">
         これまでの機能は、主に左手（音程）に関わるものでした。ここでは、右手（弓）の運動制御を測ります。<br><br>
-        <strong>上手い人ほど、ロングトーンの音量が一定に保てます。</strong>音量を一定に保てて初めて、意図したクレッシェンド・デクレッシェンドなどの変化をつけられます。ツールの音は鳴らさず、メトロノームのみで拍を確認しながら、ご自身の音をマイクで録音し、音量（振幅）の標準偏差を測定します。<br><br>
+        <strong>上手い人ほど、ロングトーンの音量が一定に保てます。</strong>音量を一定に保てて初めて、意図したクレッシェンド・デクレッシェンドなどの変化をつけられます。ツールの音は鳴らさず、メトロノームのみで拍を確認しながら、ご自身の音をマイクで録音し、音量（振幅）の変動係数（%）を測定します。<br><br>
         <strong>使い方：</strong>下のボタンを押すと、マイクの使用許可が求められます。許可後、1小節分のカウントイン（空振り）→ダウンボウ2小節（8秒）→アップボウ2小節（8秒）→ダウンボウ2小節（8秒）→アップボウ2小節（8秒）、合計32秒間、主音のロングトーンを弾いてください（テンポ＝四分音符60、4拍子固定）。<br><br>
-        測定機器や環境によって、絶対的な数値は変わります。他人と比べるものではなく、<strong>同じ環境で繰り返し測り、自分自身の数値が小さくなっていくかを確認する</strong>、目安としてお使いください。32秒間、安定させ続けようとすること自体が、良い練習になります。
+        測定機器や環境によって、絶対的な数値は変わります。他人と比べるものではなく、<strong>同じ環境で繰り返し測り、自分自身の変動係数が小さくなっていくかを確認する</strong>、目安としてお使いください。32秒間、安定させ続けようとすること自体が、良い練習になります。
       </div>
       <div class="controls">
         <button id="vt-start">▶️ 測定スタート（32秒）</button>
@@ -175,11 +175,11 @@
       <div id="vt-results" style="display:none">
         <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
           <tr style="background:#f1f3f6">
-            <th style="padding:6px;border:1px solid #c9d0da">全体(32秒)</th>
-            <th style="padding:6px;border:1px solid #c9d0da">1区間(ダウン)</th>
-            <th style="padding:6px;border:1px solid #c9d0da">2区間(アップ)</th>
-            <th style="padding:6px;border:1px solid #c9d0da">3区間(ダウン)</th>
-            <th style="padding:6px;border:1px solid #c9d0da">4区間(アップ)</th>
+            <th style="padding:6px;border:1px solid #c9d0da">全体(32秒)<br><span style="font-size:11px;font-weight:600;color:#3d4654">変動係数(%)</span></th>
+            <th style="padding:6px;border:1px solid #c9d0da">1区間(ダウン)<br><span style="font-size:11px;font-weight:600;color:#3d4654">変動係数(%)</span></th>
+            <th style="padding:6px;border:1px solid #c9d0da">2区間(アップ)<br><span style="font-size:11px;font-weight:600;color:#3d4654">変動係数(%)</span></th>
+            <th style="padding:6px;border:1px solid #c9d0da">3区間(ダウン)<br><span style="font-size:11px;font-weight:600;color:#3d4654">変動係数(%)</span></th>
+            <th style="padding:6px;border:1px solid #c9d0da">4区間(アップ)<br><span style="font-size:11px;font-weight:600;color:#3d4654">変動係数(%)</span></th>
           </tr>
           <tr>
             <td style="padding:6px;border:1px solid #c9d0da;text-align:center" id="vt-overall">–</td>
@@ -346,6 +346,19 @@
     return Math.sqrt(variance);
   }
 
+  function mean(arr){
+    if(arr.length===0) return 0;
+    return arr.reduce((a,b)=>a+b,0)/arr.length;
+  }
+
+  function coefficientOfVariation(arr){
+    if(arr.length===0) return 0;
+    const m=mean(arr);
+    if(m===0) return 0;
+    const sd=stdDev(arr);
+    return (sd/m)*100;
+  }
+
   async function startVolumeTest(){
     if(vtActive) return;
     let stream;
@@ -411,23 +424,23 @@
     if(vtMicStream){ vtMicStream.getTracks().forEach(t=>t.stop()); vtMicStream=null; }
 
     const allV=vtData.map(d=>d.v);
-    const overallSD=stdDev(allV);
+    const overallCV=coefficientOfVariation(allV);
     const segs=[[],[],[],[]];
     vtData.forEach(d=>{ const idx=Math.min(3,Math.floor(d.t/8)); segs[idx].push(d.v); });
-    const segSDs=segs.map(s=>stdDev(s));
+    const segCVs=segs.map(s=>coefficientOfVariation(s));
 
     document.getElementById('vt-status').textContent='測定完了（32秒間）';
     document.getElementById('vt-results').style.display='';
-    document.getElementById('vt-overall').textContent=overallSD.toFixed(4);
-    document.getElementById('vt-seg1').textContent=segSDs[0].toFixed(4);
-    document.getElementById('vt-seg2').textContent=segSDs[1].toFixed(4);
-    document.getElementById('vt-seg3').textContent=segSDs[2].toFixed(4);
-    document.getElementById('vt-seg4').textContent=segSDs[3].toFixed(4);
+    document.getElementById('vt-overall').textContent=overallCV.toFixed(1)+'%';
+    document.getElementById('vt-seg1').textContent=segCVs[0].toFixed(1)+'%';
+    document.getElementById('vt-seg2').textContent=segCVs[1].toFixed(1)+'%';
+    document.getElementById('vt-seg3').textContent=segCVs[2].toFixed(1)+'%';
+    document.getElementById('vt-seg4').textContent=segCVs[3].toFixed(1)+'%';
 
-    vtHistory.push(overallSD);
+    vtHistory.push(overallCV);
     const histDiv=document.getElementById('vt-history');
     if(vtHistory.length>0){
-      histDiv.textContent='このセッションでの履歴（全体の標準偏差、古い順）：'+vtHistory.map(v=>v.toFixed(4)).join(' → ');
+      histDiv.textContent='このセッションでの履歴（全体の変動係数、古い順）：'+vtHistory.map(v=>v.toFixed(1)+'%').join(' → ');
     }
   }
 
