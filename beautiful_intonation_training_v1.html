@@ -159,12 +159,69 @@
       <button id="lt-start">スタート</button>
       <button class="stop" id="lt-stop" disabled>ストップ</button>
     </div>
+
+    <details style="margin-top:14px">
+      <summary style="cursor:pointer">▶️ ボーイングの安定性を測る（右手・弓のベンチマーク）</summary>
+      <div style="padding:10px 0;font-size:13px;color:#3d4654;line-height:1.8;font-weight:600">
+        これまでの機能は、主に左手（音程）に関わるものでした。ここでは、右手（弓）の運動制御を測ります。<br><br>
+        <strong>上手い人ほど、ロングトーンの音量が一定に保てます。</strong>音量を一定に保てて初めて、意図したクレッシェンド・デクレッシェンドなどの変化をつけられます。ツールの音は鳴らさず、メトロノームのみで拍を確認しながら、ご自身の音をマイクで録音し、音量（振幅）の標準偏差を測定します。<br><br>
+        <strong>使い方：</strong>下のボタンを押すと、マイクの使用許可が求められます。許可後、1小節分のカウントイン（空振り）→ダウンボウ2小節（8秒）→アップボウ2小節（8秒）→ダウンボウ2小節（8秒）→アップボウ2小節（8秒）、合計32秒間、主音のロングトーンを弾いてください（テンポ＝四分音符60、4拍子固定）。<br><br>
+        測定機器や環境によって、絶対的な数値は変わります。他人と比べるものではなく、<strong>同じ環境で繰り返し測り、自分自身の数値が小さくなっていくかを確認する</strong>、目安としてお使いください。32秒間、安定させ続けようとすること自体が、良い練習になります。
+      </div>
+      <div class="controls">
+        <button id="vt-start">▶️ 測定スタート（32秒）</button>
+      </div>
+      <div id="vt-status" style="font-size:13px;color:#3d4654;font-weight:700;margin:8px 0"></div>
+      <div id="vt-results" style="display:none">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
+          <tr style="background:#f1f3f6">
+            <th style="padding:6px;border:1px solid #c9d0da">全体(32秒)</th>
+            <th style="padding:6px;border:1px solid #c9d0da">1区間(ダウン)</th>
+            <th style="padding:6px;border:1px solid #c9d0da">2区間(アップ)</th>
+            <th style="padding:6px;border:1px solid #c9d0da">3区間(ダウン)</th>
+            <th style="padding:6px;border:1px solid #c9d0da">4区間(アップ)</th>
+          </tr>
+          <tr>
+            <td style="padding:6px;border:1px solid #c9d0da;text-align:center" id="vt-overall">–</td>
+            <td style="padding:6px;border:1px solid #c9d0da;text-align:center" id="vt-seg1">–</td>
+            <td style="padding:6px;border:1px solid #c9d0da;text-align:center" id="vt-seg2">–</td>
+            <td style="padding:6px;border:1px solid #c9d0da;text-align:center" id="vt-seg3">–</td>
+            <td style="padding:6px;border:1px solid #c9d0da;text-align:center" id="vt-seg4">–</td>
+          </tr>
+        </table>
+      </div>
+      <div id="vt-history" style="font-size:12px;color:#3d4654;margin-top:10px;line-height:1.8"></div>
+    </details>
   </section>
 
   <!-- ② 1オクターブ音階 -->
   <section>
     <h2>② 1オクターブ音階（ピタゴラス音律）</h2>
-    <div class="hint">主音から1オクターブ、1音4拍で昇降する音階です。音声を聞く → 一緒にドレミで歌う → 一緒に楽器で弾く → ツールを止めて歌う → 楽器だけで弾く、という順番で練習すると効果的です。合わせて弾く場合は音程をピッタリ合わせ、両方の音が溶け合って聞こえなくなるようにしてください。楽器だけで弾く場合は最高音と、1オクターブ下の開放弦の共鳴による振動を最大にし、重音で弾く場合は一つの音に聞こえるようにしてください。</div>
+    <div class="hint">主音から1オクターブ、1音4拍で昇降する音階です。
+      <div style="margin-top:12px">
+        <details style="cursor:pointer">
+          <summary style="background:rgba(44, 93, 146, 0.08);border:1px solid rgba(44, 93, 146, 0.2);border-radius:10px;padding:12px;font-weight:700;font-size:13px;color:#2c5d92;list-style:none">
+            練習のポイント ▼
+          </summary>
+          <div style="background:rgba(44, 93, 146, 0.08);border:1px solid rgba(44, 93, 146, 0.2);border-top:none;border-radius:0 0 10px 10px;padding:12px;margin-top:-1px;font-size:12.5px;color:#0f1722;line-height:1.7">
+            <div style="margin-bottom:12px">
+              次の順番で練習すると効果的です。
+              <ol style="margin: 6px 0 6px 20px; padding: 0;">
+                <li>音声を聞く（外部の正しい音を、まず受け取る）</li>
+                <li>一緒にドレミで歌う（外部の音に合わせて、自分の発声で再現する＝音感の基礎構築）</li>
+                <li>ツールを止めてドレミで歌う（外部の助けなしで、記憶から再現できるか検証）</li>
+                <li>ドレミで歌いながら楽器で弾く（発声という認知的基準を保持したまま、楽器という運動出力に接続）</li>
+                <li>（頭の中でドレミと臨時記号を思い浮かべながら）楽器で弾く（発声という外部化された確認を内面化し、脳内処理だけで運動を制御）</li>
+                <li>楽器で音楽的に弾く（技術処理が自動化された状態で、表現に専念）</li>
+              </ol>
+            </div>
+            <div style="padding-top:12px;border-top:1px solid rgba(44, 93, 146, 0.2)">
+              音声に合わせて弾く場合は音程をピッタリ合わせ、両方の音が溶け合って聞こえなくなるようにしてください。楽器だけで弾く場合は最高音と、1オクターブ下の開放弦の共鳴による振動を最大にし、重音で弾く場合は一つの音に聞こえるようにしてください。
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
     <div class="opt"><span>弦（主音）</span>
       <select id="sc-key">
         <option value="C">C弦（ド）</option>
@@ -174,11 +231,11 @@
       </select>
     </div>
     <div class="opt"><span>テンポ</span>
-      <input type="range" id="sc-bpm" min="10" max="180" value="60">
-      <span class="bpmval" id="sc-bpmval">60 BPM</span>
+      <input type="range" id="sc-bpm" min="10" max="180" value="120">
+      <span class="bpmval" id="sc-bpmval">120 BPM</span>
     </div>
     <div class="controls">
-      <button id="sc-start">スタート</button>
+      <button id="sc-start">スタート（3秒後）</button>
       <button class="stop" id="sc-stop" disabled>ストップ</button>
     </div>
   </section>
@@ -186,7 +243,32 @@
   <!-- ③ 分散和音 -->
   <section>
     <h2>③ 分散和音（純正律）</h2>
-    <div class="hint">『ド-ミ-ソ（長調）』『ド-ミ♭-ソ（短調）』（ハ長調の場合）の2つのグループの分散和音の練習。最初と最後に3和音が鳴るので、そのイメージを思い浮かべながら分散和音を弾いてください。ツールを使わずに弾く際には、最初の音から１オクターブ上の音を弾いている時に開放弦と重音として弾き、１つの音に聞こえるまで音程を合わせてください。</div>
+    <div class="hint">『ド-ミ♭-ソ（短調）』『ド-ミ-ソ（長調）』（ハ長調の場合）の2つのグループの分散和音の練習。単音モードでは最初と最後に3和音が鳴るので、そのイメージを思い浮かべながら分散和音を弾いてください。
+      <div style="margin-top:12px">
+        <details style="cursor:pointer">
+          <summary style="background:rgba(44, 93, 146, 0.08);border:1px solid rgba(44, 93, 146, 0.2);border-radius:10px;padding:12px;font-weight:700;font-size:13px;color:#2c5d92;list-style:none">
+            練習のポイント ▼
+          </summary>
+          <div style="background:rgba(44, 93, 146, 0.08);border:1px solid rgba(44, 93, 146, 0.2);border-top:none;border-radius:0 0 10px 10px;padding:12px;margin-top:-1px;font-size:12.5px;color:#0f1722;line-height:1.7">
+            <div style="margin-bottom:12px">
+              必要に応じて②のプロセス（の一部）を実践してください。ツールを使わずに弾く際には、最初の音から１オクターブ上の音を弾いている時に開放弦と重音として弾き、１つの音に聞こえるまで音程を合わせてください。
+            </div>
+            <div style="margin-bottom:12px;padding-top:12px;border-top:1px solid rgba(44, 93, 146, 0.2)">
+              ・開放弦を弾くときは、指を押さえないため脳から指への指令が緩みやすくなります。開放弦でも音名を意識して頭の中で鳴らし、回路が細くならないようにしてください。
+            </div>
+            <div style="margin-bottom:12px">
+              ・5つの三和音（主和音・転回形）は、音程が3度と4度の組み合わせのみで構成されています。音名だけで覚えるより、「どこが3度で、どこが4度か」を意識すると、認知負荷が下がります。
+            </div>
+            <div style="margin-bottom:12px">
+              ・慣れてきたら、開放弦（C・G・D・A）を主音として、分散和音を続けてビブラートをかけながら弾いてみてください。目的は作曲ではなく、これまで個別に磨いてきた各調性を、実際に移り変わりながら体感することです。曲には転調がつきものなので、この練習で「調から調へ移る感覚」そのものに慣れておくと役立ちます。例えば、G(主音)→D(Gの属調へ)→C(Gの下属調へ、意外な展開に感じるが実は近親調)→G(主調に戻り終止)、という進行。
+            </div>
+            <div>
+              ・長調・短調を固定せず、進行の途中で自由に混ぜてみるのも面白い発見があります（例：C(長)→G(長)→Dm(短)→Am(短)→G(長)→C(長)）。5度進行という骨格を保ったまま、色彩を自由に変える、この「遊び」自体が、実は本質的な練習になります。
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
     <div class="opt"><span>弦（主音）</span>
       <select id="ar-key">
         <option value="C">C弦（ド）</option>
@@ -202,12 +284,12 @@
       </select>
     </div>
     <div class="opt"><span>テンポ</span>
-      <input type="range" id="ar-bpm" min="10" max="180" value="60">
-      <span class="bpmval" id="ar-bpmval">60 BPM</span>
+      <input type="range" id="ar-bpm" min="10" max="180" value="120">
+      <span class="bpmval" id="ar-bpmval">120 BPM</span>
     </div>
     <div class="current-chord" id="ar-current">スタートで開始します</div>
     <div class="controls">
-      <button id="ar-start">スタート</button>
+      <button id="ar-start">スタート（3秒後）</button>
       <button class="stop" id="ar-stop" disabled>ストップ</button>
     </div>
     <div class="footnote">
@@ -239,6 +321,117 @@
       audioContext.resume().catch(e => console.error('Audio resume failed:', e));
     }
   }
+
+  function playClickAt(time, isAccent) {
+    const ctx = audioContext;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(isAccent ? 880 : 440, time);
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.exponentialRampToValueAtTime(isAccent ? 0.3 : 0.18, time + 0.003);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.06);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(time); osc.stop(time + 0.08);
+  }
+
+  /* ---- 音量安定性測定（右手・弓のベンチマーク） ---- */
+  let vtActive=false, vtData=[], vtHistory=[];
+  let vtMicStream=null, vtAnalyser=null;
+
+  function stdDev(arr){
+    if(arr.length===0) return 0;
+    const mean=arr.reduce((a,b)=>a+b,0)/arr.length;
+    const variance=arr.reduce((a,b)=>a+Math.pow(b-mean,2),0)/arr.length;
+    return Math.sqrt(variance);
+  }
+
+  async function startVolumeTest(){
+    if(vtActive) return;
+    let stream;
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    }catch(e){
+      document.getElementById('vt-status').textContent='マイクの使用が許可されませんでした。ブラウザの設定をご確認ください。';
+      return;
+    }
+    vtMicStream=stream;
+    initAudio();
+    const ctx=audioContext;
+    const micSource=ctx.createMediaStreamSource(stream);
+    vtAnalyser=ctx.createAnalyser();
+    vtAnalyser.fftSize=2048;
+    micSource.connect(vtAnalyser);
+
+    vtActive=true;
+    vtData=[];
+    document.getElementById('vt-start').disabled=true;
+    document.getElementById('vt-results').style.display='none';
+    document.getElementById('vt-status').textContent='カウントイン中…';
+
+    const bpm=60, beatSec=60/bpm;
+    const countInBeats=4;
+    const perfBeats=32;
+    const startTime=ctx.currentTime+0.15;
+
+    for(let i=0;i<countInBeats+perfBeats;i++){
+      playClickAt(startTime+i*beatSec, i%4===0);
+    }
+
+    const recordStart=startTime+countInBeats*beatSec;
+    const recordEnd=recordStart+perfBeats*beatSec;
+    const bufferLen=vtAnalyser.fftSize;
+    const dataArray=new Uint8Array(bufferLen);
+
+    function sampleLoop(){
+      if(!vtActive) return;
+      const now=ctx.currentTime;
+      if(now<recordStart){
+        document.getElementById('vt-status').textContent='カウントイン中…';
+      } else if(now<recordEnd){
+        vtAnalyser.getByteTimeDomainData(dataArray);
+        let sumSq=0;
+        for(let i=0;i<bufferLen;i++){ const v=(dataArray[i]-128)/128; sumSq+=v*v; }
+        const rms=Math.sqrt(sumSq/bufferLen);
+        vtData.push({t:now-recordStart, v:rms});
+        document.getElementById('vt-status').textContent='測定中… '+(now-recordStart).toFixed(1)+' 秒 / 32秒';
+      }
+      if(now<recordEnd+0.15){
+        requestAnimationFrame(sampleLoop);
+      } else {
+        finishVolumeTest();
+      }
+    }
+    requestAnimationFrame(sampleLoop);
+  }
+
+  function finishVolumeTest(){
+    vtActive=false;
+    document.getElementById('vt-start').disabled=false;
+    if(vtMicStream){ vtMicStream.getTracks().forEach(t=>t.stop()); vtMicStream=null; }
+
+    const allV=vtData.map(d=>d.v);
+    const overallSD=stdDev(allV);
+    const segs=[[],[],[],[]];
+    vtData.forEach(d=>{ const idx=Math.min(3,Math.floor(d.t/8)); segs[idx].push(d.v); });
+    const segSDs=segs.map(s=>stdDev(s));
+
+    document.getElementById('vt-status').textContent='測定完了（32秒間）';
+    document.getElementById('vt-results').style.display='';
+    document.getElementById('vt-overall').textContent=overallSD.toFixed(4);
+    document.getElementById('vt-seg1').textContent=segSDs[0].toFixed(4);
+    document.getElementById('vt-seg2').textContent=segSDs[1].toFixed(4);
+    document.getElementById('vt-seg3').textContent=segSDs[2].toFixed(4);
+    document.getElementById('vt-seg4').textContent=segSDs[3].toFixed(4);
+
+    vtHistory.push(overallSD);
+    const histDiv=document.getElementById('vt-history');
+    if(vtHistory.length>0){
+      histDiv.textContent='このセッションでの履歴（全体の標準偏差、古い順）：'+vtHistory.map(v=>v.toFixed(4)).join(' → ');
+    }
+  }
+
+  document.getElementById('vt-start').addEventListener('click', startVolumeTest);
 
   function stopAll() {
     if (metronomeTimeout) clearTimeout(metronomeTimeout);
@@ -539,7 +732,7 @@
     const tempo = parseInt(document.getElementById('sc-bpm').value);
     const beatDuration = (60 / tempo) * 4;
     
-    let time = audioContext.currentTime;
+    let time = audioContext.currentTime + 3; // 構える時間として3秒後から開始
     
     // 上行
     scale.forEach(freq => {
@@ -618,7 +811,7 @@
     const beatDuration = (60 / tempo) * 4;
     const mode = document.getElementById('ar-mode').value;
     
-    let time = audioContext.currentTime;
+    let time = audioContext.currentTime + 3; // 構える時間として3秒後から開始
     const chordDuration = beatDuration * 2;  // 8拍
     
     // 表示更新関数
@@ -629,8 +822,8 @@
     const startTime = audioContext.currentTime;
     
     if (mode === 'single') {
-      // 2つのグループを順番に再生（長調と短調）
-      const groupList = [groups.group1, groups.group2];
+      // 2つのグループを順番に再生（短調→長調、解決感を意識した順序）
+      const groupList = [groups.group2, groups.group1];
       
       groupList.forEach((group) => {
         const freqs = group.frequencies;  // [基本, 3度, 5度]
@@ -752,8 +945,8 @@
         }
       });
     } else {
-      // 和音版
-      const groupList = [groups.group1, groups.group2];
+      // 和音版（短調→長調、解決感を意識した順序）
+      const groupList = [groups.group2, groups.group1];
       const chordDuration_4beat = beatDuration * 4;
       
       groupList.forEach((group, idx) => {

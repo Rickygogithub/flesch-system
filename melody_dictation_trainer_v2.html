@@ -49,31 +49,48 @@
 <body>
 <div class="wrap">
   <h1>Melody Dictation Trainer<span class="badge">v2</span></h1>
-  <div class="sub">▶️ 設定から「音高あり」「リズムのみ」「聴音」のモードを選択。
-  <br>・「音高あり」は楽譜を見て簡易な旋律を歌う練習
-  <br>・「リズムのみ」は拍子・休止小節数のカウントなどを設定し、リズム練習
-  <br>・「聴音」は基準音（A=442）に続いて鳴る単音・和音の聴音練習</div>
+  <div class="sub">▶️ 設定から「視唱準備トレ」「リズム」「聴音」「視唱」のモードを選択。
+  <br>・「視唱準備トレ」は跳躍や半音階を含む高速で歌い、楽譜を脳内で音にする瞬発力を上げる練習
+  <br>・「リズム」でリズムを鍛え、「聴音」で音感を養い、統合演習として「視唱」は楽譜を見て簡易な旋律を歌う練習</div>
 
-  <div class="stats" id="main-stats">
+  <div class="stats" id="main-stats" style="display:none">
     <div class="stat"><div class="v" id="s-count">0</div><div class="l">練習したフレーズ数</div></div>
+    <div class="stat"><div class="v" id="pr-acc">–</div><div class="l">成功率</div></div>
+    <div class="stat"><div class="v" id="pr-bpm">–</div><div class="l">できた平均テンポ</div></div>
   </div>
   <div class="stats" id="dict-stats" style="display:none">
     <div class="stat"><div class="v" id="dict-total">0</div><div class="l">出題数</div></div>
     <div class="stat"><div class="v" id="dict-acc">–</div><div class="l">正答率</div></div>
     <div class="stat"><div class="v" id="dict-time">–</div><div class="l">平均回答時間(秒)</div></div>
   </div>
+  <div class="stats" id="warmup-stats">
+    <div class="stat"><div class="v" id="warmup-total">0</div><div class="l">試行回数</div></div>
+    <div class="stat"><div class="v" id="warmup-acc">–</div><div class="l">成功率</div></div>
+    <div class="stat"><div class="v" id="warmup-bpm">–</div><div class="l">できた平均テンポ</div></div>
+  </div>
 
   <div class="cardarea"><div id="score"></div></div>
 
-  <div class="controls">
+  <div class="controls" id="pitch-rhythm-controls" style="display:none">
     <button class="alt" id="click">メトロノームを聴く</button>
     <button class="primary" id="play">正解を再生</button>
+  </div>
+  <div class="row" id="pr-judge" style="display:none;margin-top:10px">
+    <button class="bad" id="pr-fail">✗ まだ難しい</button>
+    <button class="primary" id="pr-ok">✓ できた</button>
   </div>
   <div class="row" id="dict-judge" style="display:none;margin-top:10px">
     <button class="bad" id="dict-wrong">✗ 間違えた</button>
     <button class="primary" id="dict-right">✓ 正解</button>
   </div>
-  <div class="controls">
+  <div class="controls" id="warmup-controls">
+    <button class="primary" id="warmup-start">▶️ スタート</button>
+  </div>
+  <div class="row" id="warmup-judge" style="display:none;margin-top:10px">
+    <button class="bad" id="warmup-fail">✗ まだ難しい</button>
+    <button class="primary" id="warmup-ok">✓ できた</button>
+  </div>
+  <div class="controls" id="next-controls" style="display:none">
     <button id="next">次のフレーズ</button>
   </div>
 
@@ -81,13 +98,33 @@
     <summary>▶️ 設定</summary>
     <div class="opt"><span>モード</span>
       <span class="seg" id="seg-appmode">
-        <button data-v="pitch" class="on">音高あり</button>
-        <button data-v="rhythm">リズムのみ</button>
+        <button data-v="warmup" class="on">視唱準備トレ</button>
+        <button data-v="rhythm">リズム</button>
         <button data-v="dictation">聴音</button>
+        <button data-v="pitch">視唱</button>
       </span>
     </div>
 
-    <div id="pitch-settings">
+    <div id="warmup-settings">
+      <div class="opt"><span>調</span>
+        <span class="seg" id="seg-warmup-key">
+          <button data-v="C" class="on">ハ長調</button>
+          <button data-v="Am">イ短調</button>
+        </span>
+      </div>
+      <div class="opt"><span>種類</span>
+        <span class="seg" id="seg-warmup-type">
+          <button data-v="scale" class="on">音階</button>
+          <button data-v="arp">分散3度</button>
+          <button data-v="p4">4度</button>
+          <button data-v="p5">5度</button>
+          <button data-v="p6">6度</button>
+          <button data-v="chroma">半音階</button>
+        </span>
+      </div>
+    </div>
+
+    <div id="pitch-settings" style="display:none">
       <div class="opt"><span>臨時記号（♯・♭）</span>
         <span class="seg" id="seg-acc">
           <button data-v="on" class="on">混ぜる</button>
@@ -171,14 +208,45 @@
         <span class="bpmval" id="bpmval">80 BPM</span>
       </div>
     </div>
-    <button class="reset" id="resetstats">記録をリセット</button>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="reset" id="resetstats" style="flex:0 0 auto">記録をリセット</button>
+      <span style="font-size:12px;color:var(--muted);font-weight:600">モードを変えた時、仕切り直したい時などにクリックしてください</span>
+    </div>
   </details>
 
-  <div class="footnote">
-    使い方：<br>
-    ・「音高あり」モード：メトロノームによる1小節分のカウントイン（空振り）の後、譜面が始まります。心の中で読む・声に出して歌う → 「メトロノームを聴く」で拍を取りながら練習する → 「正解を再生」で確認 → 「次のフレーズ」で新しい譜面へ。<br>
-    ・「リズムのみ」：「固定」を選択するとメトロノームによる1小節分のカウントイン（空振り）の後、設定した長さの休みが続き、その後に刻むべきリズムが始まります。小節の頭でクリックの音高が変わるので、休みの間も小節の頭を見失わないようにしてください。「ランダム」を選択すると「次のフレーズ」を押すだけで各拍子の課題が自動で生成されます。<br>
-    ・「聴音」モードでは、基準音（A=442）に続いて単音または和音（実在する主和音）が鳴ります。音名を思い浮かべたら「答えを見る」で確認し、「✓ 正解」「✗ 間違えた」を選ぶと出題数・正答率・平均回答時間が記録されます。「🔊 もう一度聴く」で何度でも聴き直せます。
+  <div style="margin-top:20px">
+    <div style="font-weight:800;font-size:14px;color:#0f1722;margin-bottom:8px">狙いと使い方</div>
+
+    <details style="margin-bottom:8px">
+      <summary>▶️ ① 視唱準備トレ</summary>
+      <div class="footnote" style="margin-top:6px">
+        Score Readingの単音・重音の視唱と、この先の小節単位の視唱との間には、大きな段差があります。ここでは、1オクターブの音階、フレッシュの分散3度・4度・5度・6度、そして半音階を、指定したテンポで、システムと一緒に歌う練習をします。<br><br>
+        正確な音程を確認するソルフェージュではなく、跳躍や隙間のない音の動きに、頭と口がどれだけ速く反応できるかという、回路の速度そのものを鍛えることが目的です。3度だけでなく4度・5度・6度も揃えることで、様々な広さの跳躍に対応する内的な音程感覚を、視唱の基礎として体系的にカバーできます。<br><br>
+        使い方：「スタート」を押すと、主音（3秒）→選んだ種類のパターンが、設定したテンポで流れます。楽譜を見ながら、声に出して（またはドレミを心の中で思い浮かべながら）一緒に歌ってください。ついていけたら「✓ できた」、まだ厳しければ「✗ まだ難しい」を選び、テンポスライダーを調整して次に挑戦してください。「できた」時のテンポの平均が、回路の太さの目安になります。慣れてきたら、楽譜を見ずに挑戦してみてください。半音階は調性の足場がないため、最も負荷の高い練習です。<br><br>
+        分散3度・4度・5度・6度・半音階は楽譜が横に長くなるため、画面をスクロールしながらご利用ください。
+      </div>
+    </details>
+
+    <details style="margin-bottom:8px">
+      <summary>▶️ ② リズム</summary>
+      <div class="footnote" style="margin-top:6px">
+        「固定」を選択するとメトロノームによる1小節分のカウントイン（空振り）の後、設定した長さの休みが続き、その後に刻むべきリズムが始まります。小節の頭でクリックの音高が変わるので、休みの間も小節の頭を見失わないようにしてください。「ランダム」を選択すると「次のフレーズ」を押すだけで各拍子の課題が自動で生成されます。「✓ できた／✗ まだ難しい」で判定でき、平均テンポ・成功率が記録されます。小節数や設定によって、横スクロールが必要になることがあります。
+      </div>
+    </details>
+
+    <details style="margin-bottom:8px">
+      <summary>▶️ ③ 聴音</summary>
+      <div class="footnote" style="margin-top:6px">
+        基準音（A=442）に続いて単音または和音（実在する主和音）が鳴ります。音名を思い浮かべたら「答えを見る」で確認し、「✓ 正解」「✗ 間違えた」を選ぶと出題数・正答率・平均回答時間が記録されます。「🔊 もう一度聴く」で何度でも聴き直せます。
+      </div>
+    </details>
+
+    <details style="margin-bottom:8px">
+      <summary>▶️ ④ 視唱</summary>
+      <div class="footnote" style="margin-top:6px">
+        メトロノームによる1小節分のカウントイン（空振り）の後、譜面が始まります。心の中で読む・声に出して歌う → 「メトロノームを聴く」で拍を取りながら練習する → 「正解を再生」で確認 → 「✓ できた／✗ まだ難しい」で判定（できた時の平均テンポ・成功率が記録されます） → 「次のフレーズ」で新しい譜面へ。小節数や設定によって、横スクロールが必要になることがあります。
+      </div>
+    </details>
   </div>
 </div>
 
@@ -238,13 +306,266 @@ function diatonicCandidates(lowMidi,highMidi){
   return out;
 }
 
-let appMode='pitch';
+let appMode='warmup';
 let useAcc=true, lowMidi=48, highMidi=77, measures=1;
 let timeSigLabel='4/4', restMin=0, restMax=0, rMeasures=1, rhythmRandom=false;
 let dictType='single', dictUseAcc=false, dictLowMidi=48, dictHighMidi=77;
 let count=0, currentPhrase=null, audioCtx=null;
 let currentDictNotes=null, currentDictKeyName=null, dictRevealed=false, dictStartTime=0, dictElapsed=0;
 let dictTotal=0, dictCorrect=0, dictTimeSum=0;
+let warmupKey='C', warmupType='scale', warmupTotal=0, warmupOk=0, warmupOkBpmSum=0, warmupJudged=false;
+let prTotal=0, prOk=0, prOkBpmSum=0;
+
+/* ---------- 音階・分散3度・半音階（ウォームアップ） ---------- */
+const WARMUP_PATTERNS={
+  C:{
+    label:'ハ長調',
+    scaleAsc:  [{letter:'C',octave:4},{letter:'D',octave:4},{letter:'E',octave:4},{letter:'F',octave:4},{letter:'G',octave:4},{letter:'A',octave:4},{letter:'B',octave:4},{letter:'C',octave:5}],
+    scaleDesc: [{letter:'C',octave:5},{letter:'B',octave:4},{letter:'A',octave:4},{letter:'G',octave:4},{letter:'F',octave:4},{letter:'E',octave:4},{letter:'D',octave:4},{letter:'C',octave:4}],
+    arpAsc:  [{letter:'C',octave:4},{letter:'E',octave:4},{letter:'D',octave:4},{letter:'F',octave:4},{letter:'E',octave:4},{letter:'G',octave:4},{letter:'F',octave:4},{letter:'A',octave:4},{letter:'G',octave:4},{letter:'B',octave:4},{letter:'A',octave:4},{letter:'C',octave:5},{letter:'B',octave:4},{letter:'D',octave:5},{letter:'C',octave:5}],
+    arpDesc: [{letter:'E',octave:5},{letter:'C',octave:5},{letter:'D',octave:5},{letter:'B',octave:4},{letter:'C',octave:5},{letter:'A',octave:4},{letter:'B',octave:4},{letter:'G',octave:4},{letter:'A',octave:4},{letter:'F',octave:4},{letter:'G',octave:4},{letter:'E',octave:4},{letter:'F',octave:4},{letter:'D',octave:4},{letter:'C',octave:4}],
+    p4Asc:  [{letter:'C',octave:4},{letter:'F',octave:4},{letter:'D',octave:4},{letter:'G',octave:4},{letter:'E',octave:4},{letter:'A',octave:4},{letter:'F',octave:4},{letter:'B',octave:4},{letter:'G',octave:4},{letter:'C',octave:5},{letter:'A',octave:4},{letter:'D',octave:5},{letter:'B',octave:4},{letter:'E',octave:5},{letter:'C',octave:5}],
+    p4Desc: [{letter:'F',octave:5},{letter:'C',octave:5},{letter:'E',octave:5},{letter:'B',octave:4},{letter:'D',octave:5},{letter:'A',octave:4},{letter:'C',octave:5},{letter:'G',octave:4},{letter:'B',octave:4},{letter:'F',octave:4},{letter:'A',octave:4},{letter:'E',octave:4},{letter:'G',octave:4},{letter:'D',octave:4},{letter:'C',octave:4}],
+    p5Asc:  [{letter:'C',octave:4},{letter:'G',octave:4},{letter:'D',octave:4},{letter:'A',octave:4},{letter:'E',octave:4},{letter:'B',octave:4},{letter:'F',octave:4},{letter:'C',octave:5},{letter:'G',octave:4},{letter:'D',octave:5},{letter:'A',octave:4},{letter:'E',octave:5},{letter:'B',octave:4},{letter:'F',octave:5},{letter:'C',octave:5}],
+    p5Desc: [{letter:'G',octave:5},{letter:'C',octave:5},{letter:'F',octave:5},{letter:'B',octave:4},{letter:'E',octave:5},{letter:'A',octave:4},{letter:'D',octave:5},{letter:'G',octave:4},{letter:'C',octave:5},{letter:'F',octave:4},{letter:'B',octave:4},{letter:'E',octave:4},{letter:'A',octave:4},{letter:'D',octave:4},{letter:'C',octave:4}],
+    p6Asc:  [{letter:'C',octave:4},{letter:'A',octave:4},{letter:'D',octave:4},{letter:'B',octave:4},{letter:'E',octave:4},{letter:'C',octave:5},{letter:'F',octave:4},{letter:'D',octave:5},{letter:'G',octave:4},{letter:'E',octave:5},{letter:'A',octave:4},{letter:'F',octave:5},{letter:'B',octave:4},{letter:'G',octave:5},{letter:'C',octave:5}],
+    p6Desc: [{letter:'A',octave:5},{letter:'C',octave:5},{letter:'G',octave:5},{letter:'B',octave:4},{letter:'F',octave:5},{letter:'A',octave:4},{letter:'E',octave:5},{letter:'G',octave:4},{letter:'D',octave:5},{letter:'F',octave:4},{letter:'C',octave:5},{letter:'E',octave:4},{letter:'B',octave:4},{letter:'D',octave:4},{letter:'C',octave:4}],
+    chromaAsc:  [{letter:'C',octave:4},{letter:'C',octave:4,acc:'#'},{letter:'D',octave:4},{letter:'D',octave:4,acc:'#'},{letter:'E',octave:4},{letter:'F',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'G',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'A',octave:4},{letter:'B',octave:4,acc:'b'},{letter:'B',octave:4}],
+    chromaDesc: [{letter:'C',octave:5},{letter:'B',octave:4},{letter:'B',octave:4,acc:'b'},{letter:'A',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'G',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'F',octave:4},{letter:'E',octave:4},{letter:'D',octave:4,acc:'#'},{letter:'D',octave:4},{letter:'C',octave:4,acc:'#'}],
+    root:{letter:'C',octave:4}
+  },
+  Am:{
+    label:'イ短調',
+    scaleAsc:  [{letter:'A',octave:3},{letter:'B',octave:3},{letter:'C',octave:4},{letter:'D',octave:4},{letter:'E',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'G',octave:4,acc:'#'},{letter:'A',octave:4}],
+    scaleDesc: [{letter:'A',octave:4},{letter:'G',octave:4},{letter:'F',octave:4},{letter:'E',octave:4},{letter:'D',octave:4},{letter:'C',octave:4},{letter:'B',octave:3},{letter:'A',octave:3}],
+    arpAsc:  [{letter:'A',octave:3},{letter:'C',octave:4},{letter:'B',octave:3},{letter:'D',octave:4},{letter:'C',octave:4},{letter:'E',octave:4},{letter:'D',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'E',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'F',octave:4,acc:'#'},{letter:'A',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'B',octave:4},{letter:'A',octave:4}],
+    arpDesc: [{letter:'C',octave:4},{letter:'A',octave:3},{letter:'B',octave:3},{letter:'G',octave:3},{letter:'A',octave:3},{letter:'F',octave:3},{letter:'G',octave:3},{letter:'E',octave:3},{letter:'F',octave:3},{letter:'D',octave:3},{letter:'E',octave:3},{letter:'C',octave:3},{letter:'D',octave:3},{letter:'B',octave:2},{letter:'A',octave:2}],
+    p4Asc:  [{letter:'A',octave:3},{letter:'D',octave:4},{letter:'B',octave:3},{letter:'E',octave:4},{letter:'C',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'D',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'E',octave:4},{letter:'A',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'B',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'C',octave:5},{letter:'A',octave:4}],
+    p4Desc: [{letter:'D',octave:5},{letter:'A',octave:4},{letter:'C',octave:5},{letter:'G',octave:4},{letter:'B',octave:4},{letter:'F',octave:4},{letter:'A',octave:4},{letter:'E',octave:4},{letter:'G',octave:4},{letter:'D',octave:4},{letter:'F',octave:4},{letter:'C',octave:4},{letter:'E',octave:4},{letter:'B',octave:3},{letter:'A',octave:3}],
+    p5Asc:  [{letter:'A',octave:3},{letter:'E',octave:4},{letter:'B',octave:3},{letter:'F',octave:4,acc:'#'},{letter:'C',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'D',octave:4},{letter:'A',octave:4},{letter:'E',octave:4},{letter:'B',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'C',octave:5},{letter:'G',octave:4,acc:'#'},{letter:'D',octave:5},{letter:'A',octave:4}],
+    p5Desc: [{letter:'E',octave:5},{letter:'A',octave:4},{letter:'D',octave:5},{letter:'G',octave:4},{letter:'C',octave:5},{letter:'F',octave:4},{letter:'B',octave:4},{letter:'E',octave:4},{letter:'A',octave:4},{letter:'D',octave:4},{letter:'G',octave:4},{letter:'C',octave:4},{letter:'F',octave:4},{letter:'B',octave:3},{letter:'A',octave:3}],
+    p6Asc:  [{letter:'A',octave:3},{letter:'F',octave:4,acc:'#'},{letter:'B',octave:3},{letter:'G',octave:4,acc:'#'},{letter:'C',octave:4},{letter:'A',octave:4},{letter:'D',octave:4},{letter:'B',octave:4},{letter:'E',octave:4},{letter:'C',octave:5},{letter:'F',octave:4,acc:'#'},{letter:'D',octave:5},{letter:'G',octave:4,acc:'#'},{letter:'E',octave:5},{letter:'A',octave:4}],
+    p6Desc: [{letter:'F',octave:5},{letter:'A',octave:4},{letter:'E',octave:5},{letter:'G',octave:4},{letter:'D',octave:5},{letter:'F',octave:4},{letter:'C',octave:5},{letter:'E',octave:4},{letter:'B',octave:4},{letter:'D',octave:4},{letter:'A',octave:4},{letter:'C',octave:4},{letter:'G',octave:4},{letter:'B',octave:3},{letter:'A',octave:3}],
+    chromaAsc:  [{letter:'A',octave:3},{letter:'B',octave:3,acc:'b'},{letter:'B',octave:3},{letter:'C',octave:4},{letter:'C',octave:4,acc:'#'},{letter:'D',octave:4},{letter:'D',octave:4,acc:'#'},{letter:'E',octave:4},{letter:'F',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'G',octave:4},{letter:'G',octave:4,acc:'#'}],
+    chromaDesc: [{letter:'A',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'G',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'F',octave:4},{letter:'E',octave:4},{letter:'D',octave:4,acc:'#'},{letter:'D',octave:4},{letter:'C',octave:4,acc:'#'},{letter:'C',octave:4},{letter:'B',octave:3},{letter:'B',octave:3,acc:'b'}],
+    root:{letter:'A',octave:3}
+  }
+};
+function warmupBuildPitch(n){ return buildPitch(n.letter,n.octave,n.acc||''); }
+function warmupGetSeq(){
+  const pat=WARMUP_PATTERNS[warmupKey];
+  if(warmupType==='scale') return {asc:pat.scaleAsc, desc:pat.scaleDesc, hasHold:true, noteDur:'16th'};
+  if(warmupType==='arp') return {asc:pat.arpAsc, desc:pat.arpDesc, hasHold:false, noteDur:'arp'};
+  if(warmupType==='p4') return {asc:pat.p4Asc, desc:pat.p4Desc, hasHold:false, noteDur:'arp'};
+  if(warmupType==='p5') return {asc:pat.p5Asc, desc:pat.p5Desc, hasHold:false, noteDur:'arp'};
+  if(warmupType==='p6') return {asc:pat.p6Asc, desc:pat.p6Desc, hasHold:false, noteDur:'arp'};
+  return {asc:pat.chromaAsc, desc:pat.chromaDesc, hasHold:true, noteDur:'16th'};
+}
+function drawRestGlyph(x,yMid){
+  return `<path d="M${x-2},${yMid-9} C${x+6},${yMid-7} ${x-6},${yMid-1} ${x+4},${yMid+1} C${x-4},${yMid+3} ${x+6},${yMid+9} ${x-2},${yMid+11}" stroke="#16202b" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+}
+// 2分休符：五線の中央線の上に乗る、塗りつぶしの四角
+function drawHalfRestGlyph(x,midLineY){
+  return `<rect x="${x-6}" y="${midLineY-4}" width="12" height="4" fill="#16202b"/>`;
+}
+// 付点（3拍の保続音などに使用）
+function drawAugDot(x,y){
+  return `<circle cx="${x+12}" cy="${y}" r="2.2" fill="#16202b"/>`;
+}
+function drawBarline(x,double){
+  if(!double) return `<line x1="${x}" y1="93" x2="${x}" y2="147" stroke="#16202b" stroke-width="1.4"/>`;
+  return `<line x1="${x}" y1="93" x2="${x}" y2="147" stroke="#16202b" stroke-width="1.4"/><line x1="${x+5}" y1="93" x2="${x+5}" y2="147" stroke="#16202b" stroke-width="3.2"/>`;
+}
+const DOREMI_BASE={C:'ド',D:'レ',E:'ミ',F:'ファ',G:'ソ',A:'ラ',B:'シ'};
+// ノート1個分の描画データを準備（符頭・臨時記号・加線・符尾トップ座標・下の音名）
+function warmupPrepNote(p,x,hollow,dotted){
+  const y=120-stepIndex(p)*6;
+  let s=ledgerLines(x,y);
+  if(p.acc){ const sym=p.acc==='#'?'♯':'♭'; s+=`<text x="${x-14}" y="${y+6}" font-size="17" font-family="serif" fill="#16202b">${sym}</text>`; }
+  s+=`<ellipse cx="${x}" cy="${y}" rx="6" ry="4.4" fill="${hollow?'none':'#16202b'}" stroke="${hollow?'#16202b':'none'}" stroke-width="${hollow?'1.6':'0'}" transform="rotate(-22 ${x} ${y})"/>`;
+  if(dotted) s+=drawAugDot(x,y);
+  s+=`<text x="${x}" y="168" font-size="11" font-family="sans-serif" fill="#3d4654" text-anchor="middle">${DOREMI_BASE[p.letter]}</text>`;
+  return {svg:s, x, y, stemTopBase:y-26};
+}
+// 連桁（ビーム）でつながれた16分音符のグループを描画（最大4個/1拍ごと）
+function warmupDrawBeamGroup(notesInfo){
+  if(notesInfo.length===1) return warmupDrawStem(notesInfo[0]);
+  let s='';
+  const beamY = Math.min(...notesInfo.map(n=>n.stemTopBase));
+  notesInfo.forEach(n=>{
+    s+=`<line x1="${n.x+5.5}" y1="${n.y-1}" x2="${n.x+5.5}" y2="${beamY}" stroke="#16202b" stroke-width="1.4"/>`;
+  });
+  const x1=notesInfo[0].x+5.5, x2=notesInfo[notesInfo.length-1].x+5.5;
+  s+=`<line x1="${x1}" y1="${beamY}" x2="${x2}" y2="${beamY}" stroke="#16202b" stroke-width="4"/>`;
+  s+=`<line x1="${x1}" y1="${beamY+5}" x2="${x2}" y2="${beamY+5}" stroke="#16202b" stroke-width="4"/>`;
+  return s;
+}
+// 単独の8分音符（旗1本）
+function warmupDrawEighthFlag(n){
+  let s=`<line x1="${n.x+5.5}" y1="${n.y-1}" x2="${n.x+5.5}" y2="${n.stemTopBase}" stroke="#16202b" stroke-width="1.4"/>`;
+  s+=`<path d="M${n.x+5.5},${n.stemTopBase} C${n.x+16},${n.stemTopBase+4} ${n.x+14},${n.stemTopBase+16} ${n.x+5.5},${n.stemTopBase+20}" fill="#16202b"/>`;
+  return s;
+}
+// 保続音（白抜き、符尾のみ・旗なし）
+function warmupDrawStem(n){
+  return `<line x1="${n.x+5.5}" y1="${n.y-1}" x2="${n.x+5.5}" y2="${n.stemTopBase}" stroke="#16202b" stroke-width="1.4"/>`;
+}
+// 16分音符の並びを、4個ずつの連桁グループに分割して描画
+function warmupLayoutSixteenths(pitches, xStart, headsRef, stemsRef){
+  let x=xStart;
+  const infos=[];
+  pitches.forEach(p=>{ const info=warmupPrepNote(p,x,false); headsRef.push(info.svg); infos.push(info); x+=30; });
+  for(let i=0;i<infos.length;i+=4){
+    stemsRef.push(warmupDrawBeamGroup(infos.slice(i,i+4)));
+  }
+  return x;
+}
+// タイ（同音を結ぶ弧線）
+function warmupDrawTie(n1,n2){
+  const midX=(n1.x+n2.x)/2, y=Math.max(n1.y,n2.y)+11;
+  return `<path d="M${n1.x+4},${y} Q${midX},${y+9} ${n2.x-4},${y}" stroke="#16202b" stroke-width="1.3" fill="none"/>`;
+}
+function drawWarmupScore(){
+  const pat=WARMUP_PATTERNS[warmupKey];
+  const {asc,desc,hasHold,noteDur}=warmupGetSeq();
+  const ascP=asc.map(warmupBuildPitch), descP=desc.map(warmupBuildPitch);
+  const totalCount=ascP.length+descP.length+(hasHold?1:0);
+  const W=70+totalCount*30+140, H=190;
+  const lines=[96,108,120,132,144];
+  const heads=[], stems=[];
+  let x=70;
+  const measureUnits = (warmupType==='chroma') ? 12 : 16; // 半音階は3拍子(12)、その他は4拍子(16)
+  let cumUnits=0, nextBar=measureUnits;
+  const barlines=[]; // {x, double}
+
+  function checkBar(unitsAdded){
+    cumUnits+=unitsAdded;
+    if(cumUnits>=nextBar){
+      barlines.push({x:x+8, double:false});
+      x+=16;
+      nextBar+=measureUnits;
+    }
+  }
+
+  let lastScaleNoteInfo=null;
+  if(noteDur==='arp'){
+    [ascP,descP].forEach(seqP=>{
+      // 先頭12個：4個ずつ3グループ、残り2個＋8分音符1個で1拍
+      const first12=seqP.slice(0,12), last3=seqP.slice(12); // last3 = [16th,16th,8th相当の最後]
+      for(let i=0;i<first12.length;i+=4){
+        const infos=first12.slice(i,i+4).map(p=>{ const info=warmupPrepNote(p,x,false); heads.push(info.svg); x+=30; return info; });
+        stems.push(warmupDrawBeamGroup(infos));
+      }
+      const twoInfos=last3.slice(0,2).map(p=>{ const info=warmupPrepNote(p,x,false); heads.push(info.svg); x+=30; return info; });
+      stems.push(warmupDrawBeamGroup(twoInfos));
+      const eighthInfo=warmupPrepNote(last3[2],x,false); heads.push(eighthInfo.svg); x+=30;
+      stems.push(warmupDrawEighthFlag(eighthInfo));
+      x+=16;
+      checkBar(16);
+    });
+  } else {
+    [ascP,descP].forEach(seqP=>{
+      for(let i=0;i<seqP.length;i+=4){
+        const infos=seqP.slice(i,i+4).map(p=>{ const info=warmupPrepNote(p,x,false); heads.push(info.svg); x+=30; return info; });
+        stems.push(warmupDrawBeamGroup(infos));
+        lastScaleNoteInfo=infos[infos.length-1];
+        checkBar(4);
+      }
+      x+=16;
+    });
+  }
+
+  if(hasHold){
+    const rootP=warmupBuildPitch(pat.root);
+    const isChroma=(warmupType==='chroma');
+    const info=warmupPrepNote(rootP,x,true,isChroma); // 半音階は3拍＝付点半音符
+    heads.push(info.svg);
+    stems.push(warmupDrawStem(info));
+    if(warmupType==='scale' && lastScaleNoteInfo){
+      stems.push(warmupDrawTie(lastScaleNoteInfo,info)); // 最後の16分音符と保続音をタイで結ぶ
+    }
+    x+=isChroma?40:34;
+    if(isChroma){
+      // 半音階：主音を3拍まるごと伸ばす（休符なし）
+      checkBar(12);
+    } else {
+      // 音階：主音を2拍（半音符）伸ばし、2拍分の休符（2分休符）
+      checkBar(8);
+      heads.push(drawHalfRestGlyph(x,120));
+      x+=34;
+      checkBar(8);
+    }
+  }
+
+  // 最後は必ず終止線（ダブルバー）で終える
+  if(barlines.length && (x-barlines[barlines.length-1].x)<20){
+    barlines[barlines.length-1].double=true;
+  } else {
+    barlines.push({x:x+8, double:true});
+    x+=16;
+  }
+
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${x+20}" height="${H}" viewBox="0 0 ${x+20} ${H}">`;
+  s+=`<rect width="${x+20}" height="${H}" fill="#fbfbf7"/>`;
+  for(const y of lines) s+=`<line x1="10" y1="${y}" x2="${x+10}" y2="${y}" stroke="#16202b" stroke-width="1.3"/>`;
+  s+=drawClef();
+  barlines.forEach(b=>{ s+=drawBarline(b.x,b.double); });
+  s+=stems.join('')+heads.join('');
+  s+='</svg>';
+  document.getElementById('score').innerHTML=s;
+}
+function warmupToneAt(ctx,pitch,t,dur,peak){
+  const freq=442*Math.pow(2,(pitch.midi-69)/12);
+  const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
+  const gain=ctx.createGain();
+  gain.gain.setValueAtTime(0.0001,t);
+  gain.gain.exponentialRampToValueAtTime(peak,t+0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001,t+Math.max(dur*0.92,0.04));
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(t); osc.stop(t+dur+0.03);
+}
+function playWarmup(){
+  const ctx=ensureCtx();
+  const pat=WARMUP_PATTERNS[warmupKey];
+  const {asc,desc,hasHold}=warmupGetSeq();
+  const bpm=getBpm();
+  const beat=60/bpm;
+  let t=ctx.currentTime+0.05;
+  // ①主音を3秒
+  warmupToneAt(ctx,warmupBuildPitch(pat.root),t,3.0,0.24);
+  t+=3.0;
+  if(!hasHold){
+    // 分散3度・4度・5度・6度：14個は16分音符、最後は8分音符（上昇・下降）
+    [asc,desc].forEach(seq=>{
+      seq.forEach((n,i)=>{
+        const dur = (i===seq.length-1) ? beat/2 : beat/4;
+        warmupToneAt(ctx,warmupBuildPitch(n),t,dur,0.24);
+        t+=dur;
+      });
+    });
+  } else {
+    // 音階・半音階：すべて16分音符 → 保続音（音階:2拍/半音階:3拍）
+    [...asc,...desc].forEach(n=>{
+      warmupToneAt(ctx,warmupBuildPitch(n),t,beat/4,0.24);
+      t+=beat/4;
+    });
+    const holdBeats = (warmupType==='chroma') ? 3 : 2; // 半音階は3拍、音階は2拍（半音符）
+    warmupToneAt(ctx,warmupBuildPitch(pat.root),t,beat*holdBeats,0.24);
+    t+=beat*holdBeats;
+  }
+  warmupJudged=false;
+  document.getElementById('warmup-judge').style.display='flex';
+}
+function judgeWarmup(ok){
+  warmupTotal++;
+  if(ok){ warmupOk++; warmupOkBpmSum+=getBpm(); }
+  updateWarmupStats();
+}
+function updateWarmupStats(){
+  document.getElementById('warmup-total').textContent=warmupTotal;
+  document.getElementById('warmup-acc').textContent=warmupTotal?Math.round(warmupOk/warmupTotal*100)+'%':'–';
+  document.getElementById('warmup-bpm').textContent=warmupOk?Math.round(warmupOkBpmSum/warmupOk)+' BPM':'–';
+}
 
 /* ---------- 音高あり ---------- */
 function generatePhrase(){
@@ -691,6 +1012,15 @@ function ensureCtx(){
 }
 function getBpm(){ return Number(document.getElementById('bpm').value); }
 function updateStats(){ document.getElementById('s-count').textContent=count; }
+function judgePR(ok){
+  prTotal++;
+  if(ok){ prOk++; prOkBpmSum+=getBpm(); }
+  updatePRStats();
+}
+function updatePRStats(){
+  document.getElementById('pr-acc').textContent=prTotal?Math.round(prOk/prTotal*100)+'%':'–';
+  document.getElementById('pr-bpm').textContent=prOk?Math.round(prOkBpmSum/prOk)+' BPM':'–';
+}
 
 function newPhrase(){
   if(appMode==='pitch'){
@@ -717,24 +1047,48 @@ document.getElementById('click').onclick=()=>{
 };
 document.getElementById('dict-right').onclick=()=>judgeDict(true);
 document.getElementById('dict-wrong').onclick=()=>judgeDict(false);
-document.getElementById('resetstats').onclick=()=>{count=0;dictTotal=0;dictCorrect=0;dictTimeSum=0;updateStats();updateDictStats();};
+document.getElementById('warmup-start').onclick=()=>{ playWarmup(); };
+document.getElementById('warmup-ok').onclick=()=>{ judgeWarmup(true); document.getElementById('warmup-judge').style.display='none'; };
+document.getElementById('warmup-fail').onclick=()=>{ judgeWarmup(false); document.getElementById('warmup-judge').style.display='none'; };
+document.getElementById('pr-ok').onclick=()=>{ judgePR(true); };
+document.getElementById('pr-fail').onclick=()=>{ judgePR(false); };
+document.getElementById('resetstats').onclick=()=>{
+  count=0;dictTotal=0;dictCorrect=0;dictTimeSum=0;
+  warmupTotal=0;warmupOk=0;warmupOkBpmSum=0;
+  prTotal=0;prOk=0;prOkBpmSum=0;
+  updateStats();updateDictStats();updateWarmupStats();updatePRStats();
+};
+
+function applyModeVisibility(){
+  document.getElementById('warmup-settings').style.display = appMode==='warmup' ? '' : 'none';
+  document.getElementById('pitch-settings').style.display = appMode==='pitch' ? '' : 'none';
+  document.getElementById('rhythm-settings').style.display = appMode==='rhythm' ? '' : 'none';
+  document.getElementById('dict-settings').style.display = appMode==='dictation' ? '' : 'none';
+
+  document.getElementById('main-stats').style.display = (appMode==='pitch'||appMode==='rhythm') ? 'flex' : 'none';
+  document.getElementById('dict-stats').style.display = appMode==='dictation' ? 'flex' : 'none';
+  document.getElementById('warmup-stats').style.display = appMode==='warmup' ? 'flex' : 'none';
+
+  document.getElementById('pitch-rhythm-controls').style.display = (appMode==='pitch'||appMode==='rhythm') ? 'flex' : 'none';
+  document.getElementById('pr-judge').style.display = (appMode==='pitch'||appMode==='rhythm') ? 'flex' : 'none';
+  document.getElementById('warmup-controls').style.display = appMode==='warmup' ? 'flex' : 'none';
+  document.getElementById('warmup-judge').style.display='none';
+  document.getElementById('dict-judge').style.display='none';
+  document.getElementById('next-controls').style.display = (appMode==='warmup') ? 'none' : 'flex';
+}
 
 document.getElementById('seg-appmode').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   appMode=b.dataset.v;
   [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
-  document.getElementById('pitch-settings').style.display = appMode==='pitch' ? '' : 'none';
-  document.getElementById('rhythm-settings').style.display = appMode==='rhythm' ? '' : 'none';
-  document.getElementById('dict-settings').style.display = appMode==='dictation' ? '' : 'none';
-  document.getElementById('main-stats').style.display = appMode==='dictation' ? 'none' : 'flex';
-  document.getElementById('dict-stats').style.display = appMode==='dictation' ? 'flex' : 'none';
-  document.getElementById('dict-judge').style.display='none';
-  document.getElementById('play').style.display='';
+  applyModeVisibility();
   if(appMode==='dictation'){
     document.getElementById('click').textContent='🔊 もう一度聴く';
     document.getElementById('play').textContent='答えを見る';
     document.getElementById('next').textContent='次の音';
     newDictNote();
+  } else if(appMode==='warmup'){
+    drawWarmupScore();
   } else {
     document.getElementById('click').textContent='メトロノームを聴く';
     document.getElementById('play').textContent='正解を再生';
@@ -742,6 +1096,8 @@ document.getElementById('seg-appmode').addEventListener('click',e=>{
     newPhrase();
   }
 });
+document.getElementById('seg-warmup-key').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;warmupKey=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));document.getElementById('warmup-judge').style.display='none';drawWarmupScore();});
+document.getElementById('seg-warmup-type').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;warmupType=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));document.getElementById('warmup-judge').style.display='none';drawWarmupScore();});
 document.getElementById('seg-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;useAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newPhrase();});
 document.getElementById('seg-dict-type').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictType=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
 document.getElementById('seg-dict-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictUseAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
@@ -754,7 +1110,8 @@ document.getElementById('restlen').onchange=e=>{const [lo,hi]=e.target.value.spl
 document.getElementById('rmeasures').onchange=e=>{rMeasures=Number(e.target.value);newPhrase();};
 document.getElementById('bpm').oninput=e=>{document.getElementById('bpmval').textContent=e.target.value+' BPM';};
 
-newPhrase();
+applyModeVisibility();
+drawWarmupScore();
 </script>
 </body>
 </html>

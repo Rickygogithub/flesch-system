@@ -100,7 +100,10 @@
         <option value="48,77" selected>低～中（C3–F5）</option>
       </select>
     </div>
-    <button class="reset" id="resetstats">記録をリセット</button>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="reset" id="resetstats" style="flex:0 0 auto">記録をリセット</button>
+      <span style="font-size:12px;color:var(--muted);font-weight:600">モードを変えた時、仕切り直したい時などにクリックしてください</span>
+    </div>
   </details>
 
   <div class="footnote">
@@ -251,9 +254,9 @@ function buildStackedChord(rootLetter,rootOctave,intervalSemis,accMap){
 
 // 和音の種類。position: 展開する音の並び替え（0=基本形, 1=第一転回, 2=第二転回）
 const CHORD_TYPES=[
-  {id:'root',    label:'主和音（基本形）',   intervals:[0,4,7],    invertible:true},
-  {id:'inv1',    label:'主和音（第一転回）', intervals:[0,4,7],    invertible:true, forcePos:1},
-  {id:'inv2',    label:'主和音（第二転回）', intervals:[0,4,7],    invertible:true, forcePos:2},
+  {id:'root',    label:'主和音の基本形',   intervals:[0,4,7],    invertible:true},
+  {id:'inv1',    label:'主和音の第一転回', intervals:[0,4,7],    invertible:true, forcePos:1},
+  {id:'inv2',    label:'主和音の第二転回', intervals:[0,4,7],    invertible:true, forcePos:2},
   {id:'dim7',    label:'減七の和音',        intervals:[0,3,6,9],  invertible:false},
   {id:'dom7',    label:'属七の和音',        intervals:[-5,-1,2,5],invertible:false} // Vの根音から見た属七(下属からの相対ではなく、Iの完全4度下=属音を根音とする)
 ];
@@ -538,7 +541,13 @@ function reveal(){
     const doremi=current.map(p=>p.nameDoremi).join(' ');
     const ger=current.map(p=>p.nameGerman).join(' ');
     let extraTag='';
-    if(current._key) extraTag='　|　'+current._key+'／'+current._keyGerman+'の'+(current._chordType||'主和音');
+    if(current._key){
+      const bassGerman=current[0].nameGerman;
+      const rootIsMajor=current._keyGerman.includes('-Dur');
+      const tonicGermanOnly=current._keyGerman.replace('-Dur','').replace('-moll','');
+      const slashChord=tonicGermanOnly+(rootIsMajor?'':'m')+'/'+bassGerman;
+      extraTag='　|　'+current._key+'／'+current._keyGerman+(current._chordType||'主和音の基本形')+'（'+slashChord+'）';
+    }
     else if(current._degree) extraTag='　|　'+(current._quality||'')+current._degree+'度';
     ans.innerHTML='<div class="names">'+doremi+'　/　'+ger+'</div>'+
       '<div class="hint">'+(current.length>1?'（低い音 → 高い音）'+extraTag:'')+'</div>';
