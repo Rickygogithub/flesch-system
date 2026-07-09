@@ -73,7 +73,7 @@
 
   <div class="controls" id="pitch-rhythm-controls" style="display:none">
     <button class="alt" id="click">メトロノームを聴く</button>
-    <button class="primary" id="play">正解を再生</button>
+    <button class="primary" id="play">🔊 正解を聞く</button>
   </div>
   <div class="row" id="pr-judge" style="display:none;margin-top:10px">
     <button class="bad" id="pr-fail">✗ まだ難しい</button>
@@ -235,7 +235,7 @@
     <details style="margin-bottom:8px">
       <summary>▶️ ② リズム</summary>
       <div class="footnote" style="margin-top:6px">
-        「固定」を選択するとメトロノームによる1小節分のカウントイン（空振り）の後、設定した長さの休みが続き、その後に刻むべきリズムが始まります。小節の頭でクリックの音高が変わるので、休みの間も小節の頭を見失わないようにしてください。「ランダム」を選択すると「次のフレーズ」を押すだけで各拍子の課題が自動で生成されます。「✓ できた／✗ まだ難しい」で判定でき、平均テンポ・成功率が記録されます。小節数や設定によって、横スクロールが必要になることがあります。
+        「固定」を選択するとメトロノームによる1小節分のカウントイン（空振り）の後、設定した長さの休みが続き、その後に刻むべきリズムが始まります。小節の頭でクリックの音高が変わるので、休みの間も小節の頭を見失わないようにしてください。「ランダム」を選択すると「次のフレーズ」を押すだけで各拍子の課題が自動で生成されます。自分で叩いてみた後、「🔊 正解を聞く」で答えのリズムを確認できます。「✓ できた／✗ まだ難しい」で判定でき、平均テンポ・成功率が記録されます。小節数や設定によって、横スクロールが必要になることがあります。
       </div>
     </details>
 
@@ -249,7 +249,7 @@
     <details style="margin-bottom:8px">
       <summary>▶️ ④ 視唱</summary>
       <div class="footnote" style="margin-top:6px">
-        メトロノームによる1小節分のカウントイン（空振り）の後、譜面が始まります。心の中で読む・声に出して歌う → 「メトロノームを聴く」で拍を取りながら練習する → 「正解を再生」で確認 → 「✓ できた／✗ まだ難しい」で判定（できた時の平均テンポ・成功率が記録されます） → 「次のフレーズ」で新しい譜面へ。小節数や設定によって、横スクロールが必要になることがあります。
+        メトロノームによる1小節分のカウントイン（空振り）の後、譜面が始まります。心の中で読む・声に出して歌う → 「メトロノームを聴く」で拍を取りながら練習する → 「🔊 正解を聞く」で確認 → 「✓ できた／✗ まだ難しい」で判定（できた時の平均テンポ・成功率が記録されます） → 「次のフレーズ」で新しい譜面へ。小節数や設定によって、横スクロールが必要になることがあります。
       </div>
     </details>
   </div>
@@ -619,7 +619,11 @@ function playWarmup(){
     }
   }
   warmupJudged=false;
-  document.getElementById('warmup-judge').style.display='flex';
+  document.getElementById('warmup-judge').style.display='none';
+  const remainSec = t - ctx.currentTime;
+  setTimeout(()=>{
+    document.getElementById('warmup-judge').style.display='flex';
+  }, Math.max(remainSec,0)*1000);
 }
 function playWarmupMetroOnly(){
   const ctx=ensureCtx();
@@ -953,7 +957,15 @@ function drawRhythmStaff(phrase){
   document.getElementById('score').innerHTML=s;
 }
 
+let currentAudioNodes=[];
+function stopAudio(){
+  currentAudioNodes.forEach(node=>{
+    try{ node.stop(); } catch(e){}
+  });
+  currentAudioNodes=[];
+}
 function playRhythmClicks(phrase, withTaps){
+  stopAudio();
   const ctx=ensureCtx();
   const bpm=getBpm();
   const beatSec=60/bpm;
@@ -969,6 +981,7 @@ function playRhythmClicks(phrase, withTaps){
     gain.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
     osc.connect(gain); gain.connect(ctx.destination);
     osc.start(t); osc.stop(t+0.06);
+    currentAudioNodes.push(osc);
   }
   if(withTaps){
     let tt=t0+info.beats*(1+phrase.restCount)*beatSec;
@@ -983,6 +996,7 @@ function playRhythmClicks(phrase, withTaps){
         gain.gain.exponentialRampToValueAtTime(0.0001,tt+Math.max(dur*0.95,0.06));
         osc.connect(gain); gain.connect(ctx.destination);
         osc.start(tt); osc.stop(tt+dur+0.05);
+        currentAudioNodes.push(osc);
       }
       tt+=dur;
     });
@@ -1091,6 +1105,8 @@ function judgePR(ok){
   prTotal++;
   if(ok){ prOk++; prOkBpmSum+=getBpm(); }
   updatePRStats();
+  // 次のフレーズへは「できた」「まだ難しい」ボタン操作後に移動
+  newPhrase();
 }
 function updatePRStats(){
   document.getElementById('pr-acc').textContent=prTotal?Math.round(prOk/prTotal*100)+'%':'–';
@@ -1169,7 +1185,7 @@ document.getElementById('seg-appmode').addEventListener('click',e=>{
     drawWarmupScore();
   } else {
     document.getElementById('click').textContent='メトロノームを聴く';
-    document.getElementById('play').textContent='正解を再生';
+    document.getElementById('play').textContent='🔊 正解を聞く';
     document.getElementById('next').textContent='次のフレーズ';
     newPhrase();
   }
