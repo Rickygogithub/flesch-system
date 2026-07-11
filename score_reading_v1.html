@@ -298,7 +298,9 @@ function makeChord(){
       const leadLetter=LETTERS[((li%7)+7)%7]; const leadOctave=Math.floor(li/7);
       notes=buildStackedChord(leadLetter,leadOctave,[0,3,6,9],accMap);
     } else {
-      notes=buildStackedChord(tonicPos.letter,tonicPos.octave,[0,4,7],accMap);
+      const isMinorKey = key.name.indexOf('短調')!==-1;
+      const triadIntervals = isMinorKey ? [0,3,7] : [0,4,7];
+      notes=buildStackedChord(tonicPos.letter,tonicPos.octave,triadIntervals,accMap);
       if(notes && typeChoice.forcePos){
         const pos=typeChoice.forcePos;
         for(let i=0;i<pos;i++){
@@ -359,18 +361,14 @@ function determineIsMajorFromNotes(notes, rootLetter){
   
   if(!rootNote || !thirdNote) return true; // 見つからない場合はデフォルト
   
-  // 3度の半音数を計算
-  const semi=thirdNote.midi-rootNote.midi;
+  // 3度の半音数を計算（転回形では、根音の音が3度の音よりオクターブ上に
+  // 来ることがあるため、mod 12でオクターブの違いを正規化してから判定する）
+  let semi=(thirdNote.midi-rootNote.midi)%12;
+  if(semi<0) semi+=12;
   
-  // 長3度か短3度かを判定（intervalQualityと同じロジック）
-  const majorScale=[0,2,4,5,7,9,11];
-  const base=3; // 3度は固定
-  const expected=majorScale[base-1]+12*Math.floor((base-1)/7);
-  const diff=semi-expected;
-  
-  // diff === 0 なら長3度（長調）、diff === -1 なら短3度（短調）
-  if(diff===0) return true;   // 長3度 = 長調
-  if(diff===-1) return false; // 短3度 = 短調
+  // semiは0〜11の範囲。長3度=4半音、短3度=3半音
+  if(semi===4) return true;   // 長3度 = 長調
+  if(semi===3) return false;  // 短3度 = 短調
   
   return true; // デフォルト
 }
