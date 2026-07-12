@@ -234,6 +234,8 @@ function diatonicCandidates(){
   return out;
 }
 function pickAcc(){ if(!useAcc) return ''; const r=Math.random(); if(r<0.6) return ''; return r<0.8?'#':'b'; }
+// 単音モード専用：臨時記号ありの比率を、70%に引き上げる（視唱の準備段階として、より高い負荷をかけるため）
+function pickAccSingle(){ if(!useAcc) return ''; const r=Math.random(); if(r<0.3) return ''; return r<0.65?'#':'b'; }
 function buildPitch(letter,octave,acc){
   const off=acc==='#'?1:acc==='b'?-1:0; // 'n'（明示的なナチュラル）と''は、どちらも半音のズレなし
   const midi=(octave+1)*12+SEMI[letter]+off;
@@ -241,7 +243,7 @@ function buildPitch(letter,octave,acc){
   const sym=nameAcc==='#'?'♯':nameAcc==='b'?'♭':'';
   return {letter,octave,acc,midi,nameDoremi:DOREMI[letter]+sym,nameGerman:germanName(letter,nameAcc)};
 }
-function makeNote(){ const c=diatonicCandidates(); const b=c[Math.floor(Math.random()*c.length)]; return buildPitch(b.letter,b.octave,pickAcc()); }
+function makeNote(){ const c=diatonicCandidates(); const b=c[Math.floor(Math.random()*c.length)]; return buildPitch(b.letter,b.octave,pickAccSingle()); }
 
 // 連続音符モード：2〜6音を、実際の旋律・和声とは無関係に、ランダムな位置で生成する。
 // 音符の数は2〜6の5パターンから均等（各20%）にランダムで決まる。並び順は生成順のまま（左→右で読む）。
