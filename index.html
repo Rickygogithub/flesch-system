@@ -408,6 +408,13 @@
         <details style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <summary style="cursor: pointer; font-weight: 700; font-size: 1.1rem; color: #0f1722; user-select: none;">📋 アップデート履歴</summary>
             <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #c9d0da; font-size: 0.95rem; line-height: 2; color: #555;">
+                <p><strong>2026年7月12日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>Score Reading：新しい出題モード「連続音符」を追加。2〜6音（各20%の確率でランダム）が、実際の旋律・和声とは無関係に並ぶ。単音の認識は高速化してきた一方、跳躍を含む複数音符の連続認識が本命の課題という診断に基づき、視唱・発声を切り離し、純粋な視覚的認識速度だけを測定できるようにした</li>
+                    <li>Score Reading：「連続音符」に、実際の楽譜の文法を反映。同じ音の高さが出題の中で再度出現した場合、最初についた臨時記号がそのまま有効（2回目以降は記号を非表示、正解の音名は1回目と同じ）とし、稀に（約10%）ナチュラル（♮）で明示的に打ち消すパターンも追加</li>
+                    <li>Score Reading：「連続音符」専用の特訓オプション「五線の両端（1番線・5番線）に特化」を追加。単音判定・連続音符の両方で、五線の1番線・5番線とその周辺での間違いが多いという発見を受け、その箇所だけに出題を絞り込めるようにした。現在の音部記号（ハ音記号／ト音記号）に応じて、該当する音の高さを自動的に計算</li>
+                    <li>Score Reading：「🔊 音を聴く」を、連続音符モードでは、和音のように同時にではなく、1音ずつ時間差（0.5秒間隔）で再生するよう変更</li>
+                </ul>
                 <p><strong>2026年7月11日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>Score Reading：和音モードで、主和音の基本形・第一転回・第二転回が、選ばれた調の長調・短調に関わらず、常に長三和音（長調）として生成されていた不具合を修正。短調が選ばれた場合は、正しく短三和音（ラ・ド・ミなど）が生成されるように変更</li>

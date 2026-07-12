@@ -81,6 +81,7 @@
     <div class="opt"><span>出題</span>
       <span class="seg" id="seg-mode">
         <button data-v="single" class="on">単音</button>
+        <button data-v="sequence">連続音符</button>
         <button data-v="chord">和音</button>
         <button data-v="interval">度数</button>
         <button data-v="keysig">調号</button>
@@ -100,6 +101,13 @@
         <option value="48,77" selected>低～中（C3–F5）</option>
       </select>
     </div>
+    <div class="opt" id="edgeFocusOpt" style="display:none">
+      <span>連続音符：特訓モード</span>
+      <span class="seg" id="seg-edgefocus">
+        <button data-v="off" class="on">通常（音域の設定に従う）</button>
+        <button data-v="on">五線の両端（1番線・5番線）に特化</button>
+      </span>
+    </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button class="reset" id="resetstats" style="flex:0 0 auto">記録をリセット</button>
       <span style="font-size:12px;color:var(--muted);font-weight:600">モードを変えた時、仕切り直したい時などにクリックしてください</span>
@@ -114,6 +122,7 @@
     ドイツ音名：B♮=H、B♭=B、♯は語尾 -is（Fis 等）、♭は語尾 -es（Des 等、E♭=Es・A♭=As）。<br>
     「和音」はその調の主和音（基本形・第一転回・第二転回）に加え、減七・属七の和音（4音）もランダムに出題されます。<br>
     「度数」は実際の和声かどうかは考慮しません。「🔊 音を聴く」で2音同時に確認できます（変則的な音の組み合わせにも対応、マーラーなど複雑な楽曲対策に活用できます）。<br>
+    「連続音符」は2〜6音（各20%の確率でランダム）が、実際の旋律・和声とは無関係に、ランダムに並びます。左から右へ、順番に音名を読み上げてください。跳躍を含む、複数の音符を、瞬時に、連続して認識する力を鍛えます。実際の楽譜と同じく、同じ音の高さが、出題の中で再度出現した場合、最初についた臨時記号が、そのまま有効（2回目以降は記号を表示しません）です。稀に、ナチュラル（♮）で、明示的に打ち消すパターンも出題されます。「🔊 音を聴く」では、和音のように同時にではなく、1音ずつ、時間差（0.5秒間隔）で再生されます。「五線の両端に特化」をオンにすると、1番線・5番線とその、すぐ上下（現在の音部記号における、間違いやすい箇所）だけに、出題を絞り込めます。<br>
     「調号」は♯・♭0〜6個の範囲で出題し、同じ調号を持つ長調・短調の両方を答えます。<br>
     記録はこのセッション内のみ（再読み込みでリセット）。
   </div>
@@ -195,9 +204,26 @@ function pickKeySig(){
 
 let clef='alto';
 let mode='single', useAcc=true, lowMidi=48, highMidi=77;
+let edgeFocus=false; // 連続音符モード専用：五線の両端（1番線・5番線周辺）に、出題を絞り込む特訓モード
 let total=0, correct=0, timeSum=0;
 let current=null, startTime=0, revealed=false;
 let audioCtx=null;
+
+// 現在の音部記号（clef）における、五線の「1番線とその周辺（1つ下・1つ上）」
+// および「5番線とその周辺（1つ下・1つ上）」の、letter+octaveの組み合わせを、動的に求める。
+// stepIndex(p) = LIDX[letter]+octave*7 - 28 - offset という関係を、逆算している。
+function edgeCandidates(){
+  const offset = clef==='treble' ? 6 : 0;
+  const targetSteps=[-5,-4,-3, 3,4,5]; // 1番線の1つ下～1つ上、5番線の1つ下～1つ上
+  const out=[];
+  for(const stepIdx of targetSteps){
+    const ci = stepIdx + 28 + offset;
+    const octave = Math.floor(ci/7);
+    const letter = LETTERS[((ci%7)+7)%7];
+    out.push({letter,octave});
+  }
+  return out;
+}
 
 function diatonicCandidates(){
   const out=[];
@@ -209,12 +235,59 @@ function diatonicCandidates(){
 }
 function pickAcc(){ if(!useAcc) return ''; const r=Math.random(); if(r<0.6) return ''; return r<0.8?'#':'b'; }
 function buildPitch(letter,octave,acc){
-  const off=acc==='#'?1:acc==='b'?-1:0;
+  const off=acc==='#'?1:acc==='b'?-1:0; // 'n'（明示的なナチュラル）と''は、どちらも半音のズレなし
   const midi=(octave+1)*12+SEMI[letter]+off;
-  const sym=acc==='#'?'♯':acc==='b'?'♭':'';
-  return {letter,octave,acc,midi,nameDoremi:DOREMI[letter]+sym,nameGerman:germanName(letter,acc)};
+  const nameAcc = acc==='n' ? '' : acc; // ナチュラル記号は、音名の表記には反映しない（例：Es ではなく E）
+  const sym=nameAcc==='#'?'♯':nameAcc==='b'?'♭':'';
+  return {letter,octave,acc,midi,nameDoremi:DOREMI[letter]+sym,nameGerman:germanName(letter,nameAcc)};
 }
 function makeNote(){ const c=diatonicCandidates(); const b=c[Math.floor(Math.random()*c.length)]; return buildPitch(b.letter,b.octave,pickAcc()); }
+
+// 連続音符モード：2〜6音を、実際の旋律・和声とは無関係に、ランダムな位置で生成する。
+// 音符の数は2〜6の5パターンから均等（各20%）にランダムで決まる。並び順は生成順のまま（左→右で読む）。
+// 実際の楽譜の文法に沿い、「同じ小節内（＝この出題全体を1小節とみなす）で、同じ音の高さの位置(letter+octave)が
+// 再度出現した場合、最初についた臨時記号が、そのまま有効であり続ける」というルールを適用する。
+// 2回目以降は、記号自体は表示しないが、正解の音名は、1回目と同じ（臨時記号込み）とする。
+// また、稀に（10%）、既に♯・♭が有効な状態から、ナチュラルで、明示的に打ち消すパターンも含める。
+function makeSequence(){
+  const count = 2 + Math.floor(Math.random()*5); // 2,3,4,5,6 を均等に
+  const notes=[];
+  const measureState={}; // key: letter+octave → 現在、有効な臨時記号（''・'#'・'b'・'n'）
+  const candidates = edgeFocus ? edgeCandidates() : diatonicCandidates();
+  for(let i=0;i<count;i++){
+    const pos = candidates[Math.floor(Math.random()*candidates.length)];
+    const key = pos.letter+pos.octave;
+    let pitch;
+    if(!(key in measureState)){
+      // この連続の中で、初めて出現する音の高さ：通常通り、ランダムに臨時記号を決定
+      const acc = pickAcc();
+      measureState[key]=acc;
+      pitch = buildPitch(pos.letter,pos.octave,acc);
+      pitch._showAcc = acc; // 初出は、決定した記号の通りに表示する
+    } else {
+      const prevAcc = measureState[key];
+      if(prevAcc==='#' || prevAcc==='b'){
+        // 既に♯か♭が、この小節内で有効。90%はそのまま引き継ぎ（記号は表示しない）、
+        // 10%は、ナチュラルで、明示的に打ち消す
+        if(Math.random()<0.1){
+          measureState[key]='n';
+          pitch = buildPitch(pos.letter,pos.octave,'n');
+          pitch._showAcc = 'n'; // ナチュラル記号を表示
+        } else {
+          pitch = buildPitch(pos.letter,pos.octave,prevAcc);
+          pitch._showAcc = ''; // 既に有効なため、記号は表示しない
+        }
+      } else {
+        // 既にナチュラル（元々''、あるいはナチュラルで打ち消し済み）：そのまま引き継ぐ
+        pitch = buildPitch(pos.letter,pos.octave, prevAcc==='n' ? 'n' : '');
+        pitch._showAcc='';
+      }
+    }
+    notes.push(pitch);
+  }
+  notes._isSequence=true;
+  return notes;
+}
 
 // 根音(letter,octave)から、根音を基準にした半音のリスト(intervalSemis)で和音を組み立てる。
 // 文字は3度ずつダイアトニックに進め、実際に必要な半音との差を臨時記号(diff)として付与する。
@@ -475,6 +548,35 @@ function drawScore(pitches){
   document.getElementById('score').innerHTML=s;
 }
 
+// 連続音符モード：複数の音符を、和音のように積み重ねず、左から右へ、時系列順に並べて描画する。
+function drawSequence(pitches){
+  const spacing=46, leftMargin=60, rightMargin=30;
+  const W=leftMargin+pitches.length*spacing+rightMargin, H=220, midY=110;
+  const lines=[86,98,110,122,134];
+  let s='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+  s+='<rect width="'+W+'" height="'+H+'" fill="#fbfbf7"/>';
+  s+='<g stroke="#16202b" stroke-width="1.3">';
+  for(const y of lines) s+='<line x1="10" y1="'+y+'" x2="'+(W-10)+'" y2="'+y+'"/>';
+  s+='</g>';
+  s+=drawClefGlyph();
+  pitches.forEach((p,i)=>{
+    const noteX=leftMargin+22+i*spacing;
+    const y = midY - stepIndex(p)*6;
+    s+='<g stroke="#16202b" stroke-width="1.3">';
+    for(let ly=74; ly>=y; ly-=12) s+='<line x1="'+(noteX-11)+'" y1="'+ly+'" x2="'+(noteX+11)+'" y2="'+ly+'"/>';
+    for(let ly=146; ly<=y; ly+=12) s+='<line x1="'+(noteX-11)+'" y1="'+ly+'" x2="'+(noteX+11)+'" y2="'+ly+'"/>';
+    s+='</g>';
+    const showAcc = p._showAcc !== undefined ? p._showAcc : p.acc;
+    if(showAcc){
+      const sym=showAcc==='#'?'♯':showAcc==='b'?'♭':'♮';
+      s+='<text x="'+(noteX-19)+'" y="'+(y+6)+'" font-size="19" font-family="serif" fill="#16202b">'+sym+'</text>';
+    }
+    s+='<ellipse cx="'+noteX+'" cy="'+y+'" rx="6.5" ry="4.6" fill="#16202b" transform="rotate(-22 '+noteX+' '+y+')"/>';
+  });
+  s+='</svg>';
+  document.getElementById('score').innerHTML=s;
+}
+
 function drawKeySig(entry){
   const W=300,H=220, midY=110;
   const lines=[86,98,110,122,134];
@@ -514,17 +616,22 @@ function newCard(){
   } else {
     let pitches;
     if(mode==='single') pitches=[makeNote()];
+    else if(mode==='sequence') pitches=makeSequence();
     else if(mode==='chord') pitches=makeChord();
     else pitches=makeInterval();
-    pitches.sort((a,b)=>a.midi-b.midi);
-    current=pitches; revealed=false; drawScore(pitches);
+    if(mode!=='sequence') pitches.sort((a,b)=>a.midi-b.midi);
+    current=pitches; revealed=false;
+    if(mode==='sequence') drawSequence(pitches); else drawScore(pitches);
   }
   const ans=document.getElementById('answer');
   ans.className='answer placeholder';
-  ans.textContent = mode==='keysig' ? '長調・短調の両方を思い浮かべてから「答えを見る」' : '音名を思い浮かべてから「答えを見る」';
+  ans.textContent = mode==='keysig' ? '長調・短調の両方を思い浮かべてから「答えを見る」'
+    : mode==='sequence' ? '左から順に、音名を思い浮かべてから「答えを見る」'
+    : '音名を思い浮かべてから「答えを見る」';
   document.getElementById('judge').style.display='none';
   document.getElementById('reveal').style.display='';
-  document.getElementById('audio-controls').style.display=(mode==='single'||mode==='chord'||mode==='interval')?'flex':'none';
+  document.getElementById('audio-controls').style.display=(mode==='single'||mode==='sequence'||mode==='chord'||mode==='interval')?'flex':'none';
+  document.getElementById('edgeFocusOpt').style.display=(mode==='sequence')?'':'none';
   startTime=performance.now();
 }
 function reveal(){
@@ -547,8 +654,9 @@ function reveal(){
       extraTag='　|　'+current._key+'／'+current._keyGerman+(current._chordType||'主和音の基本形')+'（'+slashChord+'）';
     }
     else if(current._degree) extraTag='　|　'+(current._quality||'')+current._degree+'度';
+    const orderHint = current._isSequence ? '（左 → 右の順。実際の旋律・和声とは無関係のランダムな並びです）' : '（低い音 → 高い音）'+extraTag;
     ans.innerHTML='<div class="names">'+doremi+'　/　'+ger+'</div>'+
-      '<div class="hint">'+(current.length>1?'（低い音 → 高い音）'+extraTag:'')+'</div>';
+      '<div class="hint">'+(current.length>1?orderHint:'')+'</div>';
   }
   document.getElementById('reveal').style.display='none';
   document.getElementById('judge').style.display='flex';
@@ -568,16 +676,20 @@ function playCurrentSound(){
   if(!current || current._isKeysig) return;
   const ctx=ensureCtx();
   const t0=ctx.currentTime+0.05;
-  current.forEach(p=>{
+  const isSeq=current._isSequence;
+  const noteDur = isSeq ? 0.45 : 1.0; // 連続音符は1音あたり短め、その分テンポよく確認できる
+  const gap = isSeq ? 0.5 : 0; // 連続音符は0.5秒間隔でずらして再生
+  current.forEach((p,i)=>{
+    const start=t0+i*gap;
     const freq=442*Math.pow(2,(p.midi-69)/12);
     const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
     const gain=ctx.createGain();
-    gain.gain.setValueAtTime(0.0001,t0);
-    gain.gain.exponentialRampToValueAtTime(0.28,t0+0.05);
-    gain.gain.setValueAtTime(0.28,t0+1.0);
-    gain.gain.exponentialRampToValueAtTime(0.0001,t0+1.2);
+    gain.gain.setValueAtTime(0.0001,start);
+    gain.gain.exponentialRampToValueAtTime(0.28,start+0.05);
+    gain.gain.setValueAtTime(0.28,start+noteDur);
+    gain.gain.exponentialRampToValueAtTime(0.0001,start+noteDur+0.2);
     osc.connect(gain); gain.connect(ctx.destination);
-    osc.start(t0); osc.stop(t0+1.25);
+    osc.start(start); osc.stop(start+noteDur+0.25);
   });
 }
 
@@ -588,6 +700,7 @@ document.getElementById('playSound').onclick=playCurrentSound;
 document.getElementById('resetstats').onclick=()=>{total=correct=0;timeSum=0;updateStats();};
 document.getElementById('seg-clef').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;clef=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newCard();});
 document.getElementById('seg-mode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;mode=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newCard();});
+document.getElementById('seg-edgefocus').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;edgeFocus=(b.dataset.v==='on');[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newCard();});
 document.getElementById('seg-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;useAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newCard();});
 document.getElementById('range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);lowMidi=lo;highMidi=hi;newCard();};
 
