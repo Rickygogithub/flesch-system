@@ -255,8 +255,9 @@
     
     <div class="container">
         <div class="intro">
-            <p>Flesch Systemは、5つの連続した訓練ツールから構成されています。練習の目的に応じて、各ツールを独立して使用することもできますが、順序に沿って進むことで、より高い学習効果が得られます。スマホでも使用可能ですが、PCや音質の良いオーディオで使用することを強く推奨します。</p>
+            <p>Flesch Systemは、6つの連続した訓練ツールから構成されています。練習の目的に応じて、各ツールを独立して使用することもできますが、順序に沿って進むことで、より高い学習効果が得られます。スマホでも使用可能ですが、PCや音質の良いオーディオで使用することを強く推奨します。</p>
             <p>このシステムは、先生の指導を受けながら、自主学習で併用することを想定して設計されています。音程は理論から導き出したガイドラインです。実際の楽曲の演奏では、先生と相談しながら状況に応じて調整してください。</p>
+            <p>1〜5は抽象的な訓練用の音符・音型を使用しますが、6のOrchestra Excerptは、実際のオーケストラ・レパートリーから抽出した難所を教材とし、これまでの訓練を実際の楽曲に橋渡しします。</p>
         </div>
         
         <div class="learning-path">
@@ -401,6 +402,25 @@
                 </ul>
                 <a class="tool-button" onclick="openTool('flesch_integrated_performance_practice_v2.html')">開始</a>
             </div>
+
+            <div class="tool">
+                <div class="tool-header">
+                    <div class="tool-number">6</div>
+                    <div class="tool-title">
+                        <h3>Orchestra Excerpt</h3>
+                        <span class="version-badge">v1</span>
+                    </div>
+                </div>
+                <p><strong>実際のオーケストラ・レパートリーの難所訓練</strong></p>
+                <p>抽象的な訓練用の音型ではなく、実際の楽曲（マーラー交響曲第5番など）から抽出した難所を教材とし、視唱・音名認識を実践的な文脈で鍛えます。</p>
+                <ul>
+                    <li>実際のスキャン楽譜を見ながら音名・音高を思い浮かべて歌う</li>
+                    <li>小節ごとに区切ったドイツ音名・階名での正解表示</li>
+                    <li>正確な音程間隔（跳躍方向）を反映した音声確認</li>
+                    <li>複数の難所（楽章・小節範囲）をグループとして切り替え可能</li>
+                </ul>
+                <a class="tool-button" onclick="openTool('orchestra_excerpt.html')">開始</a>
+            </div>
         </div>
     </div>
     
@@ -408,6 +428,13 @@
         <details style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <summary style="cursor: pointer; font-weight: 700; font-size: 1.1rem; color: #0f1722; user-select: none;">📋 アップデート履歴</summary>
             <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #c9d0da; font-size: 0.95rem; line-height: 2; color: #555;">
+                <p><strong>2026年7月17日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>新ツール「Orchestra Excerpt」を追加。抽象的な訓練用の音型ではなく、実際のオーケストラ・レパートリー（マーラー交響曲第5番第2楽章・第3楽章の難所）から抽出した音符を教材として使用</li>
+                    <li>Orchestra Excerpt：実際のスキャン楽譜を画像として表示し、それを見ながら音名・音高を思い浮かべて歌う→「答えを見る」で小節ごとに区切ったドレミ・ドイツ音名を照合する形式を実装</li>
+                    <li>Orchestra Excerpt：音声再生ロジックに、正確な音程間隔（度数・方向）を指定できる仕組みを追加。従来の「前の音に最も近い音を自動選択」する方式では、実際の楽譜にある大きな跳躍（5度・7度上行など）が誤って逆方向・小さい音程に丸められてしまう問題を解消し、実際の跳躍方向を正確に音声へ反映できるようにした</li>
+                    <li>Orchestra Excerpt：複数の難所（小節範囲）をグループとして登録し、トグルで切り替えられる機能を実装。現在マーラー5番第2楽章・第3楽章の計6箇所を収録</li>
+                </ul>
                 <p><strong>2026年7月13日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>Score Reading：単音モードの、臨時記号ありの出現比率を、40%から70%に引き上げ。視唱の準備段階として、臨時記号なしとの難易度差を明確につけるため。和音・度数・連続音符など、他のモードには影響しないよう、単音専用の関数として分離</li>
