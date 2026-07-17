@@ -37,7 +37,7 @@
 <body>
 <div class="wrap">
   <h1>Orchestra Excerpt</h1>
-  <div class="sub">実際の楽譜から抽出した視唱訓練です。まずスキャン楽譜を見て音名を思い浮かべ、「答えを見る」で照合。「🔊 音を聴く」で音を確認できます（オクターブは実際の楽譜とは異なる場合がありますが、音名＝ピッチクラスは正確です）。</div>
+  <div class="sub">実際の楽譜から抽出した視唱訓練です。まずスキャン楽譜を見て音名を思い浮かべ、「答えを見る」で照合。「🔊 音を聴く」で音を確認できます（音価は楽譜と異なる場合があります。音高の参考にしてください）。</div>
 
   <div class="seg" id="seg-group">
     <button data-v="1" class="on">マーラー Sym5, 2mov（530〜532）</button>
@@ -62,7 +62,7 @@
     <div class="bars" id="bars"></div>
   </div>
 
-  <div class="answer placeholder" id="answer">音名と音高を思い浮かべて歌い、「答えを見る」</div>
+  <div class="answer placeholder" id="answer"></div>
 
   <div class="controls">
     <button class="act" id="reveal">答えを見る</button>
@@ -270,7 +270,7 @@ function loadGroup(){
   revealed=false;
   const ans=document.getElementById('answer');
   ans.className='answer placeholder';
-  ans.textContent='音名と音高を思い浮かべて歌い、「答えを見る」';
+  ans.textContent='';
   document.getElementById('reveal').style.display='';
   document.getElementById('audio-controls').style.display='none';
 }
@@ -294,7 +294,7 @@ function playSequence(){
   const measures = currentGroup==='1' ? group1 : currentGroup==='2' ? group2 : currentGroup==='3' ? group3 : currentGroup==='4' ? group4 : currentGroup==='5' ? group5 : group6;
   const midiSeq=buildAudioSeq(measures);
   const ctx=ensureCtx();
-  const t0=ctx.currentTime+0.05;
+  const t0=ctx.currentTime+1.0;
   const noteDur=0.28;
   const gap=0.32;
   midiSeq.forEach((midi,i)=>{
