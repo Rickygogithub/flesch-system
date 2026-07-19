@@ -37,7 +37,7 @@
 <body>
 <div class="wrap">
   <h1>Integrated Performance Practice<span class="badge">v2</span></h1>
-  <div class="sub">音階練習の効果を上げるための参考音源。主音／音階（ピタゴラス音律）／和音（純正律）／分散3度／半音階／3、4、6、8度重音対応。単に音源に音を合わせるのではなく、楽器を弾く前に調性、旋律、和音を感じ、音楽的な表現を頭に思い浮かべてから弾く練習。「メトロノーム併用（有無）」「テンポ」「拍子」の設定可能。冒頭に1小節のカウントイン（空振り）あり。</div>
+  <div class="sub">音階練習の効果を上げるための参考音源。主音／音階（ピタゴラス音律）／和音（純正律）／分散3度／半音階／3、4、6、8度重音対応。単に音源に音を合わせるのではなく、楽器を弾く前に調性、旋律、和音を感じ、音楽的な表現を頭に思い浮かべてから弾く練習。「メトロノーム併用（有無）」「テンポ」「拍子」の設定可能。冒頭に1小節のカウントイン（空振り）あり。メトロノーム併用しない場合は、冒頭に主音が鳴ってからスタートします。</div>
 
   <!-- ① 主音ロングトーン -->
   <section>
@@ -986,20 +986,21 @@ function buildChords(){
   const cfg=CHORDS_BY_KEY[key];
   const tonicMidi=cfg.tonicMidi;
   const tonicFreqCh=tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], tonicMidi);
+  const meterCh=Number(document.getElementById('ch-meter').value);
 
   const noteMap={}, labelMap={}; let step=0;
   const add=(s,freq,d,p)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p});};
   cfg.chords.forEach((c,i)=>{
     labelMap[step]=(i+1)+'. '+c.label;
-    c.notes.forEach(m=>add(step, jiFreqFromTonic(tonicFreqCh,tonicMidi,c.root,m), 6*4, 0.18)); // 6拍＝24×16分
-    step+=6*4;
+    c.notes.forEach(m=>add(step, jiFreqFromTonic(tonicFreqCh,tonicMidi,c.root,m), meterCh*4, 0.18)); // 拍子の拍数ぶん
+    step+=meterCh*4;
   });
   const finalLabel = cfg.finalLabel;
   labelMap[step]=finalLabel;
-  add(step, pythFreqFromTonic(tonicFreqCh,tonicMidi,cfg.finalNote), 3*4, 0.30); // 末尾：単音3拍
+  add(step, pythFreqFromTonic(tonicFreqCh,tonicMidi,cfg.finalNote), 3*4, 0.30); // 末尾：単音3拍（固定）
   step+=3*4;
-  step+=3*4; // 次のループまで3拍の空振り
-  return {noteMap,labelMap,totalSteps:step};
+  step+=3*4; // 次のループまで3拍の空振り（固定）
+  return {noteMap,labelMap,totalSteps:step,tonicFreq:tonicFreqCh};
 }
 
 /* ================= ③分散3度（3オクターブ固定・6小節） ================= */
@@ -1103,7 +1104,7 @@ function buildThirds(){
 
   step+=meter*4; // 次のループまで1小節の空振り
 
-  return {noteMap,totalSteps:step};
+  return {noteMap,totalSteps:step,tonicFreq:tonicFreq3};
 }
 
 /* ================= ④半音階（3オクターブ固定） ================= */
@@ -1124,7 +1125,7 @@ function buildChromatic(){
   for(let m=top-1;m>tonicLow;m--){ add(step,pf(m),unitDur,0.26); step+=unitDur; }    // 下行（最後の主音手前まで）
   add(step,pf(tonicLow),finalDur,0.30); step+=finalDur;                             // 末尾：主音
   step+=meter*4; // 次のループまで1小節の空振り
-  return {noteMap,totalSteps:step};
+  return {noteMap,totalSteps:step,tonicFreq:tonicFreq4};
 }
 
 /* ================= ⑥重音3度（実際の楽譜の下声部・8小節） ================= */
@@ -1199,7 +1200,7 @@ function buildThirdsPrep(){
     });
   });
   step+=meterTp*4; // 次のループまで1小節の空振り
-  return {noteMap,totalSteps:step};
+  return {noteMap,totalSteps:step,tonicFreq:tonicFreq5};
 }
 
 /* ================= ⑧重音4度（⑥の旋律を再利用・純正4度=4/3固定・長短の区別なし） ================= */
@@ -1258,7 +1259,7 @@ function buildFourths(){
     });
   });
   step+=meterFo*4; // 次のループまで1小節の空振り
-  return {noteMap,totalSteps:step};
+  return {noteMap,totalSteps:step,tonicFreq:tonicFreq6};
 }
 
 /* ================= ②音階（ドレミファソラシド・3オクターブ） ================= */
@@ -1319,7 +1320,7 @@ function buildScale(){
     step+=dur;
   });
   step+=meterSc*4; // 次のループまで1小節の空振り
-  return {noteMap,totalSteps:step};
+  return {noteMap,totalSteps:step,tonicFreq:tonicFreqSc};
 }
 
 /* ================= ⑨重音オクターブ（⑥の旋律を再利用・比率は常に2固定） ================= */
@@ -1380,7 +1381,7 @@ function buildOctaves(){
     });
   });
   step+=meterOc*4; // 次のループまで1小節の空振り
-  return {noteMap,totalSteps:step};
+  return {noteMap,totalSteps:step,tonicFreq:tonicFreq7};
 }
 
 /* ================= ⑦重音6度（基準音は上の音・8小節） ================= */
@@ -1454,7 +1455,7 @@ function buildSixths(){
     });
   });
   step+=meterSx*4; // 次のループまで1小節の空振り
-  return {noteMap,totalSteps:step};
+  return {noteMap,totalSteps:step,tonicFreq:tonicFreq8};
 }
 
 /* ================= 先読みスケジューラ（カウントイン対応） ================= */
@@ -1469,7 +1470,14 @@ function makeController(buildFn, els){
       this.metroOn=els.metro.checked;
       this.built=buildFn();
       this.stepIndex=this.metroOn ? -(this.meter*4) : 0; // メトロノーム時のみ1小節カウントイン
-      this.nextStepTime=ctx.currentTime+0.12;
+      if(this.metroOn){
+        this.nextStepTime=ctx.currentTime+0.12;
+      } else {
+        // メトロノーム未使用時：1秒待つ→主音を2秒鳴らす→1秒待ってから本編開始
+        const preStart=ctx.currentTime+1.0;
+        if(this.built.tonicFreq) playToneAt(preStart, this.built.tonicFreq, 2.0, 0.26);
+        this.nextStepTime=preStart+2.0+1.0;
+      }
       els.start.disabled=true; els.stop.disabled=false;
       this.tick();
     },
@@ -1566,7 +1574,7 @@ function startLT(){
   const overlay=document.getElementById('lt-overlay').checked && meter===6;
   const bpm=Number(document.getElementById('lt-bpm').value);
   const spb=60/bpm;
-  let startDelay=0.06;
+  let startDelay=1.0;
   if(metro){
     for(let i=0;i<meter;i++) playClickAt(ctx.currentTime+0.06+i*spb, i===0);
     startDelay=0.06+meter*spb;
@@ -1740,7 +1748,10 @@ function playNextRotationKey(){
   document.getElementById('rot-current-key').textContent=ROT_KEY_DISPLAY[key];
   
   let time=ctx.currentTime;
-  
+  if(!metro && rot.currentKeyIndex===0){
+    time+=1.0; // スタート直後のみ、音が鳴るまで1秒あける
+  }
+
   // (1) 初回の主音4拍を鳴らす（参考音）
   const initialTonicDur=spb*4;
   playTonicDrone(tonicFreq, time, initialTonicDur, 0.25);
