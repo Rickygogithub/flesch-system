@@ -108,6 +108,13 @@
         <button data-v="on">五線の両端（1番線・5番線）に特化</button>
       </span>
     </div>
+    <div class="opt" id="intervalLayoutOpt" style="display:none">
+      <span>度数：出題の形</span>
+      <span class="seg" id="seg-intervallayout">
+        <button data-v="stacked" class="on">重音（同時に鳴る）</button>
+        <button data-v="broken">分散（2音を順番に、8分音符で）</button>
+      </span>
+    </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button class="reset" id="resetstats" style="flex:0 0 auto">記録をリセット</button>
       <span style="font-size:12px;color:var(--muted);font-weight:600">モードを変えた時、仕切り直したい時などにクリックしてください</span>
@@ -121,7 +128,7 @@
     単音・和音モードでは「🔊 音を聴く」で正解の音を1秒間のロングトーンでA=442基準で確認できます（和音は3／4音同時に鳴ります）。歌ってから鳴らして、音程を耳で確認する練習にも使えます。<br>
     ドイツ音名：B♮=H、B♭=B、♯は語尾 -is（Fis 等）、♭は語尾 -es（Des 等、E♭=Es・A♭=As）。<br>
     「和音」はその調の主和音（基本形・第一転回・第二転回）に加え、減七・属七の和音（4音）もランダムに出題されます。<br>
-    「度数」は実際の和声かどうかは考慮しません。「🔊 音を聴く」で2音同時に確認できます（変則的な音の組み合わせにも対応、マーラーなど複雑な楽曲対策に活用できます）。<br>
+    「度数」は実際の和声かどうかは考慮しません。「🔊 音を聴く」で2音同時に確認できます（変則的な音の組み合わせにも対応、マーラーなど複雑な楽曲対策に活用できます）。「出題の形」を「分散」にすると、重音ではなく、8分音符2つとして左から右へ順番に出題されます（実際の楽曲では重音より単音の連なりで度数を判断する場面が多いため）。この場合「🔊 音を聴く」も2音を時間差で再生します。<br>
     「連続音符」は2〜6音（各20%の確率でランダム）が、実際の旋律・和声とは無関係に、ランダムに並びます。左から右へ、順番に音名を読み上げてください。跳躍を含む、複数の音符を、瞬時に、連続して認識する力を鍛えます。実際の楽譜と同じく、同じ音の高さが、出題の中で再度出現した場合、最初についた臨時記号が、そのまま有効（2回目以降は記号を表示しません）です。稀に、ナチュラル（♮）で、明示的に打ち消すパターンも出題されます。「🔊 音を聴く」では、和音のように同時にではなく、1音ずつ、時間差（0.5秒間隔）で再生されます。「五線の両端に特化」をオンにすると、1番線・5番線とその、すぐ上下（現在の音部記号における、間違いやすい箇所）だけに、出題を絞り込めます。<br>
     「調号」は♯・♭0〜6個の範囲で出題し、同じ調号を持つ長調・短調の両方を答えます。<br>
     記録はこのセッション内のみ（再読み込みでリセット）。
@@ -203,7 +210,7 @@ function pickKeySig(){
 }
 
 let clef='alto';
-let mode='single', useAcc=true, lowMidi=48, highMidi=77;
+let mode='single', useAcc=true, lowMidi=48, highMidi=77, intervalLayout='stacked';
 let edgeFocus=false; // 連続音符モード専用：五線の両端（1番線・5番線周辺）に、出題を絞り込む特訓モード
 let total=0, correct=0, timeSum=0;
 let current=null, startTime=0, revealed=false;
@@ -623,7 +630,9 @@ function newCard(){
     else pitches=makeInterval();
     if(mode!=='sequence') pitches.sort((a,b)=>a.midi-b.midi);
     current=pitches; revealed=false;
-    if(mode==='sequence') drawSequence(pitches); else drawScore(pitches);
+    if(mode==='sequence') drawSequence(pitches);
+    else if(mode==='interval' && intervalLayout==='broken') drawSequence(pitches);
+    else drawScore(pitches);
   }
   const ans=document.getElementById('answer');
   ans.className='answer placeholder';
@@ -634,6 +643,7 @@ function newCard(){
   document.getElementById('reveal').style.display='';
   document.getElementById('audio-controls').style.display=(mode==='single'||mode==='sequence'||mode==='chord'||mode==='interval')?'flex':'none';
   document.getElementById('edgeFocusOpt').style.display=(mode==='sequence')?'':'none';
+  document.getElementById('intervalLayoutOpt').style.display=(mode==='interval')?'':'none';
   startTime=performance.now();
 }
 function reveal(){
@@ -678,9 +688,9 @@ function playCurrentSound(){
   if(!current || current._isKeysig) return;
   const ctx=ensureCtx();
   const t0=ctx.currentTime+0.05;
-  const isSeq=current._isSequence;
-  const noteDur = isSeq ? 0.45 : 1.0; // 連続音符は1音あたり短め、その分テンポよく確認できる
-  const gap = isSeq ? 0.5 : 0; // 連続音符は0.5秒間隔でずらして再生
+  const isSeq = current._isSequence || (mode==='interval' && intervalLayout==='broken');
+  const noteDur = isSeq ? 0.45 : 1.0; // 連続音符・分散度数は1音あたり短め、その分テンポよく確認できる
+  const gap = isSeq ? 0.5 : 0; // 連続音符・分散度数は0.5秒間隔でずらして再生
   current.forEach((p,i)=>{
     const start=t0+i*gap;
     const freq=442*Math.pow(2,(p.midi-69)/12);
@@ -703,6 +713,7 @@ document.getElementById('resetstats').onclick=()=>{total=correct=0;timeSum=0;upd
 document.getElementById('seg-clef').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;clef=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newCard();});
 document.getElementById('seg-mode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;mode=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newCard();});
 document.getElementById('seg-edgefocus').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;edgeFocus=(b.dataset.v==='on');[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newCard();});
+document.getElementById('seg-intervallayout').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;intervalLayout=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newCard();});
 document.getElementById('seg-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;useAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newCard();});
 document.getElementById('range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);lowMidi=lo;highMidi=hi;newCard();};
 
