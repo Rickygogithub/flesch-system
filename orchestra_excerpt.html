@@ -36,6 +36,7 @@
 </head>
 <body>
 <div class="wrap">
+  <a href="index.html" style="display:inline-block;margin-bottom:10px;font-size:13px;font-weight:600;color:#2c5d92;text-decoration:none;">← トップページに戻る</a>
   <h1>Orchestra Excerpt</h1>
   <div class="sub">実際の楽譜から抽出した視唱訓練です。まずスキャン楽譜を見て音名を思い浮かべ、「答えを見る」で照合。「🔊 音を聴く」で音を確認できます（音価は楽譜と異なる場合があります。音高の参考にしてください）。</div>
 
@@ -284,16 +285,18 @@ function reveal(){
   document.getElementById('audio-controls').style.display='flex';
 }
 
-function ensureCtx(){
+async function ensureCtx(){
   if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-  if(audioCtx.state==='suspended') audioCtx.resume().catch(e=>console.error(e));
+  if(audioCtx.state==='suspended'){
+    try{ await audioCtx.resume(); }catch(e){ console.error(e); }
+  }
   return audioCtx;
 }
 
-function playSequence(){
+async function playSequence(){
   const measures = currentGroup==='1' ? group1 : currentGroup==='2' ? group2 : currentGroup==='3' ? group3 : currentGroup==='4' ? group4 : currentGroup==='5' ? group5 : group6;
   const midiSeq=buildAudioSeq(measures);
-  const ctx=ensureCtx();
+  const ctx=await ensureCtx();
   const t0=ctx.currentTime+1.0;
   const noteDur=0.28;
   const gap=0.32;

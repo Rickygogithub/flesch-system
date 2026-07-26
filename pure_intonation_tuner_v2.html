@@ -84,6 +84,7 @@
 <div class="wrap">
   <header>
     <div class="title-container">
+      <a href="index.html" style="display:inline-block;margin-bottom:10px;font-size:13px;font-weight:600;color:#2c5d92;text-decoration:none;">← トップページに戻る</a>
       <h1>Pure Intonation Tuner<span style="display:inline-block;background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px;">v2</span></h1>
       
     </div>
@@ -444,10 +445,10 @@ let activeVoices = []; // {osc, gain} のペアで管理（フェードアウト
 let pianoTimeouts = [];
 let currentActiveId = null;
 
-function initAudio() {
+async function initAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') {
-    audioCtx.resume().catch(e => console.error('Audio resume failed:', e));
+    try{ await audioCtx.resume(); }catch(e){ console.error('Audio resume failed:', e); }
   }
 }
 
@@ -597,11 +598,11 @@ function scheduleTone(freq, startTime, isPiano = false, isLowerString = false, i
 }
 
 // A-Tune セクションのトグル制御
-function toggleATune(mode) {
+async function toggleATune(mode) {
   const targetId = `btn-A-${mode}`;
   if (currentActiveId === targetId) { stopAll(); return; }
   stopAll();
-  initAudio();
+  await initAudio();
 
   const now = audioCtx.currentTime;
   const baseFreqs = getBaseFreqs();
@@ -632,11 +633,11 @@ function toggleATune(mode) {
 }
 
 // 完全5度（重音）のトグル制御
-function toggleDyad(lowNote, highNote, type) {
+async function toggleDyad(lowNote, highNote, type) {
   const targetId = `btn-${lowNote}-${highNote}`;
   if (currentActiveId === targetId) { stopAll(); return; }
   stopAll();
-  initAudio();
+  await initAudio();
 
   const now = audioCtx.currentTime;
   const baseFreqs = getBaseFreqs();
@@ -654,12 +655,12 @@ function toggleDyad(lowNote, highNote, type) {
 }
 
 // 3度・4度・6度（重音）のトグル制御
-function toggleInterval(stringName, type, instrumentType) {
+async function toggleInterval(stringName, type, instrumentType) {
   const typeTag = type === 'third' ? '3rd' : (type === 'fourth' ? '4th' : '6th');
   const targetId = `btn-${typeTag}${instrumentType === 'vln' ? '-vln' : ''}-${stringName}`;
   if (currentActiveId === targetId) { stopAll(); return; }
   stopAll();
-  initAudio();
+  await initAudio();
 
   const now = audioCtx.currentTime;
   const { low, high } = getIntervalFreqs(stringName, type);
@@ -831,8 +832,7 @@ let metroTimer = null;
 let metroBeat = 0;
 
 function playClick(time, isAccent) {
-  initAudio();
-  const ctx = audioCtx;
+  const ctx = audioCtx; // 呼び出し元が既にinitAudioで初期化・再開済み
   const vol = getMasterVolume();
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -879,7 +879,7 @@ async function startVolumeTest(){
     return;
   }
   vtMicStream=stream;
-  initAudio();
+  await initAudio();
   const ctx=audioCtx;
   const micSource=ctx.createMediaStreamSource(stream);
   vtAnalyser=ctx.createAnalyser();
@@ -957,9 +957,9 @@ function finishVolumeTest(){
 document.getElementById('vt-start').addEventListener('click', startVolumeTest);
 
 
-function startMetro() {
+async function startMetro() {
   if (metroTimer) stopMetro();
-  initAudio();
+  await initAudio();
   const bpm = Number(document.getElementById('metro-bpm').value);
   const meter = Number(document.getElementById('metro-meter').value);
   const spb = 60 / bpm;

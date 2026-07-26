@@ -241,11 +241,6 @@
             }
         }
     </style>
-    <script>
-        function openTool(url) {
-            window.open(url, '_blank');
-        }
-    </script>
 </head>
 <body>
     <div class="header">
@@ -322,7 +317,7 @@
                     <li>臨時記号の有無設定</li>
                     <li>正解音の再生機能</li>
                 </ul>
-                <a class="tool-button" onclick="openTool('score_reading_v1.html')">開始</a>
+                <a class="tool-button" href="score_reading_v1.html" target="_blank" rel="noopener">開始</a>
             </div>
             
             <div class="tool">
@@ -341,7 +336,7 @@
                     <li>聴音訓練</li>
                     <li>メトロノーム機能</li>
                 </ul>
-                <a class="tool-button" onclick="openTool('melody_dictation_trainer_v2.html')">開始</a>
+                <a class="tool-button" href="melody_dictation_trainer_v2.html" target="_blank" rel="noopener">開始</a>
             </div>
             
             <div class="tool">
@@ -360,7 +355,7 @@
                     <li>デチューン機能で「うねり」を体感</li>
                     <li>3度・4度・6度の重音体験</li>
                 </ul>
-                <a class="tool-button" onclick="openTool('pure_intonation_tuner_v2.html')">開始</a>
+                <a class="tool-button" href="pure_intonation_tuner_v2.html" target="_blank" rel="noopener">開始</a>
             </div>
             
             <div class="tool">
@@ -380,7 +375,7 @@
                     <li>分散和音（純正律・長調と短調）</li>
                     <li>フラジオによる差音トレーニング</li>
                 </ul>
-                <a class="tool-button" onclick="openTool('beautiful_intonation_training_v1.html')">開始</a>
+                <a class="tool-button" href="beautiful_intonation_training_v1.html" target="_blank" rel="noopener">開始</a>
             </div>
             
             <div class="tool">
@@ -400,7 +395,7 @@
                     <li>分散3度・重音練習</li>
                     <li>拍子・テンポ設定可能</li>
                 </ul>
-                <a class="tool-button" onclick="openTool('flesch_integrated_performance_practice_v2.html')">開始</a>
+                <a class="tool-button" href="flesch_integrated_performance_practice_v2.html" target="_blank" rel="noopener">開始</a>
             </div>
 
             <div class="tool">
@@ -419,7 +414,7 @@
                     <li>正確な音程間隔（跳躍方向）を反映した音声確認</li>
                     <li>複数の難所（楽章・小節範囲）をグループとして切り替え可能</li>
                 </ul>
-                <a class="tool-button" onclick="openTool('orchestra_excerpt.html')">開始</a>
+                <a class="tool-button" href="orchestra_excerpt.html" target="_blank" rel="noopener">開始</a>
             </div>
         </div>
     </div>
@@ -428,6 +423,13 @@
         <details style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <summary style="cursor: pointer; font-weight: 700; font-size: 1.1rem; color: #0f1722; user-select: none;">📋 アップデート履歴</summary>
             <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #c9d0da; font-size: 0.95rem; line-height: 2; color: #555;">
+                <p><strong>2026年7月23日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>全アプリ（Score Reading・Melody Dictation Trainer・Pure Intonation Tuner・Beautiful Intonation Training・Integrated Performance Practice・Orchestra Excerpt）共通：iOS（26.5で確認）の一部環境で音が鳴らない不具合を修正。AudioContextの再開（resume）処理が完了する前に、音声の再生スケジュールが組まれてしまうことがある構造上の問題を特定し、再開の完了を待ってから再生するよう修正</li>
+                    <li>Score Reading：「度数」モードに「出題の形：重音／分散」を追加。「分散」を選ぶと、2音同時（重音）ではなく、8分音符2つとして左から右へ順番に出題される。実際の楽曲では重音より単音の連なりで度数を判断する場面が多いため</li>
+                    <li>index.html：スマホでツールを開いた際、トップページのタブ・画面がそのまま残らない問題を修正。「開始」ボタンを、JavaScript経由の擬似リンクから、実際のリンク（href + target="_blank"）に変更</li>
+                    <li>各アプリ（6本すべて）：画面上部に「← トップページに戻る」リンクを追加</li>
+                </ul>
                 <p><strong>2026年7月20日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>Melody Dictation Trainer：「視唱」モードに、音の並びを選べる設定（実験的機能）を追加。従来の「ランダム」（実際の調性・和声を無視した配列で、予測に頼れない読譜力そのものを鍛える）に加え、「自然な旋律」を新設</li>

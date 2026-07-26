@@ -36,6 +36,7 @@
 </head>
 <body>
 <div class="wrap">
+  <a href="index.html" style="display:inline-block;margin-bottom:10px;font-size:13px;font-weight:600;color:#2c5d92;text-decoration:none;">← トップページに戻る</a>
   <h1>Integrated Performance Practice<span class="badge">v2</span></h1>
   <div class="sub">音階練習の効果を上げるための参考音源。主音／音階（ピタゴラス音律）／和音（純正律）／分散3度／半音階／3、4、6、8度重音対応。単に音源に音を合わせるのではなく、楽器を弾く前に調性、旋律、和音を感じ、音楽的な表現を頭に思い浮かべてから弾く練習。「メトロノーム併用（有無）」「テンポ」「拍子」の設定可能。冒頭に1小節のカウントイン（空振り）あり。メトロノーム併用しない場合は、冒頭に主音が鳴ってからスタートします。</div>
 
@@ -569,7 +570,14 @@
 <script>
 let actx=null;
 let activeOscillators=[]; // すべてのオシレーターを追跡
-function ensureCtx(){ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+function getCtx(){ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+async function ensureCtx(){
+  if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
+  if(actx.state==='suspended'){
+    try{ await actx.resume(); }catch(e){ console.error('Audio resume failed:',e); }
+  }
+  return actx;
+}
 function freqOf(midi){ return 442*Math.pow(2,(midi-69)/12); }
 
 const TONIC_LOW=48;        // C3（音階・半音階・低高ロングトーンの低い主音）
@@ -593,7 +601,7 @@ function jiFreq(rootMidi, noteMidi){
 
 /* ---- 単発音・クリック（絶対時刻でスケジュール） ---- */
 function playToneAt(time, freq, dur, peak){
-  const ctx=ensureCtx();
+  const ctx=getCtx();
   peak=peak||0.26;
   const a=Math.min(0.012, dur*0.4);
   const r=Math.min(0.05, dur*0.4);
@@ -610,7 +618,7 @@ function playToneAt(time, freq, dur, peak){
   activeOscillators.push({osc, g, stopTime:time+dur+xfade+0.03});
 }
 function playClickAt(time, accent){
-  const ctx=ensureCtx();
+  const ctx=getCtx();
   const osc=ctx.createOscillator(); osc.type='square';
   osc.frequency.value=accent?2300:1500;
   const g=ctx.createGain();
@@ -643,7 +651,7 @@ async function startVolumeTest(){
     return;
   }
   vtMicStream=stream;
-  const ctx=ensureCtx();
+  const ctx=await ensureCtx();
   const micSource=ctx.createMediaStreamSource(stream);
   vtAnalyser=ctx.createAnalyser();
   vtAnalyser.fftSize=2048;
@@ -1462,9 +1470,9 @@ function buildSixths(){
 function makeController(buildFn, els){
   return {
     running:false,timer:null,stepIndex:0,nextStepTime:0,bpm:60,meter:4,metroOn:false,built:null,
-    start(){
+    async start(){
       if(this.running)return;
-      const ctx=ensureCtx(); if(ctx.state==='suspended')ctx.resume().catch(e=>console.error('Audio resume failed:',e));
+      const ctx=await ensureCtx();
       this.running=true;
       this.bpm=Number(els.bpm.value); this.meter=Number(els.meter.value);
       this.metroOn=els.metro.checked;
@@ -1483,7 +1491,7 @@ function makeController(buildFn, els){
     },
     tick(){
       if(!this.running)return;
-      const ctx=ensureCtx();
+      const ctx=getCtx();
       const sixteenth=()=>(60/this.bpm)/4;
       while(this.nextStepTime < ctx.currentTime+0.13){
         const step=this.stepIndex, b=this.built;
@@ -1514,7 +1522,7 @@ function makeController(buildFn, els){
       if(this.timer){clearTimeout(this.timer);this.timer=null;}
       
       // すべてのアクティブなオシレーターを即座に停止
-      const ctx=ensureCtx();
+      const ctx=getCtx();
       activeOscillators.forEach(({osc, g})=>{
         try{
           g.gain.cancelScheduledValues(ctx.currentTime);
@@ -1564,9 +1572,9 @@ function generateRotFreqs(){
   };
 }
 const ROT_FREQS=generateRotFreqs();
-function startLT(){
+async function startLT(){
   if(lt.active)return;
-  const ctx=ensureCtx(); if(ctx.state==='suspended')ctx.resume().catch(e=>console.error('Audio resume failed:',e));
+  const ctx=await ensureCtx();
   lt.active=true;
   const metro=document.getElementById('lt-metro').checked;
   const meter=Number(document.getElementById('lt-meter').value);
@@ -1625,7 +1633,7 @@ function startLT(){
         lt.hiGain.gain.exponentialRampToValueAtTime(0.0001,decayEnd); // そこから完全な無音まで自然に減衰
       }catch(e){}
       cycleStart+=LT_OVERLAY_CYCLE_BEATS*spb;
-      const delayMs=(cycleStart-ensureCtx().currentTime)*1000-60;
+      const delayMs=(cycleStart-getCtx().currentTime)*1000-60;
       lt.overlayTimer=setTimeout(scheduleCycle, Math.max(0,delayMs));
     };
     const firstDelay=(cycleStart-ctx.currentTime)*1000;
@@ -1637,8 +1645,8 @@ function startLT(){
     lt.startTimer=setTimeout(()=>{
       if(!lt.active)return;
       let beat=0;
-      playClickAt(ensureCtx().currentTime+0.01,true);
-      lt.timer=setInterval(()=>{ if(!lt.active)return; beat=(beat+1)%meter; playClickAt(ensureCtx().currentTime+0.01,beat===0); }, spb*1000);
+      playClickAt(getCtx().currentTime+0.01,true);
+      lt.timer=setInterval(()=>{ if(!lt.active)return; beat=(beat+1)%meter; playClickAt(getCtx().currentTime+0.01,beat===0); }, spb*1000);
     }, Math.max(0,beginMs));
   }
   document.getElementById('lt-start').disabled=true;
@@ -1647,7 +1655,7 @@ function startLT(){
 function stopLT(){
   if(!lt.active)return; 
   lt.active=false;
-  const ctx=ensureCtx();
+  const ctx=getCtx();
   
   // すべてのオシレーターを即座に停止
   if(lt.osc){ 
@@ -1676,10 +1684,9 @@ function stopLT(){
 
 
 // ===== ⑤ 12調ローテーション・分散和音 =====
-function startRotation(){
+async function startRotation(){
   if(rot.active) return;
-  const ctx=ensureCtx();
-  if(ctx.state==='suspended') ctx.resume().catch(e=>console.error('Audio resume failed:', e));
+  const ctx=await ensureCtx();
   
   rot.active=true;
   rot.currentKeyIndex=0;
@@ -1693,7 +1700,7 @@ function startRotation(){
 function stopRotation(){
   if(!rot.active) return;
   rot.active=false;
-  const ctx=ensureCtx();
+  const ctx=getCtx();
   
   // すべてのオシレーターを即座に停止
   rot.oscillators.forEach(osc=>{ 
@@ -1741,7 +1748,7 @@ function playNextRotationKey(){
   const longtone=document.getElementById('rot-longtone').checked;
   const spb=60/bpm; // secondsPerBeat（四分音符1拍）
   
-  const ctx=ensureCtx();
+  const ctx=getCtx();
   const tonicFreq=ROT_FREQS[key];
   
   // 楽譜表示（ポジション付き）
@@ -1801,7 +1808,7 @@ function playNextRotationKey(){
 }
 
 function playTonicDrone(freq, startTime, duration, gainLevel){
-  const ctx=ensureCtx();
+  const ctx=getCtx();
   const osc=ctx.createOscillator();
   const gain=ctx.createGain();
   osc.connect(gain);

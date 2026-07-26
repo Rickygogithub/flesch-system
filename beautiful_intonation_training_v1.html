@@ -45,6 +45,7 @@
 </head>
 <body>
 <div class="wrap">
+  <a href="index.html" style="display:inline-block;margin-bottom:10px;font-size:13px;font-weight:600;color:#2c5d92;text-decoration:none;">← トップページに戻る</a>
   <h1>Beautiful Intonation Training<span class="badge">v1</span></h1>
   <div class="sub">ピタゴラス音律と純正律に基づいた、開放弦との共鳴を感じながら正確な音程を習得するシステム。調弦・主音ロングトーン・1オクターブ音階・分散和音・チューナー機能を搭載。</div>
 
@@ -313,12 +314,12 @@
   let audioContext = null;
   let oscillators = [];
 
-  function initAudio() {
+  async function initAudio() {
     if (!audioContext) {
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
     if (audioContext.state === 'suspended') {
-      audioContext.resume().catch(e => console.error('Audio resume failed:', e));
+      try{ await audioContext.resume(); }catch(e){ console.error('Audio resume failed:', e); }
     }
   }
 
@@ -369,7 +370,7 @@
       return;
     }
     vtMicStream=stream;
-    initAudio();
+    await initAudio();
     const ctx=audioContext;
     const micSource=ctx.createMediaStreamSource(stream);
     vtAnalyser=ctx.createAnalyser();
@@ -581,8 +582,8 @@
   };
 
   // ============ Tuning Section ============
-  document.getElementById('tuning-ref-start').onclick = function() {
-    initAudio();
+  document.getElementById('tuning-ref-start').onclick = async function() {
+    await initAudio();
     stopAll();
     this.disabled = true;
     document.getElementById('tuning-ref-stop').disabled = false;
@@ -600,8 +601,8 @@
 
   document.getElementById('tuning-ref-stop').onclick = stopAll;
 
-  document.getElementById('tuning-normal-start').onclick = function() {
-    initAudio();
+  document.getElementById('tuning-normal-start').onclick = async function() {
+    await initAudio();
     stopAll();
     this.disabled = true;
     document.getElementById('tuning-normal-stop').disabled = false;
@@ -624,8 +625,8 @@
 
   document.getElementById('tuning-normal-stop').onclick = stopAll;
 
-  document.getElementById('tuning-flag-start').onclick = function() {
-    initAudio();
+  document.getElementById('tuning-flag-start').onclick = async function() {
+    await initAudio();
     stopAll();
     this.disabled = true;
     document.getElementById('tuning-flag-stop').disabled = false;
@@ -688,12 +689,8 @@
     document.getElementById('ar-bpmval').textContent = this.value + ' BPM';
   });
 
-  document.getElementById('lt-start').onclick = function() {
-    initAudio();
-    // audioContextを確実にresumeさせる（デスクトップブラウザ対応）
-    if (audioContext.state === 'suspended') {
-      audioContext.resume().catch(e => console.error('Audio resume failed:', e));
-    }
+  document.getElementById('lt-start').onclick = async function() {
+    await initAudio();
     stopAll();
     this.disabled = true;
     document.getElementById('lt-stop').disabled = false;
@@ -730,12 +727,8 @@
   };
 
   // ============ Scale ============
-  document.getElementById('sc-start').onclick = function() {
-    initAudio();
-    // audioContextを確実にresumeさせる（デスクトップブラウザ対応）
-    if (audioContext.state === 'suspended') {
-      audioContext.resume().catch(e => console.error('Audio resume failed:', e));
-    }
+  document.getElementById('sc-start').onclick = async function() {
+    await initAudio();
     stopAll();
     this.disabled = true;
     document.getElementById('sc-stop').disabled = false;
@@ -808,12 +801,8 @@
   };
 
   // ============ Arpeggio ============
-  document.getElementById('ar-start').onclick = function() {
-    initAudio();
-    // audioContextを確実にresumeさせる（デスクトップブラウザ対応）
-    if (audioContext.state === 'suspended') {
-      audioContext.resume().catch(e => console.error('Audio resume failed:', e));
-    }
+  document.getElementById('ar-start').onclick = async function() {
+    await initAudio();
     stopAll();
     this.disabled = true;
     document.getElementById('ar-stop').disabled = false;
