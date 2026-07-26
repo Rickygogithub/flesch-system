@@ -578,8 +578,8 @@ function warmupToneAt(ctx,pitch,t,dur,peak){
   osc.connect(gain); gain.connect(ctx.destination);
   osc.start(t); osc.stop(t+dur+0.03);
 }
-function playWarmup(){
-  const ctx=ensureCtx();
+async function playWarmup(){
+  const ctx=await ensureCtx();
   const pat=WARMUP_PATTERNS[warmupKey];
   const {asc,desc,hasHold}=warmupGetSeq();
   const bpm=getBpm();
@@ -632,8 +632,8 @@ function playWarmup(){
     document.getElementById('warmup-judge').style.display='flex';
   }, Math.max(remainSec,0)*1000);
 }
-function playWarmupMetroOnly(){
-  const ctx=ensureCtx();
+async function playWarmupMetroOnly(){
+  const ctx=await ensureCtx();
   const bpm=getBpm();
   const beat=60/bpm;
   let t=ctx.currentTime+0.05;
@@ -847,9 +847,9 @@ function drawDictStack(notes){
   document.getElementById('score').innerHTML=s;
 }
 
-function playPhrase(){
+async function playPhrase(){
   if(!currentPhrase) return;
-  const ctx=ensureCtx();
+  const ctx=await ensureCtx();
   const beatSec=60/getBpm();
   const t0=ctx.currentTime+0.05;
   for(let i=0;i<4;i++){
@@ -879,9 +879,9 @@ function playPhrase(){
     t+=dur;
   });
 }
-function playClick(){
+async function playClick(){
   if(!currentPhrase) return;
-  const ctx=ensureCtx();
+  const ctx=await ensureCtx();
   const beatSec=60/getBpm();
   const totalBeats=currentPhrase.events.filter(e=>e.type!=='bar').reduce((s,e)=>s+e.dur,0);
   const beatCount=4+Math.ceil(totalBeats);
@@ -1042,9 +1042,9 @@ function stopAudio(){
   });
   currentAudioNodes=[];
 }
-function playRhythmClicks(phrase, withTaps){
+async function playRhythmClicks(phrase, withTaps){
   stopAudio();
-  const ctx=ensureCtx();
+  const ctx=await ensureCtx();
   const bpm=getBpm();
   const beatSec=60/bpm;
   const info=phrase.info;
@@ -1101,7 +1101,7 @@ function dictMakeChord(){
   return null;
 }
 function playTone(freq,t,dur){
-  const ctx=ensureCtx();
+  const ctx=audioCtx; // 呼び出し元(playReferenceAndTarget)が既にensureCtxで再開済み
   const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
   const gain=ctx.createGain();
   gain.gain.setValueAtTime(0.0001,t);
@@ -1110,9 +1110,9 @@ function playTone(freq,t,dur){
   osc.connect(gain); gain.connect(ctx.destination);
   osc.start(t); osc.stop(t+dur+0.05);
 }
-function playReferenceAndTarget(){
+async function playReferenceAndTarget(){
   if(!currentDictNotes) return;
-  const ctx=ensureCtx();
+  const ctx=await ensureCtx();
   const t0=ctx.currentTime+0.05;
   playTone(442,t0,0.7);
   const t1=t0+1.0;
@@ -1172,9 +1172,11 @@ function updateDictStats(){
 }
 
 /* ---------- 共通 ---------- */
-function ensureCtx(){ 
+async function ensureCtx(){ 
   if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); 
-  if(audioCtx.state==='suspended') audioCtx.resume().catch(e=>console.error('Audio resume failed:',e));
+  if(audioCtx.state==='suspended'){
+    try{ await audioCtx.resume(); }catch(e){ console.error('Audio resume failed:',e); }
+  }
   return audioCtx; 
 }
 function getBpm(){ return Number(document.getElementById('bpm').value); }
