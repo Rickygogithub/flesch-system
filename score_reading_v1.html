@@ -682,7 +682,7 @@ function updateStats(){
 }
 async function ensureCtx(){ 
   if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); 
-  if(audioCtx.state==='suspended'){
+  if(audioCtx.state==='suspended' || audioCtx.state==='interrupted'){
     try{ await audioCtx.resume(); }catch(e){ console.error('Audio resume failed:',e); }
   }
   return audioCtx; 
