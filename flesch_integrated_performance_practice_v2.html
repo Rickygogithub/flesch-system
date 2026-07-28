@@ -573,7 +573,7 @@ let activeOscillators=[]; // すべてのオシレーターを追跡
 function getCtx(){ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); return actx; }
 async function ensureCtx(){
   if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
-  if(actx.state==='suspended'){
+  if(actx.state==='suspended' || actx.state==='interrupted'){
     try{ await actx.resume(); }catch(e){ console.error('Audio resume failed:',e); }
   }
   return actx;
