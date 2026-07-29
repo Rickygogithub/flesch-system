@@ -165,7 +165,19 @@ const KEYS=[
   {name:'変ロ長調',sharps:0,flats:2,tonic:'B'},
   {name:'ト短調',sharps:0,flats:2,tonic:'G'},
   {name:'変ホ長調',sharps:0,flats:3,tonic:'E'},
-  {name:'ハ短調',sharps:0,flats:3,tonic:'C'}
+  {name:'ハ短調',sharps:0,flats:3,tonic:'C'},
+  {name:'変イ長調',sharps:0,flats:4,tonic:'A'},
+  {name:'ヘ短調',sharps:0,flats:4,tonic:'F'},
+  {name:'変ニ長調',sharps:0,flats:5,tonic:'D'},
+  {name:'変ロ短調',sharps:0,flats:5,tonic:'B'},
+  {name:'変ト長調',sharps:0,flats:6,tonic:'G'},
+  {name:'変ホ短調',sharps:0,flats:6,tonic:'E'},
+  {name:'ホ長調',sharps:4,flats:0,tonic:'E'},
+  {name:'嬰ハ短調',sharps:4,flats:0,tonic:'C'},
+  {name:'ロ長調',sharps:5,flats:0,tonic:'B'},
+  {name:'嬰ト短調',sharps:5,flats:0,tonic:'G'},
+  {name:'嬰ヘ長調',sharps:6,flats:0,tonic:'F'},
+  {name:'嬰ニ短調',sharps:6,flats:0,tonic:'D'}
 ];
 function keySignatureMap(sharps,flats){
   const acc={}; LETTERS.forEach(l=>acc[l]='');
@@ -682,30 +694,112 @@ function updateStats(){
 }
 async function ensureCtx(){ 
   if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); 
-  if(audioCtx.state==='suspended' || audioCtx.state==='interrupted'){
+  if(audioCtx.state==='suspended'){
     try{ await audioCtx.resume(); }catch(e){ console.error('Audio resume failed:',e); }
   }
   return audioCtx; 
 }
+// 純正律の音程比率（根音からの半音数→純正律比率）
+const JUST_RATIOS={
+  0:1, 1:16/15, 2:9/8, 3:6/5, 4:5/4, 5:4/3,
+  6:45/32, 7:3/2, 8:8/5, 9:5/3, 10:16/9, 11:15/8
+};
+
+function playTone(ctx, freq, start, dur, vol=0.28){
+  const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
+  const gain=ctx.createGain();
+  gain.gain.setValueAtTime(0.0001,start);
+  gain.gain.exponentialRampToValueAtTime(vol,start+0.05);
+  gain.gain.setValueAtTime(vol,start+dur);
+  gain.gain.exponentialRampToValueAtTime(0.0001,start+dur+0.2);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(start); osc.stop(start+dur+0.25);
+}
+
 async function playCurrentSound(){
   if(!current || current._isKeysig) return;
   const ctx=await ensureCtx();
   const t0=ctx.currentTime+0.05;
   const isSeq = current._isSequence || (mode==='interval' && intervalLayout==='broken');
-  const noteDur = isSeq ? 0.45 : 1.0; // 連続音符・分散度数は1音あたり短め、その分テンポよく確認できる
-  const gap = isSeq ? 0.5 : 0; // 連続音符・分散度数は0.5秒間隔でずらして再生
-  current.forEach((p,i)=>{
-    const start=t0+i*gap;
-    const freq=442*Math.pow(2,(p.midi-69)/12);
-    const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
-    const gain=ctx.createGain();
-    gain.gain.setValueAtTime(0.0001,start);
-    gain.gain.exponentialRampToValueAtTime(0.28,start+0.05);
-    gain.gain.setValueAtTime(0.28,start+noteDur);
-    gain.gain.exponentialRampToValueAtTime(0.0001,start+noteDur+0.2);
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.start(start); osc.stop(start+noteDur+0.25);
-  });
+
+  if(mode==='chord' && !isSeq){
+    // 和音モード: 低音から高音へ0.7秒間隔で分散再生→0.5秒後に全音同時再生
+    // 根音をピタゴラス音律で計算、他の音は根音からの純正律比率で計算
+
+    // 根音のmidiを特定（_keyGermanから根音音名を取得してmidiを探す）
+    // notesは低音順にソートされているが根音は転回形で最低音でない場合がある
+    // notes内で最もmidiが低い音から根音候補を探す
+    const sortedByMidi=[...current].sort((a,b)=>a.midi-b.midi);
+
+    // 根音のmidiを取得: _keyGermanの音名からnotes内の対応音を探す
+    let rootMidi=null;
+    if(current._keyGerman){
+      // "Es-Dur" → "Es", "C-moll" → "C" などから根音音名を取得
+      const germanRoot=current._keyGerman.replace(/-Dur|-moll/,'');
+      // notes内でgermanRootに対応するpitchを探す
+      const GERMAN_TO_LETTER={'C':'C','D':'D','E':'E','F':'F','G':'G','A':'A','H':'B',
+        'Cis':'C','Dis':'D','Eis':'E','Fis':'F','Gis':'G','Ais':'A','His':'B',
+        'Ces':'C','Des':'D','Es':'E','Fes':'F','Ges':'G','As':'A','B':'B'};
+      const ACC_MAP={'is':'#','es':'b','isis':'x','eses':'bb','':'',
+        'Cis':'#','Dis':'#','Eis':'#','Fis':'#','Gis':'#','Ais':'#','His':'#',
+        'Ces':'b','Des':'b','Es':'b','Fes':'b','Ges':'b','As':'b','B':'b'};
+      // 根音の音名(letter)と臨時記号を推定
+      let rootLetter=null, rootAcc='';
+      for(const [g,l] of Object.entries(GERMAN_TO_LETTER)){
+        if(germanRoot===g){ rootLetter=l;
+          if(g.endsWith('is')&&g.length>1) rootAcc='#';
+          else if(g==='Es'||g==='As'||g==='B'||g==='Ces'||g==='Des'||g==='Fes'||g==='Ges') rootAcc='b';
+          else rootAcc='';
+          break;
+        }
+      }
+      if(rootLetter){
+        const found=current.find(p=>p.letter===rootLetter&&p.acc===(rootAcc));
+        if(found) rootMidi=found.midi;
+      }
+    }
+    // 根音が見つからない場合は最低音を根音とする
+    if(rootMidi===null) rootMidi=sortedByMidi[0].midi;
+
+    // 根音のピタゴラス周波数
+    const rootFreqPyth=442*Math.pow(2,(rootMidi-69)/12);
+
+    // 各音の周波数を計算（根音からの半音差で純正律比率を適用）
+    const freqs=current.map(p=>{
+      if(p.midi===rootMidi) return rootFreqPyth;
+      let semis=(p.midi-rootMidi)%12;
+      if(semis<0) semis+=12;
+      const ratio=JUST_RATIOS[semis]||Math.pow(2,semis/12);
+      // オクターブ補正
+      const octaveDiff=Math.floor((p.midi-rootMidi)/12);
+      return rootFreqPyth*ratio*Math.pow(2,octaveDiff);
+    });
+
+    const noteDur=0.55;
+    const gap=0.7;
+
+    // 分散再生（低音から高音順 = currentの順番通り）
+    current.forEach((_,i)=>{
+      const start=t0+i*gap;
+      playTone(ctx,freqs[i],start,noteDur);
+    });
+
+    // 全音同時再生: 最後の音のstart + noteDur + 0.5秒後
+    const simultStart=t0+(current.length-1)*gap+noteDur+0.5;
+    current.forEach((_,i)=>{
+      playTone(ctx,freqs[i],simultStart,1.0);
+    });
+
+  } else {
+    // 単音・連続音符・度数モード: 従来通り平均律
+    const noteDur = isSeq ? 0.45 : 1.0;
+    const gap = isSeq ? 0.5 : 0;
+    current.forEach((p,i)=>{
+      const start=t0+i*gap;
+      const freq=442*Math.pow(2,(p.midi-69)/12);
+      playTone(ctx,freq,start,noteDur);
+    });
+  }
 }
 
 document.getElementById('reveal').onclick=reveal;
