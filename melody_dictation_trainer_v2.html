@@ -103,6 +103,12 @@
 
   <details open>
     <summary>▶️ 設定</summary>
+    <div class="opt"><span>記号</span>
+      <span class="seg" id="seg-clef">
+        <button data-v="treble" class="on">ト音記号</button>
+        <button data-v="alto">アルト記号</button>
+      </span>
+    </div>
     <div class="opt"><span>モード</span>
       <span class="seg" id="seg-appmode">
         <button data-v="warmup" class="on">視唱準備トレ</button>
@@ -146,10 +152,10 @@
       </div>
       <div class="opt"><span>音域</span>
         <select id="range">
-          <option value="48,81">標準（C3–A5）</option>
-          <option value="48,88">高音含む（C3–E6）</option>
-          <option value="53,72">アルト記号中心（F3–C5）</option>
-          <option value="48,77" selected>低～中（C3–F5）</option>
+          <option value="60,84" selected>標準（C4–C6）</option>
+          <option value="60,91">高音含む（C4–G6）</option>
+          <option value="55,79">中低音（G3–G5）</option>
+          <option value="48,77">低音（C3–F5）</option>
         </select>
       </div>
       <div class="opt"><span>小節数</span>
@@ -193,6 +199,12 @@
     </div>
 
     <div id="dict-settings" style="display:none">
+      <div class="opt"><span>聴音モード</span>
+        <span class="seg" id="seg-dict-mode">
+          <button data-v="normal" class="on">通常（基準音あり）</button>
+          <button data-v="octave1">中央1オクターブ</button>
+        </span>
+      </div>
       <div class="opt"><span>出題</span>
         <span class="seg" id="seg-dict-type">
           <button data-v="single" class="on">単音</button>
@@ -205,12 +217,12 @@
           <button data-v="off" class="on">なし</button>
         </span>
       </div>
-      <div class="opt"><span>音域</span>
+      <div class="opt" id="dict-range-row"><span>音域</span>
         <select id="dict-range">
-          <option value="48,81">標準（C3–A5）</option>
-          <option value="48,88">高音含む（C3–E6）</option>
-          <option value="53,72">アルト記号中心（F3–C5）</option>
-          <option value="48,77" selected>低～中（C3–F5）</option>
+          <option value="60,84" selected>標準（C4–C6）</option>
+          <option value="60,91">高音含む（C4–G6）</option>
+          <option value="55,79">中低音（G3–G5）</option>
+          <option value="48,77">低音（C3–F5）</option>
         </select>
       </div>
     </div>
@@ -309,7 +321,22 @@ function buildPitch(letter,octave,acc){
   const sym=acc==='#'?'♯':acc==='b'?'♭':'';
   return {letter,octave,acc,midi,nameDoremi:({C:'ド',D:'レ',E:'ミ',F:'ファ',G:'ソ',A:'ラ',B:'シ'})[letter]+sym,nameGerman:germanName(letter,acc)};
 }
-function stepIndex(p){ return (p.octave-4)*7 + LIDX[p.letter]; }
+// アルト記号：C4が五線中央（stepIndex=0 → y=120）
+// ト音記号：B4が五線中央のすぐ上の第3線、実際にはG4が第2線なので
+//   ト音記号基準では B4 を stepIndex 0 とすると y=120（五線中央）になる
+//   G4 = B4 - 2 steps → stepIndex -2 → y = 120+12 = 132（第4線）
+//   ト音記号では stepIndex = (p.octave - 4)*7 + LIDX[p.letter] - 2
+function stepIndex(p){
+  if(clefMode==='treble'){
+    // ト音記号：G4が第2線(y=132)、B4が第3線(y=120)が中央
+    // B4 = octave4, letter B → LIDX[B]=6 → (4-4)*7+6 = 6
+    // 基準をB4=0にする: index = (octave-4)*7 + LIDX[letter] - 6
+    // ただし表示上はB4をy=120の位置に置く（五線中央）
+    return (p.octave - 4) * 7 + LIDX[p.letter] - 6;
+  }
+  // アルト記号: C4(octave4,letter C=0) → (4-4)*7+0=0 → y=120（五線中央）
+  return (p.octave - 4) * 7 + LIDX[p.letter];
+}
 function diatonicCandidates(lowMidi,highMidi){
   const out=[];
   for(let oct=1;oct<=7;oct++) for(const L of LETTERS){
@@ -320,9 +347,70 @@ function diatonicCandidates(lowMidi,highMidi){
 }
 
 let appMode='warmup';
-let useAcc=true, lowMidi=48, highMidi=77, measures=1, contourMode='random';
+let clefMode='treble'; // 'treble' or 'alto'
+let useAcc=true, lowMidi=60, highMidi=84, measures=1, contourMode='random';
 let timeSigLabel='4/4', restMin=0, restMax=0, rMeasures=1, rhythmRandom=false;
-let dictType='single', dictUseAcc=false, dictLowMidi=48, dictHighMidi=77;
+let dictType='single', dictUseAcc=false, dictLowMidi=60, dictHighMidi=84;
+let dictMode='normal'; // 'normal' or 'octave1'
+
+// ハ長調ベースのピタゴラス音律（C4=基準）
+// C4のHz: A4=442 → C4 = 442 * 2^(-9/12) ≈ 263.16Hz（平均律）
+// ピタゴラスではC4を五度圏でA4から計算: A4→D4→G4→C4 = 442*(2/3)^3*4 ≈ 263.94Hz
+const C4_PYTH = 442 * Math.pow(2/3, 3) * 4; // ≈263.94Hz
+const PYTH_RATIOS_FROM_C = {
+  'C':  1,
+  'D':  9/8,
+  'E':  81/64,
+  'F':  4/3,
+  'G':  3/2,
+  'A':  27/16,
+  'B':  243/128,
+  // 臨時記号
+  'C#': 2187/2048,
+  'Db': 256/243,
+  'D#': 19683/16384,
+  'Eb': 32/27,
+  'F#': 729/512,
+  'Gb': 1024/729,
+  'G#': 6561/4096,
+  'Ab': 128/81,
+  'A#': 59049/32768,
+  'Bb': 16/9,
+  'B#': 2,
+  'Cb': 243/128
+};
+
+function pythFreqFromPitch(p){
+  // p.letter: C,D,E,F,G,A,B  p.acc: '#','b',''
+  const key = p.letter + (p.acc==='#'?'#': p.acc==='b'?'b':'');
+  const ratio = PYTH_RATIOS_FROM_C[key] || Math.pow(2, (p.midi-60)/12);
+  const octDiff = p.octave - 4;
+  return C4_PYTH * ratio * Math.pow(2, octDiff);
+}
+
+// 中央1オクターブ候補（C4=60〜B4=71）
+const OCTAVE1_ALL  = [60,61,62,63,64,65,66,67,68,69,70,71]; // 12音
+const OCTAVE1_DIAT = [60,62,64,65,67,69,71]; // ハ長調7音のみ
+let lastOctave1Midi = null;
+
+function pickOctave1Note(){
+  const pool = dictUseAcc ? OCTAVE1_ALL : OCTAVE1_DIAT;
+  // 直前と同じ音を避ける
+  const filtered = pool.length > 1 ? pool.filter(m => m !== lastOctave1Midi) : pool;
+  const midi = filtered[Math.floor(Math.random()*filtered.length)];
+  lastOctave1Midi = midi;
+  // midiからpitchを生成
+  const MIDI_TO_PITCH = {
+    60:{letter:'C',acc:'',octave:4}, 61:{letter:'C',acc:'#',octave:4},
+    62:{letter:'D',acc:'',octave:4}, 63:{letter:'D',acc:'#',octave:4},
+    64:{letter:'E',acc:'',octave:4}, 65:{letter:'F',acc:'',octave:4},
+    66:{letter:'F',acc:'#',octave:4}, 67:{letter:'G',acc:'',octave:4},
+    68:{letter:'G',acc:'#',octave:4}, 69:{letter:'A',acc:'',octave:4},
+    70:{letter:'A',acc:'#',octave:4}, 71:{letter:'B',acc:'',octave:4}
+  };
+  const base = MIDI_TO_PITCH[midi];
+  return buildPitch(base.letter, base.octave, base.acc);
+}
 let count=0, currentPhrase=null, audioCtx=null;
 let currentDictNotes=null, currentDictKeyName=null, dictRevealed=false, dictStartTime=0, dictElapsed=0;
 let dictTotal=0, dictCorrect=0, dictTimeSum=0;
@@ -364,7 +452,11 @@ const WARMUP_PATTERNS={
     root:{letter:'A',octave:3}
   }
 };
-function warmupBuildPitch(n){ return buildPitch(n.letter,n.octave,n.acc||''); }
+function warmupBuildPitch(n){
+  // ト音記号モードでは既存パターン（C3/A3始まり）を1オクターブ上げて表示
+  const octShift = (clefMode==='treble') ? 1 : 0;
+  return buildPitch(n.letter, n.octave + octShift, n.acc||'');
+}
 function warmupGetSeq(){
   const pat=WARMUP_PATTERNS[warmupKey];
   if(warmupType==='scale') return {asc:pat.scaleAsc, desc:pat.scaleDesc, hasHold:true, noteDur:'16th'};
@@ -775,6 +867,18 @@ function ledgerLines(x,y){
 }
 
 function drawClef(){
+  if(clefMode==='treble'){
+    // ト音記号: SVGパスで描画
+    // 五線 y=96,108,120,132,144（間隔12px）
+    // G線（第2線）= y=132、幹x中心=28
+    // Score Reading(score_reading_v1.html)のdrawClefGlyphをそのまま流用
+    // あちらの五線: y=86,98,110,122,134（中央y=110）
+    // こちらの五線: y=96,108,120,132,144（中央y=120）→ +10pxずらす
+    return '<g transform="translate(0,10)">'
+      + '<path d="M30,82 C24,82 20,88 24,93 C29,99 27,104 20,106 C9,109 6,118 12,124 C18,130 28,128 27,120 C26,114 16,114 18,121 C20,127 28,130 26,140 C24,148 16,151 12,146 C10,143 13,139 16,141" fill="none" stroke="#16202b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '</g>';
+  }
+  // アルト記号（ハ音記号）
   return '<g fill="#16202b">'+
      '<rect x="20" y="96" width="4" height="48"/>'+
      '<rect x="27" y="96" width="2" height="48"/>'+
@@ -1115,12 +1219,23 @@ function playReferenceAndTarget(){
   if(!currentDictNotes) return;
   const ctx=ensureCtx();
   const t0=ctx.currentTime+0.05;
-  playTone(442,t0,0.7);
-  const t1=t0+1.0;
-  currentDictNotes.forEach(p=>{ playTone(442*Math.pow(2,(p.midi-69)/12), t1, 0.9); });
+  if(dictMode==='octave1'){
+    // 中央1オクターブモード: 基準音なし、ピタゴラス音律で2秒再生
+    const freq = pythFreqFromPitch(currentDictNotes[0]);
+    playTone(freq, t0, 3.0);
+  } else {
+    // 通常モード: 基準音A=442を0.7秒→出題音0.9秒
+    playTone(442, t0, 0.7);
+    const t1=t0+1.0;
+    currentDictNotes.forEach(p=>{ playTone(442*Math.pow(2,(p.midi-69)/12), t1, 0.9); });
+  }
 }
 function newDictNote(){
-  if(dictType==='chord'){
+  if(dictMode==='octave1'){
+    // 中央1オクターブモード
+    currentDictNotes=[pickOctave1Note()];
+    currentDictKeyName=null;
+  } else if(dictType==='chord'){
     let chord=dictMakeChord();
     if(!chord){ const cand=diatonicCandidates(dictLowMidi,dictHighMidi); const c=cand[Math.floor(Math.random()*cand.length)]; chord=[buildPitch(c.letter,c.octave,'')]; chord._key=null; }
     currentDictNotes=chord;
@@ -1132,7 +1247,10 @@ function newDictNote(){
     currentDictKeyName=null;
   }
   dictRevealed=false;
-  document.getElementById('score').innerHTML='<div class="placeholder">🔊 基準音(A)に続いて'+(dictType==='chord'?'和音':'出題音')+'が鳴ります<br>'+(dictType==='chord'?'和音':'音名')+'を思い浮かべたら「答えを見る」</div>';
+  const placeholder = dictMode==='octave1'
+    ? '🔊 出題音が鳴ります（基準音なし）<br>頭の中でA=442を鳴らし、音名を思い浮かべたら「答えを見る」'
+    : '🔊 基準音(A)に続いて'+(dictType==='chord'?'和音':'出題音')+'が鳴ります<br>'+(dictType==='chord'?'和音':'音名')+'を思い浮かべたら「答えを見る」';
+  document.getElementById('score').innerHTML='<div class="placeholder">'+placeholder+'</div>';
   document.getElementById('dict-judge').style.display='none';
   document.getElementById('play').style.display='';
   dictStartTime=performance.now();
@@ -1175,7 +1293,7 @@ function updateDictStats(){
 /* ---------- 共通 ---------- */
 function ensureCtx(){ 
   if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); 
-  if(audioCtx.state==='suspended' || audioCtx.state==='interrupted') audioCtx.resume().catch(e=>console.error('Audio resume failed:',e));
+  if(audioCtx.state==='suspended') audioCtx.resume().catch(e=>console.error('Audio resume failed:',e));
   return audioCtx; 
 }
 function getBpm(){ return Number(document.getElementById('bpm').value); }
@@ -1250,6 +1368,68 @@ function applyModeVisibility(){
   document.getElementById('next-controls').style.display = (appMode==='warmup') ? 'none' : 'flex';
 }
 
+// 記号モード切り替え
+const RANGE_PRESETS = {
+  treble: {
+    pitch: [
+      {value:'60,84', label:'標準（C4–C6）', selected:true},
+      {value:'60,91', label:'高音含む（C4–G6）'},
+      {value:'55,79', label:'中低音（G3–G5）'},
+      {value:'48,77', label:'低音（C3–F5）'},
+    ],
+    dict: [
+      {value:'60,84', label:'標準（C4–C6）', selected:true},
+      {value:'60,91', label:'高音含む（C4–G6）'},
+      {value:'55,79', label:'中低音（G3–G5）'},
+      {value:'48,77', label:'低音（C3–F5）'},
+    ],
+    defaultPitch:[60,84], defaultDict:[60,84]
+  },
+  alto: {
+    pitch: [
+      {value:'48,81', label:'標準（C3–A5）'},
+      {value:'48,88', label:'高音含む（C3–E6）'},
+      {value:'53,72', label:'アルト記号中心（F3–C5）', selected:true},
+      {value:'48,77', label:'低～中（C3–F5）'},
+    ],
+    dict: [
+      {value:'48,81', label:'標準（C3–A5）'},
+      {value:'48,88', label:'高音含む（C3–E6）'},
+      {value:'53,72', label:'アルト記号中心（F3–C5）', selected:true},
+      {value:'48,77', label:'低～中（C3–F5）'},
+    ],
+    defaultPitch:[53,72], defaultDict:[53,72]
+  }
+};
+function applyRangePresets(mode){
+  const pr=RANGE_PRESETS[mode];
+  const rsel=document.getElementById('range');
+  rsel.innerHTML=pr.pitch.map(o=>`<option value="${o.value}"${o.selected?' selected':''}>${o.label}</option>`).join('');
+  const dsel=document.getElementById('dict-range');
+  dsel.innerHTML=pr.dict.map(o=>`<option value="${o.value}"${o.selected?' selected':''}>${o.label}</option>`).join('');
+  [lowMidi,highMidi]=pr.defaultPitch;
+  [dictLowMidi,dictHighMidi]=pr.defaultDict;
+}
+document.getElementById('seg-clef').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  clefMode=b.dataset.v;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  applyRangePresets(clefMode);
+  if(appMode==='warmup') drawWarmupScore();
+  else if(appMode==='dictation') newDictNote();
+  else newPhrase();
+});
+
+document.getElementById('seg-dict-mode').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  dictMode=b.dataset.v;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  // 中央1オクターブモードでは音域セレクタと出題種別を非表示
+  const isOct1 = dictMode==='octave1';
+  document.getElementById('dict-range-row').style.display = isOct1?'none':'';
+  document.getElementById('seg-dict-type').closest('.opt').style.display = isOct1?'none':'';
+  newDictNote();
+});
 document.getElementById('seg-appmode').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   appMode=b.dataset.v;
