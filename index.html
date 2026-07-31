@@ -255,6 +255,32 @@
             <p>1〜5は抽象的な訓練用の音符・音型を使用しますが、6のOrchestra Excerptは、実際のオーケストラ・レパートリーから抽出した難所を教材とし、これまでの訓練を実際の楽曲に橋渡しします。</p>
         </div>
         
+        <details style="margin:10px 0 16px;border:1px solid #dde3ec;border-radius:8px;background:#f8f9fb;">
+          <summary style="padding:10px 14px;font-size:13px;font-weight:700;color:#2c5d92;cursor:pointer;user-select:none;">🔇 音が出ない場合のチェックリスト</summary>
+          <div style="padding:10px 16px 14px;font-size:12.5px;color:#333;line-height:1.8;">
+            <p style="margin:0 0 8px;font-weight:700;">iOS（iPhone・iPad）の場合</p>
+            <ol style="margin:0 0 12px;padding-left:18px;">
+              <li><b>マナーモード（消音スイッチ）を確認</b><br>iPhoneの側面スイッチがオレンジになっていたら解除してください</li>
+              <li><b>端末の音量を確認</b><br>音量ボタンでメディア音量が上がっているか確認してください</li>
+              <li><b>Safariの自動再生設定</b><br>設定アプリ → Safari → 自動再生 →「すべてのメディアを許可」に変更してください</li>
+              <li><b>Bluetoothデバイスの確認</b><br>イヤホン・スピーカーが接続されている場合は、そちらから音が出ていないか確認してください</li>
+              <li><b>着信・通話・タブ切り替え後に音が止まる場合</b><br>画面をタップしてから再度お試しください（iOS 26でのAudioContext問題に対応済みですが、まれに発生することがあります）</li>
+              <li><b>ホーム画面追加アプリとして使用している場合</b><br>アプリスイッチャーから完全に閉じて、再度開いてください</li>
+              <li><b>低電力モードがオンの場合</b><br>設定 → バッテリー → 低電力モードをオフにしてお試しください</li>
+            </ol>
+            <p style="margin:0 0 8px;font-weight:700;">Androidの場合</p>
+            <ol style="margin:0 0 12px;padding-left:18px;">
+              <li><b>マナーモード・サイレントモードを確認</b><br>通知パネルから解除してください</li>
+              <li><b>メディア音量を確認</b><br>着信音量とは別に、メディア音量を上げてください</li>
+            </ol>
+            <p style="margin:0 0 8px;font-weight:700;">共通</p>
+            <ol style="margin:0;padding-left:18px;">
+              <li><b>ブラウザを再読み込み</b><br>ページをリロードして、画面をタップしてから再度お試しください</li>
+              <li><b>別のブラウザで試す</b><br>Safari・Chrome・Edgeなど別のブラウザでお試しください</li>
+            </ol>
+          </div>
+        </details>
+        
         <div class="learning-path">
             <h2>想定学習パス（段階や必要性に応じてどこから着手しても構いません）</h2>
             <div class="path-items">
@@ -423,6 +449,11 @@
         <details style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <summary style="cursor: pointer; font-weight: 700; font-size: 1.1rem; color: #0f1722; user-select: none;">📋 アップデート履歴</summary>
             <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #c9d0da; font-size: 0.95rem; line-height: 2; color: #555;">
+                <p><strong>2026年7月31日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>全アプリ共通：ユーザーからiOS 26環境で音が出ないという報告を受け調査。マナーモード（消音スイッチ）がオンになっていたことが原因と判明し、解除で解決。これを受け、index.htmlおよび全アプリの説明文の下に「音が出ない場合のチェックリスト」を折りたたみタブで追加。マナーモード・音量・Safariの自動再生設定・Bluetooth・iOS 26特有のAudioContext問題・低電力モードなど、考えうる原因と対処法を網羅</li>
+                    <li>Pure Intonation Tuner：「← トップページに戻る」リンクがタイトルと同じ行に表示されていた問題を修正。リンクをタイトルの上に独立して表示するよう変更</li>
+                </ul>
                 <p><strong>2026年7月30日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>Melody Dictation Trainer：視唱セクションの説明文に「自然旋律モードについて」のディスクレイマーを追加。アルゴリズム生成旋律の限界（和声的な必然性・フレーズの呼吸・表現の意図を含まない）を明示した上で、澤野立次郎「基礎から実習 ソルフェージュ」などの専門テキストとの併用を推奨。同時に、このアプリにしかない強み（ランダム生成による予測不可能な課題・即時音声確認）も明記し、両者の使い分けを案内</li>
