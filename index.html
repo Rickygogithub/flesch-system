@@ -446,9 +446,9 @@
     </div>
     
     <div class="container" style="margin-top: 30px;">
-        <details style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <summary style="cursor: pointer; font-weight: 700; font-size: 1.1rem; color: #0f1722; user-select: none;">📋 アップデート履歴</summary>
-            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #c9d0da; font-size: 0.95rem; line-height: 2; color: #555;">
+        <div style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <p style="font-weight: 700; font-size: 1.1rem; color: #0f1722; margin: 0 0 16px;">📋 アップデート履歴</p>
+            <div style="font-size: 0.95rem; line-height: 2; color: #555;">
                 <p><strong>2026年7月31日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>全アプリ共通：ユーザーからiOS 26環境で音が出ないという報告を受け調査。マナーモード（消音スイッチ）がオンになっていたことが原因と判明し、解除で解決。これを受け、index.htmlおよび全アプリの説明文の下に「音が出ない場合のチェックリスト」を折りたたみタブで追加。マナーモード・音量・Safariの自動再生設定・Bluetooth・iOS 26特有のAudioContext問題・低電力モードなど、考えうる原因と対処法を網羅</li>
@@ -466,7 +466,10 @@
                     <li>Score Reading：和音モードで、フラット4〜6個・シャープ4〜6個の調（Des-Dur・As-Dur・Ges-Dur・Eis-Dur・H-Dur・Fis-Durなど）のaccMapが正しく生成されていなかったバグを修正。該当する調で減七和音の第4音が誤った音名（例：BがHとして）生成される問題が解消される</li>
                     <li>Melody Dictation Trainer：聴音モードに「中央1オクターブ」モードを追加。C4〜B4の1オクターブに音域を限定し、基準音なしで出題。各ピッチの固有の色合いを覚えることを目的とした訓練。音律はハ長調ベースのピタゴラス音律。臨時記号「なし（ハ長調7音）」「あり（12音）」の切り替えが可能。再生は3秒間、何度でも聴き直せる。2問連続で同じ音が出ないよう制御</li>
                 </ul>
-                <p><strong>2026年7月28日</strong></p>
+
+                <details style="margin-top: 8px;">
+                    <summary style="cursor: pointer; font-weight: 700; color: #2c5d92; user-select: none; font-size: 0.95rem;">▼ すべてのアップデート履歴を見る</summary>
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e8eaed;">
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>全アプリ（Score Reading・Melody Dictation Trainer・Pure Intonation Tuner・Beautiful Intonation Training・Integrated Performance Practice・Orchestra Excerpt）共通：iOS 26で一部の操作後に音が鳴らなくなる不具合を修正。iOS 26からAudioContextに新たに追加された「interrupted」状態（着信・タブ切り替え・画面ロックなどで遷移）を検知してresumeするよう対応</li>
                 </ul>
@@ -560,8 +563,10 @@
                     <li>Google Analyticsを導入</li>
                     <li>Netlifyのクレジット制限を回避するため、GitHub Pagesに移行</li>
                 </ul>
+                    </div>
+                </details>
             </div>
-        </details>
+        </div>
     </div>
     
     <footer>
