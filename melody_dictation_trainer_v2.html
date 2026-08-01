@@ -289,7 +289,7 @@
     <details style="margin-bottom:8px">
       <summary>▶️ ③ 聴音</summary>
       <div class="footnote" style="margin-top:6px">
-        基準音（A=442）に続いて単音または和音（実在する主和音）が鳴ります。音名を思い浮かべたら「答えを見る」で確認し、「✓ 正解」「✗ 間違えた」を選ぶと出題数・正答率・平均回答時間が記録されます。「🔊 もう一度聴く」で何度でも聴き直せます。<br><strong style="color:#b23b3b">※ 異名同音（例：Fes と E）も正解とします。</strong>
+        基準音（A=442）に続いて単音または和音（実在する主和音）が鳴ります。音名を思い浮かべたら「答えを見る」で確認し、「✓ 正解」「✗ 間違えた」を選ぶと出題数・正答率・平均回答時間が記録されます。「🔊 もう一度聴く」で何度でも聴き直せます。<br><strong style="color:#b23b3b">※ 臨時記号ありの場合、CesとFesは出題しません（HおよびEと異名同音のため）。</strong>
       </div>
     </details>
 
@@ -1218,6 +1218,39 @@ function playRhythmClicks(phrase, withTaps){
 }
 
 /* ---------- 聴音 ---------- */
+// 広域聴音・臨時記号あり用：CesとFesを除外した有効音リスト
+// 各音を {letter, acc, midiOffset(C4=0基準)} で定義
+function buildDictPool(lowMidi, highMidi){
+  // 1オクターブ分の有効音（Ces=Hと同音なので除外、Fes=Eと同音なので除外）
+  const base = [
+    {letter:'C', acc:''},    // C
+    {letter:'C', acc:'#'},   // Cis
+    {letter:'D', acc:'b'},   // Des
+    {letter:'D', acc:''},    // D
+    {letter:'D', acc:'#'},   // Dis
+    {letter:'E', acc:'b'},   // Es
+    {letter:'E', acc:''},    // E  (Fesと同音なので♭Fは除外)
+    {letter:'F', acc:''},    // F
+    {letter:'F', acc:'#'},   // Fis
+    {letter:'G', acc:'b'},   // Ges
+    {letter:'G', acc:''},    // G
+    {letter:'G', acc:'#'},   // Gis
+    {letter:'A', acc:'b'},   // As
+    {letter:'A', acc:''},    // A
+    {letter:'A', acc:'#'},   // Ais
+    {letter:'B', acc:'b'},   // B
+    {letter:'B', acc:''},    // H  (CesはHと同音なのでCの♭は除外)
+  ];
+  const pool = [];
+  for(let oct = 2; oct <= 6; oct++){
+    for(const {letter, acc} of base){
+      const p = buildPitch(letter, oct, acc);
+      if(p.midi >= lowMidi && p.midi <= highMidi) pool.push(p);
+    }
+  }
+  return pool;
+}
+let lastDictMidi = null;
 function dictPickAcc(){ if(!dictUseAcc) return ''; const r=Math.random(); if(r<0.3) return ''; return r<0.65?'#':'b'; }
 function dictMakeChord(){
   const key=pickKey(dictUseAcc);
@@ -1272,9 +1305,25 @@ function newDictNote(){
     currentDictNotes=chord;
     currentDictKeyName=chord._key||null;
   } else {
-    const cand=diatonicCandidates(dictLowMidi,dictHighMidi);
-    const c=cand[Math.floor(Math.random()*cand.length)];
-    currentDictNotes=[buildPitch(c.letter,c.octave,dictPickAcc())];
+    if(dictUseAcc){
+      // 臨時記号あり：Ces/Fes除外済みプールから均等・直前midi回避
+      const pool = buildDictPool(dictLowMidi, dictHighMidi);
+      const filtered = pool.length > 1 ? pool.filter(p => p.midi !== lastDictMidi) : pool;
+      const p = filtered[Math.floor(Math.random()*filtered.length)];
+      lastDictMidi = p.midi;
+      currentDictNotes=[p];
+    } else {
+      // 臨時記号なし：従来通りダイアトニック候補から
+      const cand=diatonicCandidates(dictLowMidi,dictHighMidi);
+      const filtered = cand.length > 1 ? cand.filter(c => {
+        const p = buildPitch(c.letter,c.octave,'');
+        return p.midi !== lastDictMidi;
+      }) : cand;
+      const c=filtered[Math.floor(Math.random()*filtered.length)];
+      const p=buildPitch(c.letter,c.octave,'');
+      lastDictMidi = p.midi;
+      currentDictNotes=[p];
+    }
     currentDictKeyName=null;
   }
   dictRevealed=false;

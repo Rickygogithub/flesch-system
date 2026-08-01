@@ -106,39 +106,6 @@
       <button id="lt-start">スタート</button>
       <button class="stop" id="lt-stop" disabled>ストップ</button>
     </div>
-
-    <details style="margin-top:14px">
-      <summary>▶️ ボーイングの安定性を測る（右手・弓のベンチマーク）</summary>
-      <div style="padding:10px 0;font-size:13px;color:#3d4654;line-height:1.8;font-weight:600">
-        これまでのセクションは、楽譜を読んでから左手を押さえるまでの、認知面の診断でした。ここでは、右手（弓）の運動制御を測ります。<br><br>
-        <strong>上手い人ほど、ロングトーンの音量が一定に保てます。</strong>音量を一定に保てて初めて、意図したクレッシェンド・デクレッシェンドなどの変化をつけられます。ツールの音は鳴らさず、メトロノームのみで拍を確認しながら、ご自身の音をマイクで録音し、音量（振幅）の標準偏差を測定します。<br><br>
-        <strong>使い方：</strong>下のボタンを押すと、マイクの使用許可が求められます。許可後、1小節分のカウントイン（空振り）→ダウンボウ2小節（8秒）→アップボウ2小節（8秒）→ダウンボウ2小節（8秒）→アップボウ2小節（8秒）、合計32秒間、主音のロングトーンを弾いてください（テンポ＝四分音符60、4拍子固定）。<br><br>
-        測定機器や環境によって、絶対的な数値は変わります。他人と比べるものではなく、<strong>同じ環境で繰り返し測り、自分自身の数値が小さくなっていくかを確認する</strong>、目安としてお使いください。32秒間、安定させ続けようとすること自体が、良い練習になります。
-      </div>
-      <div class="opt"><span>マイクで録音して測定</span>
-        <button id="vt-start">▶️ 測定スタート（32秒）</button>
-      </div>
-      <div id="vt-status" style="font-size:13px;color:#3d4654;font-weight:700;margin:8px 0"></div>
-      <div id="vt-results" style="display:none">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
-          <tr style="background:#f1f3f6">
-            <th style="padding:6px;border:1px solid #c9d0da">全体(32秒)</th>
-            <th style="padding:6px;border:1px solid #c9d0da">1区間(ダウン)</th>
-            <th style="padding:6px;border:1px solid #c9d0da">2区間(アップ)</th>
-            <th style="padding:6px;border:1px solid #c9d0da">3区間(ダウン)</th>
-            <th style="padding:6px;border:1px solid #c9d0da">4区間(アップ)</th>
-          </tr>
-          <tr>
-            <td style="padding:6px;border:1px solid #c9d0da;text-align:center" id="vt-overall">–</td>
-            <td style="padding:6px;border:1px solid #c9d0da;text-align:center" id="vt-seg1">–</td>
-            <td style="padding:6px;border:1px solid #c9d0da;text-align:center" id="vt-seg2">–</td>
-            <td style="padding:6px;border:1px solid #c9d0da;text-align:center" id="vt-seg3">–</td>
-            <td style="padding:6px;border:1px solid #c9d0da;text-align:center" id="vt-seg4">–</td>
-          </tr>
-        </table>
-      </div>
-      <div id="vt-history" style="font-size:12px;color:#3d4654;margin-top:10px;line-height:1.8"></div>
-    </details>
   </section>
 
   <!-- ② 音階 -->
@@ -150,7 +117,6 @@
         <option value="C" selected>ハ長調</option>
         <option value="Am">イ短調</option>
         <option value="G">ト長調</option>
-        <option value="Em">ホ短調</option>
         <option value="D">ニ長調</option>
         <option value="Hm">ロ短調</option>
         <option value="A">イ長調</option>
@@ -229,32 +195,6 @@
       <button class="stop" id="ch-stop" disabled>ストップ</button>
     </div>
   </section>
-
-  <!-- ④ 12調ローテーション・分散和音（毎日練習用） -->
-  <section>
-    <h2>④ 12調ローテーション・分散和音</h2>
-    <div class="hint">C→G→D→A→E→Ab→Eb→Bb→F の順で実施。各調で：(1)主音4拍 (2)小休止2秒 (3)背景で主音を鳴らし続けながら、メトロノーム4拍子で7つの和音を4拍ずつ立て続けに弾く。調性感覚と5度圏の響きを習得。また、何の調性を何の指番号で弾き始めるのかを明確に意識し、ポジション自体は頭で考えて脳と指板のマッピングを連携させる。</div>
-    
-    <div class="opt"><span>メトロノーム併用</span>
-      <input type="checkbox" id="rot-metro" checked>
-    </div>
-    <div class="opt"><span>ロングトーン確認モード（1音4拍で主音を伸ばす）</span>
-      <input type="checkbox" id="rot-longtone">
-    </div>
-    <div class="opt"><span>テンポ（四分音符の速度）</span>
-      <input type="range" id="rot-bpm" min="20" max="120" value="60">
-      <span class="bpmval" id="rot-bpmval">60 BPM</span>
-    </div>
-    <div class="controls">
-      <button id="rot-start">スタート（全12調）</button>
-      <button class="stop" id="rot-stop" disabled>ストップ</button>
-    </div>
-    
-    <div id="rot-current-key" style="margin-top:12px;padding:12px;background:#f1f3f6;border-radius:10px;text-align:center;font-size:18px;font-weight:800;color:#0f1722;min-height:40px">
-      スタートで開始します
-    </div>
-  </section>
-
   <!-- ⑤ 分散3度 -->
   <section>
     <h2>⑤ 分散3度（3度のスケール）</h2>
@@ -264,7 +204,6 @@
         <option value="C" selected>ハ長調</option>
         <option value="Am">イ短調</option>
         <option value="G">ト長調</option>
-        <option value="Em">ホ短調</option>
         <option value="D">ニ長調</option>
         <option value="Hm">ロ短調</option>
         <option value="A">イ長調</option>
@@ -361,7 +300,6 @@
         <option value="C" selected>ハ長調</option>
         <option value="Am">イ短調</option>
         <option value="G">ト長調</option>
-        <option value="Em">ホ短調</option>
         <option value="D">ニ長調</option>
         <option value="Hm">ロ短調</option>
         <option value="A">イ長調</option>
@@ -417,7 +355,6 @@
         <option value="C" selected>ハ長調</option>
         <option value="Am">イ短調</option>
         <option value="G">ト長調</option>
-        <option value="Em">ホ短調</option>
         <option value="D">ニ長調</option>
         <option value="Hm">ロ短調</option>
         <option value="A">イ長調</option>
@@ -473,7 +410,6 @@
         <option value="C" selected>ハ長調</option>
         <option value="Am">イ短調</option>
         <option value="G">ト長調</option>
-        <option value="Em">ホ短調</option>
         <option value="D">ニ長調</option>
         <option value="Hm">ロ短調</option>
         <option value="A">イ長調</option>
@@ -529,7 +465,6 @@
         <option value="C" selected>ハ長調</option>
         <option value="Am">イ短調</option>
         <option value="G">ト長調</option>
-        <option value="Em">ホ短調</option>
         <option value="D">ニ長調</option>
         <option value="Hm">ロ短調</option>
         <option value="A">イ長調</option>
@@ -600,8 +535,13 @@ let activeOscillators=[]; // すべてのオシレーターを追跡
 function getCtx(){ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); return actx; }
 async function ensureCtx(){
   if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
-  if(actx.state==='suspended'){
+  if(actx.state==='suspended'||actx.state==='interrupted'){
     try{ await actx.resume(); }catch(e){ console.error('Audio resume failed:',e); }
+  }
+  // resume後も interrupted のままなら AudioContext を再生成
+  if(actx.state==='interrupted'){
+    try{ await actx.close(); }catch(e){}
+    actx=new (window.AudioContext||window.webkitAudioContext)();
   }
   return actx;
 }
@@ -661,99 +601,6 @@ function playClickAt(time, accent){
 let vtActive=false, vtData=[], vtHistory=[];
 let vtMicStream=null, vtAnalyser=null;
 
-function stdDev(arr){
-  if(arr.length===0) return 0;
-  const mean=arr.reduce((a,b)=>a+b,0)/arr.length;
-  const variance=arr.reduce((a,b)=>a+Math.pow(b-mean,2),0)/arr.length;
-  return Math.sqrt(variance);
-}
-
-async function startVolumeTest(){
-  if(vtActive) return;
-  let stream;
-  try{
-    stream = await navigator.mediaDevices.getUserMedia({audio:true});
-  }catch(e){
-    document.getElementById('vt-status').textContent='マイクの使用が許可されませんでした。ブラウザの設定をご確認ください。';
-    return;
-  }
-  vtMicStream=stream;
-  const ctx=await ensureCtx();
-  const micSource=ctx.createMediaStreamSource(stream);
-  vtAnalyser=ctx.createAnalyser();
-  vtAnalyser.fftSize=2048;
-  micSource.connect(vtAnalyser);
-
-  vtActive=true;
-  vtData=[];
-  document.getElementById('vt-start').disabled=true;
-  document.getElementById('vt-results').style.display='none';
-  document.getElementById('vt-status').textContent='カウントイン中…';
-
-  const bpm=60, beatSec=60/bpm;
-  const countInBeats=4; // 1小節分の空振り
-  const perfBeats=32;   // 8小節×4拍＝32拍＝32秒（1拍1秒）
-  const startTime=ctx.currentTime+0.15;
-
-  // メトロノーム（カウントイン＋本番、通して鳴らす）
-  for(let i=0;i<countInBeats+perfBeats;i++){
-    playClickAt(startTime+i*beatSec, i%4===0);
-  }
-
-  const recordStart=startTime+countInBeats*beatSec;
-  const recordEnd=recordStart+perfBeats*beatSec; // 32秒間
-  const bufferLen=vtAnalyser.fftSize;
-  const dataArray=new Uint8Array(bufferLen);
-
-  function sampleLoop(){
-    if(!vtActive) return;
-    const now=ctx.currentTime;
-    if(now<recordStart){
-      document.getElementById('vt-status').textContent='カウントイン中…';
-    } else if(now<recordEnd){
-      vtAnalyser.getByteTimeDomainData(dataArray);
-      let sumSq=0;
-      for(let i=0;i<bufferLen;i++){ const v=(dataArray[i]-128)/128; sumSq+=v*v; }
-      const rms=Math.sqrt(sumSq/bufferLen);
-      vtData.push({t:now-recordStart, v:rms});
-      document.getElementById('vt-status').textContent='測定中… '+(now-recordStart).toFixed(1)+' 秒 / 32秒';
-    }
-    if(now<recordEnd+0.15){
-      requestAnimationFrame(sampleLoop);
-    } else {
-      finishVolumeTest();
-    }
-  }
-  requestAnimationFrame(sampleLoop);
-}
-
-function finishVolumeTest(){
-  vtActive=false;
-  document.getElementById('vt-start').disabled=false;
-  if(vtMicStream){ vtMicStream.getTracks().forEach(t=>t.stop()); vtMicStream=null; }
-
-  const allV=vtData.map(d=>d.v);
-  const overallSD=stdDev(allV);
-  const segs=[[],[],[],[]];
-  vtData.forEach(d=>{ const idx=Math.min(3,Math.floor(d.t/8)); segs[idx].push(d.v); });
-  const segSDs=segs.map(s=>stdDev(s));
-
-  document.getElementById('vt-status').textContent='測定完了（32秒間）';
-  document.getElementById('vt-results').style.display='';
-  document.getElementById('vt-overall').textContent=overallSD.toFixed(4);
-  document.getElementById('vt-seg1').textContent=segSDs[0].toFixed(4);
-  document.getElementById('vt-seg2').textContent=segSDs[1].toFixed(4);
-  document.getElementById('vt-seg3').textContent=segSDs[2].toFixed(4);
-  document.getElementById('vt-seg4').textContent=segSDs[3].toFixed(4);
-
-  vtHistory.push(overallSD);
-  const histDiv=document.getElementById('vt-history');
-  if(vtHistory.length>0){
-    histDiv.textContent='このセッションでの履歴（全体の標準偏差、古い順）：'+vtHistory.map(v=>v.toFixed(4)).join(' → ');
-  }
-}
-
-document.getElementById('vt-start').addEventListener('click', startVolumeTest);
 
 /* ---- ピタゴラス音律（5度の連鎖。Cからの「5度の数」で12音を定義） ----
    昇り：ド・ド♯・レ・レ♯・ミ・ファ・ファ♯・ソ・ソ♯・ラ・シ♭・シ
@@ -876,143 +723,129 @@ function majorScaleMidis(startMidi, count){
 /* ================= ③和音（純正律） ================= */
 const CHORDS_BY_KEY = {
   C: {
-    tonicMidi: TONIC_MID, // ド4(60)
-    finalNote: 65,        // ファ
+    tonicMidi: 48, // ド3(48)
+    finalNote: 53,        // ファ3
     finalLabel: '♪ ファを単音で3拍（F-Dur属七の主音・解決音）',
     chords: [
-      {label:'ド / ミ♭ / ソ　|　ハ短調／C-moll主和音の基本形（Cm/C）', root:60, notes:[60,63,67]},
-      {label:'ド / ミ / ソ　|　ハ長調／C-Dur主和音の基本形（C/C）', root:60, notes:[60,64,67]},
-      {label:'ド / ミ / ラ　|　イ短調／A-moll主和音の第一転回（Am/C）', root:69, notes:[60,64,69]},
-      {label:'ド / ファ / ラ　|　へ長調／F-Dur主和音の第二転回（F/C）', root:65, notes:[60,65,69]},
-      {label:'ド / ファ / ラ♭　|　へ短調／F-moll主和音の第二転回（Fm/C）', root:65, notes:[60,65,68]},
-      {label:'ド / レ♯ / ファ♯ / ラ　|　変ニ長調／Des-Dur減七の和音（Cdim7）', root:60, notes:[60,63,66,69]},
-      {label:'ド / ミ / ソ / シ♭　|　ヘ長調／F-Dur属七の和音（C7）', root:60, notes:[60,64,67,70]}
+      {label:'ド / ミ♭ / ソ　|　ハ短調／C-moll主和音の基本形（Cm/C）', root:60, notes:[48,51,55]},
+      {label:'ド / ミ / ソ　|　ハ長調／C-Dur主和音の基本形（C/C）', root:60, notes:[48,52,55]},
+      {label:'ド / ミ / ラ　|　イ短調／A-moll主和音の第一転回（Am/C）', root:69, notes:[48,52,57]},
+      {label:'ド / ファ / ラ　|　へ長調／F-Dur主和音の第二転回（F/C）', root:65, notes:[48,53,57]},
+      {label:'ド / ファ / ラ♭　|　へ短調／F-moll主和音の第二転回（Fm/C）', root:65, notes:[48,53,56]},
+      {label:'ド / ミ♭ / ソ♭ / シ♭♭　|　変ニ長調／Des-Dur減七の和音（Cdim7）', root:48, notes:[48,51,54,57]},
+      {label:'ド / ミ / ソ / シ♭　|　ヘ長調／F-Dur属七の和音（C7）', root:48, notes:[48,52,55,58]}
     ]
   },
   G: {
-    tonicMidi: 67, // ソ4
-    finalNote: 72, // ド（ハ長調版の「ファ」を完全5度分そのまま移調）
+    tonicMidi: 55, // ソ3
+    finalNote: 60, // ド（ハ長調版の「ファ」を完全5度分そのまま移調）
     finalLabel: '♪ ドを単音で3拍（C-Dur属七の主音・解決音）',
     chords: [
-      {label:'ソ / シ♭ / レ　|　ト短調／G-moll主和音の基本形（Gm/G）', root:67, notes:[67,70,74]},
-      {label:'ソ / シ / レ　|　ト長調／G-Dur主和音の基本形（G/G）', root:67, notes:[67,71,74]},
-      {label:'ソ / シ / ミ　|　ホ短調／E-moll主和音の第一転回（Em/G）', root:76, notes:[67,71,76]},
-      {label:'ソ / ド / ミ　|　ハ長調／C-Dur主和音の第二転回（C/G）', root:72, notes:[67,72,76]},
-      {label:'ソ / ド / ミ♭　|　ハ短調／C-moll主和音の第二転回（Cm/G）', root:72, notes:[67,72,75]},
-      {label:'ソ / シ♭ / レ♭ / ミ　|　変イ長調／As-Dur減七の和音（Gdim7）', root:67, notes:[67,70,73,76]},
-      {label:'ソ / シ / レ / ファ　|　ハ長調／C-Dur属七の和音（G7）', root:67, notes:[67,71,74,77]}
+      {label:'ソ / シ♭ / レ　|　ト短調／G-moll主和音の基本形（Gm/G）', root:55, notes:[55,58,62]},
+      {label:'ソ / シ / レ　|　ト長調／G-Dur主和音の基本形（G/G）', root:55, notes:[55,59,62]},
+      {label:'ソ / シ / ミ　|　ホ短調／E-moll主和音の第一転回（Em/G）', root:64, notes:[55,59,64]},
+      {label:'ソ / ド / ミ　|　ハ長調／C-Dur主和音の第二転回（C/G）', root:60, notes:[55,60,64]},
+      {label:'ソ / ド / ミ♭　|　ハ短調／C-moll主和音の第二転回（Cm/G）', root:60, notes:[55,60,63]},
+      {label:'ソ / シ♭ / レ♭ / ファ♭　|　変イ長調／As-Dur減七の和音（Gdim7）', root:55, notes:[55,58,61,64]},
+      {label:'ソ / シ / レ / ファ　|　ハ長調／C-Dur属七の和音（G7）', root:55, notes:[55,59,62,65]}
     ]
   },
   E: {
-    tonicMidi: 64, // ミ4
-    finalNote: 69, // ラ（ハ長調版の「ファ」を完全3度分そのまま移調）
+    tonicMidi: 52, // ミ3
+    finalNote: 57, // ラ（ハ長調版の「ファ」を完全3度分そのまま移調）
     finalLabel: '♪ ラを単音で3拍（A-Dur属七の主音・解決音）',
     chords: [
-      {label:'ミ / ソ / シ♭　|　ホ短調／E-moll主和音の基本形（Em/E）', root:64, notes:[64,67,70]},
-      {label:'ミ / ソ♯ / シ　|　ホ長調／E-Dur主和音の基本形（E/E）', root:64, notes:[64,68,71]},
-      {label:'ミ / ソ♯ / ド♯　|　嬰ハ短調／Cis-moll主和音の第一転回（Cism/E）', root:73, notes:[64,68,73]},
-      {label:'ミ / ラ / ド♯　|　イ長調／A-Dur主和音の第二転回（A/E）', root:69, notes:[64,69,73]},
-      {label:'ミ / ラ / ド　|　イ短調／A-moll主和音の第二転回（Am/E）', root:69, notes:[64,69,72]},
-      {label:'ミ / ソ / シ♭ / レ♭　|　ヘ長調／F-Dur減七の和音（Edim7）', root:64, notes:[64,67,70,73]},
-      {label:'ミ / ソ♯ / シ / レ♯　|　イ長調／A-Dur属七の和音（E7）', root:64, notes:[64,68,71,74]}
-    ]
-  },
-  Em: {
-    tonicMidi: 64, // ミ4（ホ短調）
-    finalNote: 69, // ラ
-    finalLabel: '♪ ラを単音で3拍（A-Dur属七の主音・解決音）',
-    chords: [
-      {label:'ミ / ソ / シ♭　|　ホ短調／E-moll主和音の基本形（Em/E）', root:64, notes:[64,67,70]},
-      {label:'ミ / ソ♯ / シ　|　ホ長調／E-Dur主和音の基本形（E/E）', root:64, notes:[64,68,71]},
-      {label:'ミ / ソ♯ / ド♯　|　嬰ハ短調／Cis-moll主和音の第一転回（Cism/E）', root:73, notes:[64,68,73]},
-      {label:'ミ / ラ / ド♯　|　イ長調／A-Dur主和音の第二転回（A/E）', root:69, notes:[64,69,73]},
-      {label:'ミ / ラ / ド　|　イ短調／A-moll主和音の第二転回（Am/E）', root:69, notes:[64,69,72]},
-      {label:'ミ / ソ / シ♭ / レ♭　|　変ロ長調／B-Dur減七の和音（Edim7）', root:64, notes:[64,67,70,73]},
-      {label:'ミ / ソ♯ / シ / レ♯　|　ホ長調／E-Dur属七の和音（E7）', root:64, notes:[64,68,71,74]}
+      {label:'ミ / ソ / シ♭　|　ホ短調／E-moll主和音の基本形（Em/E）', root:52, notes:[52,55,58]},
+      {label:'ミ / ソ♯ / シ　|　ホ長調／E-Dur主和音の基本形（E/E）', root:52, notes:[52,56,59]},
+      {label:'ミ / ソ♯ / ド♯　|　嬰ハ短調／Cis-moll主和音の第一転回（Cism/E）', root:61, notes:[52,56,61]},
+      {label:'ミ / ラ / ド♯　|　イ長調／A-Dur主和音の第二転回（A/E）', root:57, notes:[52,57,61]},
+      {label:'ミ / ラ / ド　|　イ短調／A-moll主和音の第二転回（Am/E）', root:57, notes:[52,57,60]},
+      {label:'ミ / ソ / シ♭ / レ♭　|　ヘ長調／F-Dur減七の和音（Edim7）', root:52, notes:[52,55,58,61]},
+      {label:'ミ / ソ♯ / シ / レ♯　|　イ長調／A-Dur属七の和音（E7）', root:52, notes:[52,56,59,62]}
     ]
   },
   F: {
-    tonicMidi: 65, // ファ4
-    finalNote: 70, // シ♭
+    tonicMidi: 53, // ファ3
+    finalNote: 58, // シ♭
     finalLabel: '♪ シ♭を単音で3拍（B-Dur属七の主音・解決音）',
     chords: [
-      {label:'ファ / ラ♭ / ド　|　ヘ短調／F-moll主和音の基本形（Fm/F）', root:65, notes:[65,68,72]},
-      {label:'ファ / ラ / ド　|　ヘ長調／F-Dur主和音の基本形（F/F）', root:65, notes:[65,69,72]},
-      {label:'ファ / ラ / レ　|　ニ短調／D-moll主和音の第一転回（Dm/F）', root:74, notes:[65,69,74]},
-      {label:'ファ / シ♭ / レ　|　変ロ長調／B-Dur主和音の第二転回（B/F）', root:70, notes:[65,70,74]},
-      {label:'ファ / シ♭ / レ♭　|　変ロ短調／B-moll主和音の第二転回（Bm/F）', root:70, notes:[65,70,73]},
-      {label:'ファ / ラ♭ / シ / レ　|　変ロ長調／Ges-Dur減七の和音（Fdim7）', root:65, notes:[65,68,71,74]},
-      {label:'ファ / ラ / ド / ミ♭　|　変ロ長調／B-Dur属七の和音（F7）', root:65, notes:[65,69,72,75]}
+      {label:'ファ / ラ♭ / ド　|　ヘ短調／F-moll主和音の基本形（Fm/F）', root:53, notes:[53,56,60]},
+      {label:'ファ / ラ / ド　|　ヘ長調／F-Dur主和音の基本形（F/F）', root:53, notes:[53,57,60]},
+      {label:'ファ / ラ / レ　|　ニ短調／D-moll主和音の第一転回（Dm/F）', root:62, notes:[53,57,62]},
+      {label:'ファ / シ♭ / レ　|　変ロ長調／B-Dur主和音の第二転回（B/F）', root:58, notes:[53,58,62]},
+      {label:'ファ / シ♭ / レ♭　|　変ロ短調／B-moll主和音の第二転回（Bm/F）', root:58, notes:[53,58,61]},
+      {label:'ファ / ラ♭ / ド♭ / ミ♭♭　|　変ロ長調／Ges-Dur減七の和音（Fdim7）', root:53, notes:[53,56,59,62]},
+      {label:'ファ / ラ / ド / ミ♭　|　変ロ長調／B-Dur属七の和音（F7）', root:53, notes:[53,57,60,63]}
     ]
   },
   A: {
-    tonicMidi: 69, // ラ4
-    finalNote: 74, // レ
+    tonicMidi: 57, // ラ3
+    finalNote: 62, // レ
     finalLabel: '♪ レを単音で3拍（D-Dur属七の主音・解決音）',
     chords: [
-      {label:'ラ / ド / ミ　|　イ短調／A-moll主和音の基本形（Am/A）', root:69, notes:[69,72,76]},
-      {label:'ラ / ド♯ / ミ　|　イ長調／A-Dur主和音の基本形（A/A）', root:69, notes:[69,73,76]},
-      {label:'ラ / ド♯ / ファ♯　|　嬰ヘ短調／Fis-moll主和音の第一転回（Fism/A）', root:78, notes:[69,73,78]},
-      {label:'ラ / レ / ファ♯　|　ニ長調／D-Dur主和音の第二転回（D/A）', root:74, notes:[69,74,78]},
-      {label:'ラ / レ / ファ　|　ニ短調／D-moll主和音の第二転回（Dm/A）', root:74, notes:[69,74,77]},
-      {label:'ラ / ド / レ♯ / ファ♯　|　変ホ長調／Es-Dur減七の和音（Adim7）', root:69, notes:[69,72,75,78]},
-      {label:'ラ / ド♯ / ミ / ソ　|　ニ長調／D-Dur属七の和音（A7）', root:69, notes:[69,73,76,79]}
+      {label:'ラ / ド / ミ　|　イ短調／A-moll主和音の基本形（Am/A）', root:57, notes:[57,60,64]},
+      {label:'ラ / ド♯ / ミ　|　イ長調／A-Dur主和音の基本形（A/A）', root:57, notes:[57,61,64]},
+      {label:'ラ / ド♯ / ファ♯　|　嬰ヘ短調／Fis-moll主和音の第一転回（Fism/A）', root:66, notes:[57,61,66]},
+      {label:'ラ / レ / ファ♯　|　ニ長調／D-Dur主和音の第二転回（D/A）', root:62, notes:[57,62,66]},
+      {label:'ラ / レ / ファ　|　ニ短調／D-moll主和音の第二転回（Dm/A）', root:62, notes:[57,62,65]},
+      {label:'ラ / ド / ミ♭ / ソ♭　|　変ロ長調／B-Dur減七の和音（Adim7）', root:57, notes:[57,60,63,66]},
+      {label:'ラ / ド♯ / ミ / ソ　|　ニ長調／D-Dur属七の和音（A7）', root:57, notes:[57,61,64,67]}
     ]
   },
   D: {
-    tonicMidi: 62, // レ4
-    finalNote: 67, // ラ
+    tonicMidi: 50, // レ3
+    finalNote: 55, // ラ
     finalLabel: '♪ ソを単音で3拍（G-Dur属七の主音・解決音）',
     chords: [
-      {label:'レ / ファ / ラ　|　ニ短調／D-moll主和音の基本形（Dm/D）', root:62, notes:[62,65,69]},
-      {label:'レ / ファ♯ / ラ　|　ニ長調／D-Dur主和音の基本形（D/D）', root:62, notes:[62,66,69]},
-      {label:'レ / ファ♯ / シ　|　ロ短調／B-moll主和音の第一転回（Bm/D）', root:62, notes:[62,66,71]},
-      {label:'レ / ソ / シ　|　ト長調／G-Dur主和音の第二転回（G/D）', root:62, notes:[62,67,71]},
-      {label:'レ / ソ / シ♭　|　ト短調／G-moll主和音の第二転回（Gm/D）', root:62, notes:[62,67,70]},
-      {label:'レ / ファ / ラ♭ / ド♭　|　変ホ長調／Es-Dur減七の和音（Ddim7）', root:62, notes:[62,65,68,71]},
-      {label:'レ / ファ♯ / ラ / ド　|　ト長調／G-Dur属七の和音（D7）', root:62, notes:[62,66,69,72]}
+      {label:'レ / ファ / ラ　|　ニ短調／D-moll主和音の基本形（Dm/D）', root:50, notes:[50,53,57]},
+      {label:'レ / ファ♯ / ラ　|　ニ長調／D-Dur主和音の基本形（D/D）', root:50, notes:[50,54,57]},
+      {label:'レ / ファ♯ / シ　|　ロ短調／B-moll主和音の第一転回（Bm/D）', root:50, notes:[50,54,59]},
+      {label:'レ / ソ / シ　|　ト長調／G-Dur主和音の第二転回（G/D）', root:50, notes:[50,55,59]},
+      {label:'レ / ソ / シ♭　|　ト短調／G-moll主和音の第二転回（Gm/D）', root:50, notes:[50,55,58]},
+      {label:'レ / ファ / ラ♭ / ド♭　|　変ホ長調／Es-Dur減七の和音（Ddim7）', root:50, notes:[50,53,56,59]},
+      {label:'レ / ファ♯ / ラ / ド　|　ト長調／G-Dur属七の和音（D7）', root:50, notes:[50,54,57,60]}
     ]
   },
   Bb: {
-    tonicMidi: 70, // シ♭4
-    finalNote: 75, // ミ♭
+    tonicMidi: 58, // シ♭3
+    finalNote: 63, // ミ♭
     finalLabel: '♪ ミ♭を単音で3拍（Es-Dur属七の主音・解決音）',
     chords: [
-      {label:'シ♭ / レ♭ / ファ　|　変ロ短調／B-moll主和音の基本形（Bbm/Bb）', root:70, notes:[70,73,77]},
-      {label:'シ♭ / レ / ファ　|　変ロ長調／B-Dur主和音の基本形（Bb/Bb）', root:70, notes:[70,74,77]},
-      {label:'シ♭ / レ / ソ　|　ト短調／G-moll主和音の第一転回（Gm/Bb）', root:70, notes:[70,74,79]},
-      {label:'シ♭ / ミ♭ / ソ　|　変ホ長調／Es-Dur主和音の第二転回（Es/Bb）', root:70, notes:[70,75,79]},
-      {label:'シ♭ / ミ♭ / ソ♭　|　変ホ短調／Es-moll主和音の第二転回（Esm/Bb）', root:70, notes:[70,75,78]},
-      {label:'シ♭ / レ♭ / ファ♭ / ラ♭♭　|　ロ長調／H-Dur減七の和音（Bbdim7）', root:70, notes:[70,73,76,79]},
-      {label:'シ♭ / レ / ファ / ラ♭　|　変ホ長調／Es-Dur属七の和音（Bb7）', root:70, notes:[70,74,77,80]}
+      {label:'シ♭ / レ♭ / ファ　|　変ロ短調／B-moll主和音の基本形（Bbm/Bb）', root:58, notes:[58,61,65]},
+      {label:'シ♭ / レ / ファ　|　変ロ長調／B-Dur主和音の基本形（Bb/Bb）', root:58, notes:[58,62,65]},
+      {label:'シ♭ / レ / ソ　|　ト短調／G-moll主和音の第一転回（Gm/Bb）', root:58, notes:[58,62,67]},
+      {label:'シ♭ / ミ♭ / ソ　|　変ホ長調／Es-Dur主和音の第二転回（Es/Bb）', root:58, notes:[58,63,67]},
+      {label:'シ♭ / ミ♭ / ソ♭　|　変ホ短調／Es-moll主和音の第二転回（Esm/Bb）', root:58, notes:[58,63,66]},
+      {label:'シ♭ / レ♭ / ファ♭ / ラ♭♭　|　ロ長調／H-Dur減七の和音（Bbdim7）', root:58, notes:[58,61,64,67]},
+      {label:'シ♭ / レ / ファ / ラ♭　|　変ホ長調／Es-Dur属七の和音（Bb7）', root:58, notes:[58,62,65,68]}
     ]
   },
   Eb: {
-    tonicMidi: 63, // ミ♭4
-    finalNote: 68, // ラ♭
+    tonicMidi: 51, // ミ♭3
+    finalNote: 56, // ラ♭
     finalLabel: '♪ ラ♭を単音で3拍（As-Dur属七の主音・解決音）',
     chords: [
-      {label:'ミ♭ / ソ♭ / シ♭　|　変ホ短調／Es-moll主和音の基本形（Ebm/Eb）', root:63, notes:[63,66,70]},
-      {label:'ミ♭ / ソ / シ♭　|　変ホ長調／Es-Dur主和音の基本形（Eb/Eb）', root:63, notes:[63,67,70]},
-      {label:'ミ♭ / ソ / ド　|　ハ短調／C-moll主和音の第一転回（Cm/Eb）', root:63, notes:[63,67,72]},
-      {label:'ミ♭ / ラ♭ / ド　|　変ロ長調／B-Dur主和音の第二転回（Bb/Eb）', root:63, notes:[63,68,72]},
-      {label:'ミ♭ / ラ♭ / シ　|　変ロ短調／B-moll主和音の第二転回（Bbm/Eb）', root:63, notes:[63,68,71]},
-      {label:'ミ♭ / ソ♭ / シ♭♭ / レ♭♭　|　ホ長調／E-Dur減七の和音（Ebdim7）', root:63, notes:[63,66,69,72]},
-      {label:'ミ♭ / ソ / シ♭ / レ♭　|　変イ長調／As-Dur属七の和音（Eb7）', root:63, notes:[63,67,70,73]}
+      {label:'ミ♭ / ソ♭ / シ♭　|　変ホ短調／Es-moll主和音の基本形（Ebm/Eb）', root:51, notes:[51,54,58]},
+      {label:'ミ♭ / ソ / シ♭　|　変ホ長調／Es-Dur主和音の基本形（Eb/Eb）', root:51, notes:[51,55,58]},
+      {label:'ミ♭ / ソ / ド　|　ハ短調／C-moll主和音の第一転回（Cm/Eb）', root:51, notes:[51,55,60]},
+      {label:'ミ♭ / ラ♭ / ド　|　変ロ長調／B-Dur主和音の第二転回（Bb/Eb）', root:51, notes:[51,56,60]},
+      {label:'ミ♭ / ラ♭ / ド　|　変イ長調／As-Dur主和音の第二転回（As/Eb）', root:56, notes:[51,56,60]},
+      {label:'ミ♭ / ソ♭ / シ♭♭ / レ♭♭　|　ホ長調／E-Dur減七の和音（Ebdim7）', root:51, notes:[51,54,57,60]},
+      {label:'ミ♭ / ソ / シ♭ / レ♭　|　変イ長調／As-Dur属七の和音（Eb7）', root:51, notes:[51,55,58,61]}
     ]
   },
   Ab: {
-    tonicMidi: 68, // ラ♭4
-    finalNote: 73, // ド♯
+    tonicMidi: 56, // ラ♭3
+    finalNote: 61, // ド♯
     finalLabel: '♪ レ♭を単音で3拍（Des-Dur属七の主音・解決音）',
     chords: [
-      {label:'ラ♭ / ド♭ / ミ♭　|　変イ短調／As-moll主和音の基本形（Abm/Ab）', root:68, notes:[68,71,75]},
-      {label:'ラ♭ / ド / ミ♭　|　変イ長調／As-Dur主和音の基本形（Ab/Ab）', root:68, notes:[68,72,75]},
-      {label:'ラ♭ / ド / ファ　|　ヘ短調／F-moll主和音の第一転回（Fm/Ab）', root:68, notes:[68,72,77]},
-      {label:'ラ♭ / レ♭ / ファ　|　変ニ長調／Des-Dur主和音の第二転回（Des/Ab）', root:61, notes:[68,73,77]},
-      {label:'ラ♭ / レ♭ / ファ♭　|　変ニ短調／Des-moll主和音の第二転回（Desm/Ab）', root:61, notes:[68,73,76]},
-      {label:'ラ♭ / ド♭ / ミ♭♭ / ソ♭♭　|　イ長調／A-Dur減七の和音（Abdim7）', root:68, notes:[68,71,74,77]},
-      {label:'ラ♭ / ド / ミ♭ / ソ♭　|　変ニ長調／Des-Dur属七の和音（Ab7）', root:68, notes:[68,72,75,78]}
+      {label:'ラ♭ / ド♭ / ミ♭　|　変イ短調／As-moll主和音の基本形（Abm/Ab）', root:56, notes:[56,59,63]},
+      {label:'ラ♭ / ド / ミ♭　|　変イ長調／As-Dur主和音の基本形（Ab/Ab）', root:56, notes:[56,60,63]},
+      {label:'ラ♭ / ド / ファ　|　ヘ短調／F-moll主和音の第一転回（Fm/Ab）', root:56, notes:[56,60,65]},
+      {label:'ラ♭ / レ♭ / ファ　|　変ニ長調／Des-Dur主和音の第二転回（Des/Ab）', root:49, notes:[56,61,65]},
+      {label:'ラ♭ / レ♭ / ファ♭　|　変ニ短調／Des-moll主和音の第二転回（Desm/Ab）', root:49, notes:[56,61,64]},
+      {label:'ラ♭ / ド♭ / ミ♭♭ / ソ♭♭　|　イ長調／A-Dur減七の和音（Abdim7）', root:56, notes:[56,59,62,65]},
+      {label:'ラ♭ / ド / ミ♭ / ソ♭　|　変ニ長調／Des-Dur属七の和音（Ab7）', root:56, notes:[56,60,63,66]}
     ]
   }
 };
@@ -1570,35 +1403,6 @@ let lt={active:false,osc:null,gain:null,hiOsc:null,hiGain:null,timer:null,startT
 // 「高音を重ねる」は6拍子専用：1小節（6拍）を1サイクルとし、4拍目だけ高音
 const LT_OVERLAY_CYCLE_BEATS=6, LT_OVERLAY_PEAK_BEAT=4;
 
-// ===== 12調ローテーション用 =====
-let rot={active:false, currentKeyIndex:0, osc:null, gain:null, timer:null, startTimer:null, oscillators:[]};
-const ROT_KEYS=['C', 'G', 'D', 'A', 'E', 'Ab', 'Eb', 'Bb', 'F'];
-const ROT_KEY_DISPLAY={
-  'C': 'ハ長調・ハ短調 (C線 1st 開放弦)',
-  'G': 'ト長調・ト短調 (G線 1st 開放弦/C線 3rd 2指)',
-  'D': 'ニ長調・ニ短調 (C線 1st 1指)',
-  'A': 'イ長調・イ短調 (G線 1st 1指)',
-  'E': 'ホ長調・ホ短調 (C線 2nd 1指)',
-  'Ab': '変イ長調・変イ短調 (G線 1st 1指)',
-  'Eb': '変ホ長調・変ホ短調 (C線 2nd 1指)',
-  'Bb': '変ロ長調・変ロ短調 (G線 2nd 1指)',
-  'F': 'ヘ長調・ヘ短調 (C線 2nd 2指)'
-};
-// ④用のピタゴラス周波数（各調のMIDIに対応）
-function generateRotFreqs(){
-  return {
-    'C': tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['C'], TONIC_LOW),      // C3(48)
-    'G': tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['G'], 55),              // G3(55)
-    'D': tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['D'], 50),              // D3(50)
-    'A': tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['A'], 57),              // A3(57)
-    'E': tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['E'], 52),              // E3(52)
-    'Ab': tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['Ab'], 56),            // Ab3(56)
-    'Eb': tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['Eb'], 51),            // Eb3(51)
-    'Bb': tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['Bb'], 58),            // Bb3(58)
-    'F': tonicFreqFromFifths(TONIC_FIFTHS_FROM_A['F'], 53)               // F3(53)
-  };
-}
-const ROT_FREQS=generateRotFreqs();
 async function startLT(){
   if(lt.active)return;
   const ctx=await ensureCtx();
@@ -1710,145 +1514,6 @@ function stopLT(){
 }
 
 
-// ===== ⑤ 12調ローテーション・分散和音 =====
-async function startRotation(){
-  if(rot.active) return;
-  const ctx=await ensureCtx();
-  
-  rot.active=true;
-  rot.currentKeyIndex=0;
-  rot.oscillators=[];
-  document.getElementById('rot-start').disabled=true;
-  document.getElementById('rot-stop').disabled=false;
-  
-  playNextRotationKey();
-}
-
-function stopRotation(){
-  if(!rot.active) return;
-  rot.active=false;
-  const ctx=getCtx();
-  
-  // すべてのオシレーターを即座に停止
-  rot.oscillators.forEach(osc=>{ 
-    try{ 
-      osc.disconnect();
-      osc.stop(ctx.currentTime); 
-    }catch(e){} 
-  });
-  rot.oscillators=[];
-  
-  // activeOscillatorsもクリア
-  activeOscillators.forEach(({osc, g})=>{
-    try{
-      g.gain.cancelScheduledValues(ctx.currentTime);
-      g.gain.setValueAtTime(0, ctx.currentTime);
-      osc.disconnect();
-      osc.stop(ctx.currentTime);
-    }catch(e){}
-  });
-  activeOscillators=[];
-  
-  // すべてのタイマーをクリア
-  if(rot.timer){ clearTimeout(rot.timer); rot.timer=null; }
-  if(rot.startTimer){ clearTimeout(rot.startTimer); rot.startTimer=null; }
-  
-  document.getElementById('rot-start').disabled=false;
-  document.getElementById('rot-stop').disabled=true;
-  document.getElementById('rot-current-key').textContent='スタートで開始します';
-}
-
-function playNextRotationKey(){
-  if(!rot.active) return;
-  if(rot.currentKeyIndex>=ROT_KEYS.length){
-    // 全12調完了
-    document.getElementById('rot-current-key').textContent='完了！';
-    rot.active=false;
-    document.getElementById('rot-start').disabled=false;
-    document.getElementById('rot-stop').disabled=true;
-    return;
-  }
-  
-  const key=ROT_KEYS[rot.currentKeyIndex];
-  const bpm=Number(document.getElementById('rot-bpm').value);
-  const metro=document.getElementById('rot-metro').checked;
-  const longtone=document.getElementById('rot-longtone').checked;
-  const spb=60/bpm; // secondsPerBeat（四分音符1拍）
-  
-  const ctx=getCtx();
-  const tonicFreq=ROT_FREQS[key];
-  
-  // 楽譜表示（ポジション付き）
-  document.getElementById('rot-current-key').textContent=ROT_KEY_DISPLAY[key];
-  
-  let time=ctx.currentTime;
-  if(!metro && rot.currentKeyIndex===0){
-    time+=1.0; // スタート直後のみ、音が鳴るまで1秒あける
-  }
-
-  // (1) 初回の主音4拍を鳴らす（参考音）
-  const initialTonicDur=spb*4;
-  playTonicDrone(tonicFreq, time, initialTonicDur, 0.25);
-  time+=initialTonicDur;
-  
-  // (2) 小休止2秒
-  const restDur=2.0;
-  time+=restDur;
-  
-  // (3) 背景で主音を継続して鳴らす＋メトロノーム＋7つの和音/主音
-  const arpeggioTotalDur=spb*4*8; // 7つ × 4拍 + 最後の4拍（ドローン延長）
-  const droneStartTime=time;
-  
-  // 背景で主音を継続ドローン（7つの和音 + 最後の4拍）
-  playTonicDrone(tonicFreq, droneStartTime, arpeggioTotalDur, 0.15);
-  
-  // メトロノーム（4拍子）
-  if(metro){
-    for(let i=0; i<8; i++){ // 8回（7つの和音 + 最後）
-      const beatTime=droneStartTime+i*spb*4;
-      // 各和音の開始時に4拍ぶん鳴らす
-      for(let beat=0; beat<4; beat++){
-        const clickTime=beatTime+beat*spb;
-        playClickAt(clickTime, beat===0);
-      }
-    }
-  }
-  
-  // ロングトーン確認モード
-  if(longtone){
-    // 8回、主音を4拍ずつ伸ばす（7つ + 最後）
-    for(let i=0; i<8; i++){
-      const noteStartTime=droneStartTime+i*spb*4;
-      playTonicDrone(tonicFreq, noteStartTime, spb*4, 0.20);
-    }
-  }
-  
-  time+=arpeggioTotalDur;
-  
-  // (4) 次の調へ遷移（1秒間隔）
-  const nextKeyDelay=(time-ctx.currentTime)*1000+1000;
-  
-  rot.timer=setTimeout(()=>{
-    rot.currentKeyIndex++;
-    playNextRotationKey();
-  }, Math.max(100, nextKeyDelay));
-}
-
-function playTonicDrone(freq, startTime, duration, gainLevel){
-  const ctx=getCtx();
-  const osc=ctx.createOscillator();
-  const gain=ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.frequency.value=freq;
-  osc.type='sine';
-  gain.gain.setValueAtTime(gainLevel, startTime);
-  gain.gain.setValueAtTime(gainLevel, startTime+duration-0.05);
-  gain.gain.exponentialRampToValueAtTime(0.01, startTime+duration);
-  osc.start(startTime);
-  osc.stop(startTime+duration);
-  rot.oscillators.push(osc);
-}
 const chCtl=makeController(buildChords,{
   bpm:document.getElementById('ch-bpm'),meter:document.getElementById('ch-meter'),
   metro:document.getElementById('ch-metro'),
@@ -1929,10 +1594,7 @@ document.getElementById('fo-bpm').oninput=e=>document.getElementById('fo-bpmval'
 document.getElementById('oc-bpm').oninput=e=>document.getElementById('oc-bpmval').textContent=e.target.value+' BPM';
 document.getElementById('sc-bpm').oninput=e=>document.getElementById('sc-bpmval').textContent=e.target.value+' BPM';
 
-// 12調ローテーション
-document.getElementById('rot-start').onclick=startRotation;
-document.getElementById('rot-stop').onclick=stopRotation;
-document.getElementById('rot-bpm').oninput=e=>document.getElementById('rot-bpmval').textContent=e.target.value+' BPM';
+</script>
 </script>
 </body>
 </html>

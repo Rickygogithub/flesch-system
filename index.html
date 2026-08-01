@@ -449,6 +449,20 @@
         <div style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <p style="font-weight: 700; font-size: 1.1rem; color: #0f1722; margin: 0 0 16px;">📋 アップデート履歴</p>
             <div style="font-size: 0.95rem; line-height: 2; color: #555;">
+                <p><strong>2026年8月1日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>Integrated Performance Practice：前回のボーイング測定機能削除時に、正規表現による削除範囲が広がりすぎ、①主音ロングトーン・②音階・③和音などすべてのスタートボタンのイベントリスナーが消えていたバグを修正。ボタンは表示されているが何も起こらない状態だった。元ファイルから必要なコードを復元</li>
+                    <li>Integrated Performance Practice：Eb（変ホ長調）ブロック内の和音ラベルに誤りがあった問題を修正。「変ロ長調／B-Dur主和音の第二転回（Bb/Eb）」と表記されていた和音（ミ♭・ラ♭・ド）は、実際には変イ長調／As-Dur主和音の第二転回が正しく、ラベルを「変イ長調／As-Dur主和音の第二転回（As/Eb）」に修正</li>
+                    <li>Score Reading：調号モードで2問連続同じ調号が出ないよう制御を追加。♯・♭0〜6個の13パターンを均等に出題するよう実装</li>
+                    <li>Score Reading：度数モードの「分散」オプションに関する説明文を改訂。重音（同時）と分散（時間差）の違い・「🔊 音を聴く」の挙動変化をより明確に記載</li>
+                    <li>Melody Dictation Trainer：聴音モードで臨時記号ありの場合、Fes・Cesを出題しないよう修正。FesはEと、CesはHとそれぞれ異名同音のため、解答の表記が混乱を招くことを防止。あわせて2問連続で同じ音が出ないよう制御を追加</li>
+                    <li>Integrated Performance Practice：和音セクションの減七和音の表記を全調で短三度の積み重ね（短3度×3）に統一。ダブルフラットを使用し、教本表記より理論的な正確さを優先（実際の演奏上は平均律的に弾かざるを得ないが、理論としての積み重ね構造を明示）。あわせて一部の属七和音の表記誤りも訂正</li>
+                </ul>
+
+                <details style="margin-top: 8px;">
+                    <summary style="cursor: pointer; font-weight: 700; color: #2c5d92; user-select: none; font-size: 0.95rem;">▼ 以前のアップデート履歴を見る</summary>
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e8eaed;">
+
                 <p><strong>2026年7月31日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>全アプリ共通：ユーザーからiOS 26環境で音が出ないという報告を受け調査。マナーモード（消音スイッチ）がオンになっていたことが原因と判明し、解除で解決。これを受け、index.htmlおよび全アプリの説明文の下に「音が出ない場合のチェックリスト」を折りたたみタブで追加。マナーモード・音量・Safariの自動再生設定・Bluetooth・iOS 26特有のAudioContext問題・低電力モードなど、考えうる原因と対処法を網羅</li>
@@ -563,6 +577,9 @@
                     <li>Google Analyticsを導入</li>
                     <li>Netlifyのクレジット制限を回避するため、GitHub Pagesに移行</li>
                 </ul>
+                    </div>
+                </details>
+
                     </div>
                 </details>
             </div>
