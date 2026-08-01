@@ -729,7 +729,7 @@ const CHORDS_BY_KEY = {
     chords: [
       {label:'ド / ミ♭ / ソ　|　ハ短調／C-moll主和音の基本形（Cm/C）', root:60, notes:[48,51,55]},
       {label:'ド / ミ / ソ　|　ハ長調／C-Dur主和音の基本形（C/C）', root:60, notes:[48,52,55]},
-      {label:'ド / ミ / ラ　|　イ短調／A-moll主和音の第一転回（Am/C）', root:69, notes:[48,52,57]},
+      {label:'ド / ミ / ラ　|　イ短調／A-moll主和音の第一転回（Am/C）', root:48, notes:[48,52,57]},
       {label:'ド / ファ / ラ　|　へ長調／F-Dur主和音の第二転回（F/C）', root:65, notes:[48,53,57]},
       {label:'ド / ファ / ラ♭　|　へ短調／F-moll主和音の第二転回（Fm/C）', root:65, notes:[48,53,56]},
       {label:'ド / ミ♭ / ソ♭ / シ♭♭　|　変ニ長調／Des-Dur減七の和音（Cdim7）', root:48, notes:[48,51,54,57]},
@@ -743,7 +743,7 @@ const CHORDS_BY_KEY = {
     chords: [
       {label:'ソ / シ♭ / レ　|　ト短調／G-moll主和音の基本形（Gm/G）', root:55, notes:[55,58,62]},
       {label:'ソ / シ / レ　|　ト長調／G-Dur主和音の基本形（G/G）', root:55, notes:[55,59,62]},
-      {label:'ソ / シ / ミ　|　ホ短調／E-moll主和音の第一転回（Em/G）', root:64, notes:[55,59,64]},
+      {label:'ソ / シ / ミ　|　ホ短調／E-moll主和音の第一転回（Em/G）', root:55, notes:[55,59,64]},
       {label:'ソ / ド / ミ　|　ハ長調／C-Dur主和音の第二転回（C/G）', root:60, notes:[55,60,64]},
       {label:'ソ / ド / ミ♭　|　ハ短調／C-moll主和音の第二転回（Cm/G）', root:60, notes:[55,60,63]},
       {label:'ソ / シ♭ / レ♭ / ファ♭　|　変イ長調／As-Dur減七の和音（Gdim7）', root:55, notes:[55,58,61,64]},
@@ -755,9 +755,9 @@ const CHORDS_BY_KEY = {
     finalNote: 57, // ラ（ハ長調版の「ファ」を完全3度分そのまま移調）
     finalLabel: '♪ ラを単音で3拍（A-Dur属七の主音・解決音）',
     chords: [
-      {label:'ミ / ソ / シ♭　|　ホ短調／E-moll主和音の基本形（Em/E）', root:52, notes:[52,55,58]},
+      {label:'ミ / ソ / シ　|　ホ短調／E-moll主和音の基本形（Em/E）', root:52, notes:[52,55,59]},
       {label:'ミ / ソ♯ / シ　|　ホ長調／E-Dur主和音の基本形（E/E）', root:52, notes:[52,56,59]},
-      {label:'ミ / ソ♯ / ド♯　|　嬰ハ短調／Cis-moll主和音の第一転回（Cism/E）', root:61, notes:[52,56,61]},
+      {label:'ミ / ソ♯ / ド♯　|　嬰ハ短調／Cis-moll主和音の第一転回（Cism/E）', root:52, notes:[52,56,61]},
       {label:'ミ / ラ / ド♯　|　イ長調／A-Dur主和音の第二転回（A/E）', root:57, notes:[52,57,61]},
       {label:'ミ / ラ / ド　|　イ短調／A-moll主和音の第二転回（Am/E）', root:57, notes:[52,57,60]},
       {label:'ミ / ソ / シ♭ / レ♭　|　ヘ長調／F-Dur減七の和音（Edim7）', root:52, notes:[52,55,58,61]},
@@ -771,7 +771,7 @@ const CHORDS_BY_KEY = {
     chords: [
       {label:'ファ / ラ♭ / ド　|　ヘ短調／F-moll主和音の基本形（Fm/F）', root:53, notes:[53,56,60]},
       {label:'ファ / ラ / ド　|　ヘ長調／F-Dur主和音の基本形（F/F）', root:53, notes:[53,57,60]},
-      {label:'ファ / ラ / レ　|　ニ短調／D-moll主和音の第一転回（Dm/F）', root:62, notes:[53,57,62]},
+      {label:'ファ / ラ / レ　|　ニ短調／D-moll主和音の第一転回（Dm/F）', root:53, notes:[53,57,62]},
       {label:'ファ / シ♭ / レ　|　変ロ長調／B-Dur主和音の第二転回（B/F）', root:58, notes:[53,58,62]},
       {label:'ファ / シ♭ / レ♭　|　変ロ短調／B-moll主和音の第二転回（Bm/F）', root:58, notes:[53,58,61]},
       {label:'ファ / ラ♭ / ド♭ / ミ♭♭　|　変ロ長調／Ges-Dur減七の和音（Fdim7）', root:53, notes:[53,56,59,62]},
@@ -785,7 +785,7 @@ const CHORDS_BY_KEY = {
     chords: [
       {label:'ラ / ド / ミ　|　イ短調／A-moll主和音の基本形（Am/A）', root:57, notes:[57,60,64]},
       {label:'ラ / ド♯ / ミ　|　イ長調／A-Dur主和音の基本形（A/A）', root:57, notes:[57,61,64]},
-      {label:'ラ / ド♯ / ファ♯　|　嬰ヘ短調／Fis-moll主和音の第一転回（Fism/A）', root:66, notes:[57,61,66]},
+      {label:'ラ / ド♯ / ファ♯　|　嬰ヘ短調／Fis-moll主和音の第一転回（Fism/A）', root:57, notes:[57,61,66]},
       {label:'ラ / レ / ファ♯　|　ニ長調／D-Dur主和音の第二転回（D/A）', root:62, notes:[57,62,66]},
       {label:'ラ / レ / ファ　|　ニ短調／D-moll主和音の第二転回（Dm/A）', root:62, notes:[57,62,65]},
       {label:'ラ / ド / ミ♭ / ソ♭　|　変ロ長調／B-Dur減七の和音（Adim7）', root:57, notes:[57,60,63,66]},
@@ -828,8 +828,8 @@ const CHORDS_BY_KEY = {
       {label:'ミ♭ / ソ♭ / シ♭　|　変ホ短調／Es-moll主和音の基本形（Ebm/Eb）', root:51, notes:[51,54,58]},
       {label:'ミ♭ / ソ / シ♭　|　変ホ長調／Es-Dur主和音の基本形（Eb/Eb）', root:51, notes:[51,55,58]},
       {label:'ミ♭ / ソ / ド　|　ハ短調／C-moll主和音の第一転回（Cm/Eb）', root:51, notes:[51,55,60]},
-      {label:'ミ♭ / ラ♭ / ド　|　変ロ長調／B-Dur主和音の第二転回（Bb/Eb）', root:51, notes:[51,56,60]},
       {label:'ミ♭ / ラ♭ / ド　|　変イ長調／As-Dur主和音の第二転回（As/Eb）', root:56, notes:[51,56,60]},
+      {label:'ミ♭ / ラ♭ / シ　|　変イ短調／As-moll主和音の第二転回（Asm/Eb）', root:56, notes:[51,56,59]},
       {label:'ミ♭ / ソ♭ / シ♭♭ / レ♭♭　|　ホ長調／E-Dur減七の和音（Ebdim7）', root:51, notes:[51,54,57,60]},
       {label:'ミ♭ / ソ / シ♭ / レ♭　|　変イ長調／As-Dur属七の和音（Eb7）', root:51, notes:[51,55,58,61]}
     ]
