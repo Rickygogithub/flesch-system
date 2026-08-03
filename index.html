@@ -451,8 +451,10 @@
             <div style="font-size: 0.95rem; line-height: 2; color: #555;">
                 <p><strong>2026年8月3日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Melody Dictation Trainer（v3）：視唱準備トレに「7度」を追加。ハ長調の音階音のみを使った分散7度（上行・下降）を、既存の3〜6度・半音階と同じ構造で実装。ト音記号・アルト記号ともに対応。説明文も「3度・4度・5度・6度・7度・半音階」に更新</li>
-                    <li>Integrated Performance Practice（v3）：①主音ロングトーンの調ドロップダウンを9調から13調に拡張。ロ長調・ロ短調（B）・嬰ヘ長調・嬰ヘ短調（Fis）・変ニ長調・変ニ短調（Des）・変ト長調・変ト短調（Ges）を追加し、5度圏の#系・♭系それぞれ6個まで完結。選択肢を5度圏順（C→G→D→A→E→B→Fis→F→Bb→Eb→Ab→Des→Ges）に整列。③和音セクションは引き続き従来の9調</li>
+                    <li>Melody Dictation Trainer（v3）：視唱準備トレに「7度」を追加。ト音記号・アルト記号ともに対応</li>
+                    <li>Integrated Performance Practice（v3）：①主音ロングトーンの調を9調から13調に拡張（ロ・嬰ヘ・変ニ・変ト長調／短調を追加）。選択肢を5度圏順に整列</li>
+                    <li>Integrated Performance Practice（v3）：①主音ロングトーンで一部の調が誤った音域で鳴っていたバグを修正</li>
+                    <li>Pure Intonation Tuner（v3）：「任意の主音を鳴らす」セクションを追加。音名（5度圏順・全13音）とオクターブ（2〜6）をドロップダウンで選んで鳴らせる</li>
                 </ul>
 
                 <details style="margin-top: 8px;">
@@ -461,127 +463,111 @@
 
                 <p><strong>2026年8月2日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Integrated Performance Practice：ホ短調（E-moll）主和音の基本形（Em/E）でMIDIノート番号の誤りを修正。最上声部が58（B♭）になっていたためE-G-B♭（減三和音）が鳴っていた。正しくは59（B）で、E-G-B（短三和音）に修正。比率 1:1.2:1.5 を確認</li>
-                    <li>Integrated Performance Practice：変ホ調の変イ短調／As-moll主和音の第二転回（Asm/Eb）でMIDIノート番号の誤りを修正。最上声部が60（C）になっていたためインターバルが [0,5,9]（長三和音第二転回）と同一になっていた。正しくは59（B♮）で、インターバル [0,5,8]（短三和音第二転回）に修正。比率 1:1.333:1.6 を確認</li>
-                    <li>Integrated Performance Practice：全9調の第一転回形（短三和音）において、和音の根音（root）の設定誤りを修正。ハ・ト・イ・ホ・ヘの5調で root がバス音より高いMIDIノートに設定されており、バス音の周波数がシントニックコンマ分（1.6〜2.8Hz）ずれて計算されていた。root をバス音（最低音）に統一することで解消。純正律の整数比が和音内だけでなく和音間でも保たれるようになった</li>
+                    <li>Integrated Performance Practice：③和音の短三和音で、一部の調の音が誤って鳴っていたバグを複数修正</li>
                 </ul>
 
                 <p><strong>2026年8月1日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Integrated Performance Practice：前回のボーイング測定機能削除時に、正規表現による削除範囲が広がりすぎ、①主音ロングトーン・②音階・③和音などすべてのスタートボタンのイベントリスナーが消えていたバグを修正。ボタンは表示されているが何も起こらない状態だった。元ファイルから必要なコードを復元</li>
-                    <li>Integrated Performance Practice：Eb（変ホ長調）ブロック内の和音ラベルに誤りがあった問題を修正。「変ロ長調／B-Dur主和音の第二転回（Bb/Eb）」と表記されていた和音（ミ♭・ラ♭・ド）は、実際には変イ長調／As-Dur主和音の第二転回が正しく、ラベルを「変イ長調／As-Dur主和音の第二転回（As/Eb）」に修正</li>
-                    <li>Score Reading：調号モードで2問連続同じ調号が出ないよう制御を追加。♯・♭0〜6個の13パターンを均等に出題するよう実装</li>
-                    <li>Score Reading：度数モードの「分散」オプションに関する説明文を改訂。重音（同時）と分散（時間差）の違い・「🔊 音を聴く」の挙動変化をより明確に記載</li>
-                    <li>Melody Dictation Trainer：聴音モードで臨時記号ありの場合、Fes・Cesを出題しないよう修正。FesはEと、CesはHとそれぞれ異名同音のため、解答の表記が混乱を招くことを防止。あわせて2問連続で同じ音が出ないよう制御を追加</li>
-                    <li>Integrated Performance Practice：和音セクションの減七和音の表記を全調で短三度の積み重ね（短3度×3）に統一。ダブルフラットを使用し、教本表記より理論的な正確さを優先（実際の演奏上は平均律的に弾かざるを得ないが、理論としての積み重ね構造を明示）。あわせて一部の属七和音の表記誤りも訂正</li>
+                    <li>Integrated Performance Practice：全スタートボタンが動作しなくなっていたバグを修正</li>
+                    <li>Integrated Performance Practice：③和音の一部の調で和音ラベルの表記誤りを修正</li>
+                    <li>Integrated Performance Practice：③和音の減七和音の表記を全調で短3度×3の積み重ねに統一</li>
+                    <li>Score Reading：調号モードで同じ調号が連続して出ないよう制御を追加</li>
+                    <li>Melody Dictation Trainer：聴音モードで異名同音の表記が混乱するFes・Cesを出題しないよう修正。同じ音の連続出題も防止</li>
                 </ul>
 
                 <p><strong>2026年7月31日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>全アプリ共通：ユーザーからiOS 26環境で音が出ないという報告を受け調査。マナーモード（消音スイッチ）がオンになっていたことが原因と判明し、解除で解決。これを受け、index.htmlおよび全アプリの説明文の下に「音が出ない場合のチェックリスト」を折りたたみタブで追加。マナーモード・音量・Safariの自動再生設定・Bluetooth・iOS 26特有のAudioContext問題・低電力モードなど、考えうる原因と対処法を網羅</li>
-                    <li>Pure Intonation Tuner：「← トップページに戻る」リンクがタイトルと同じ行に表示されていた問題を修正。リンクをタイトルの上に独立して表示するよう変更</li>
+                    <li>全アプリ共通：「音が出ない場合のチェックリスト」を各アプリとトップページに追加</li>
+                    <li>Pure Intonation Tuner：「トップページに戻る」リンクの表示位置を修正</li>
                 </ul>
+
                 <p><strong>2026年7月30日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Melody Dictation Trainer：視唱セクションの説明文に「自然旋律モードについて」のディスクレイマーを追加。アルゴリズム生成旋律の限界（和声的な必然性・フレーズの呼吸・表現の意図を含まない）を明示した上で、澤野立次郎「基礎から実習 ソルフェージュ」などの専門テキストとの併用を推奨。同時に、このアプリにしかない強み（ランダム生成による予測不可能な課題・即時音声確認）も明記し、両者の使い分けを案内</li>
-                    <li>Integrated Performance Practice：7つの和音の属七・減七の調名表記をScore Readingと統一。属七は「根音の完全4度上の調の属七」、減七は「根音の半音上の調の減七」として表記（例：C-Dur属七→ヘ長調／F-Dur属七）。また各調の最後に鳴る単音のlabelに解決音の意味を追記（例：「ファを単音で3拍（F-Dur属七の主音・解決音）」）。全9調に適用</li>
-                    <li>Integrated Performance Practice：和音セクションの減七・属七の音程が誤っていたバグを修正。ニ長調・変イ長調・変ホ長調・変ロ長調の減七和音（短3度×3の積み重ね）および変イ長調・変ホ長調の属七和音（長3度+短3度+短3度）のMIDI音高が正しくなかった問題を修正。また変イ長調の第二転回形（Des-Dur）の音名・音高も修正</li>
+                    <li>Melody Dictation Trainer：視唱モードの説明文に「自然旋律モード」の注意書きを追加</li>
+                    <li>Integrated Performance Practice：③和音の属七・減七の調名表記をScore Readingと統一。一部調の音高バグも修正</li>
                 </ul>
+
                 <p><strong>2026年7月29日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Score Reading：和音モードの「🔊 音を聴く」の動作を変更。従来の全音同時再生から、低音から高音へ0.7秒間隔で分散再生した後、0.5秒おいて全音同時再生する仕様に変更。各音を歌いながら追えるようになり、視唱との接続が深まる。周波数計算は根音をピタゴラス音律、他の音を根音からの純正律比率で計算</li>
-                    <li>Score Reading：和音モードで、フラット4〜6個・シャープ4〜6個の調（Des-Dur・As-Dur・Ges-Dur・Eis-Dur・H-Dur・Fis-Durなど）のaccMapが正しく生成されていなかったバグを修正。該当する調で減七和音の第4音が誤った音名（例：BがHとして）生成される問題が解消される</li>
-                    <li>Melody Dictation Trainer：聴音モードに「中央1オクターブ」モードを追加。C4〜B4の1オクターブに音域を限定し、基準音なしで出題。各ピッチの固有の色合いを覚えることを目的とした訓練。音律はハ長調ベースのピタゴラス音律。臨時記号「なし（ハ長調7音）」「あり（12音）」の切り替えが可能。再生は3秒間、何度でも聴き直せる。2問連続で同じ音が出ないよう制御</li>
+                    <li>Score Reading：和音モードの「音を聴く」を分散再生（低音→高音→同時）に変更</li>
+                    <li>Score Reading：♯・♭4〜6個の調で和音の音名が誤って生成されていたバグを修正</li>
+                    <li>Melody Dictation Trainer：聴音モードに「中央1オクターブ」モードを追加（基準音なし・C4〜B4限定）</li>
                 </ul>
+
                 <p><strong>2026年7月26日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>全アプリ（Score Reading・Melody Dictation Trainer・Pure Intonation Tuner・Beautiful Intonation Training・Integrated Performance Practice・Orchestra Excerpt）共通：iOS（26.5で確認）の一部環境で音が鳴らない不具合を修正。AudioContextの再開（resume）処理が完了する前に、音声の再生スケジュールが組まれてしまうことがある構造上の問題を特定し、再開の完了を待ってから再生するよう修正</li>
-                    <li>index.html：スマホでツールを開いた際、トップページのタブ・画面がそのまま残らない問題を修正。「開始」ボタンを、JavaScript経由の擬似リンクから、実際のリンク（href + target="_blank"）に変更</li>
-                    <li>各アプリ（6本すべて）：画面上部に「← トップページに戻る」リンクを追加</li>
-                    <li>Melody Dictation Trainer：設定にト音記号／アルト記号の切り替えを追加。ト音記号モードでは音域プリセットがC4〜C6中心に切り替わり、視唱準備トレのウォームアップパターンも1オクターブ上で演奏・表示される</li>
+                    <li>全アプリ共通：iOS環境で音が鳴らなくなることがある不具合を修正</li>
+                    <li>全アプリ共通：各アプリに「トップページに戻る」リンクを追加</li>
+                    <li>トップページ：「開始」ボタンを正しく新規タブで開くよう修正</li>
+                    <li>Melody Dictation Trainer：ト音記号／アルト記号の切り替えを追加</li>
                 </ul>
+
                 <p><strong>2026年7月23日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Score Reading：「度数」モードに「出題の形：重音／分散」を追加。「分散」を選ぶと、2音同時（重音）ではなく、8分音符2つとして左から右へ順番に出題される。実際の楽曲では重音より単音の連なりで度数を判断する場面が多いため</li>
+                    <li>Score Reading：度数モードに「重音／分散」の切り替えを追加</li>
                 </ul>
+
                 <p><strong>2026年7月20日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Melody Dictation Trainer：「視唱」モードに、音の並びを選べる設定（実験的機能）を追加。従来の「ランダム」（実際の調性・和声を無視した配列で、予測に頼れない読譜力そのものを鍛える）に加え、「自然な旋律」を新設</li>
-                    <li>Melody Dictation Trainer：「自然な旋律」は、①主音から開始する、②順次進行を高頻度で選択する、③跳躍（3度・4度）の後は逆方向に1度戻る（ギャップフィル則）、④フレーズの最後は必ず主音に解決する、という一般的な旋律法則をアルゴリズム化して自動生成。「ランダム」と使い分けることで、型に頼れない読解力と、型を手がかりにした実践的な読み方の両方を鍛えられるようにした</li>
+                    <li>Melody Dictation Trainer：視唱モードに「自然な旋律」モードを追加（順次進行・ギャップフィル則・主音解決のアルゴリズムで生成）</li>
                 </ul>
+
                 <p><strong>2026年7月19日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Integrated Performance Practice：③和音セクションで、選択した「拍子」の設定が実際の和音の音価に反映されず、常に6拍固定で和音が切り替わっていた不具合を修正。他の8セクション（分散3度・半音階・重音各種など）は元々正しく実装されていたため、③のみを修正</li>
-                    <li>Integrated Performance Practice：メトロノーム併用しない場合の音声再生仕様を変更。①主音ロングトーン・④12調ローテーションは、スタートを押してから音が鳴るまで1秒の間を設けるように変更。それ以外のセクション（②③⑤⑥⑦⑧⑨⑩）は、1秒待つ→主音を2秒鳴らす→1秒待つ→本編の音が始まる、という流れに変更し、構えや音のイメージを作る時間を確保</li>
-                    <li>Integrated Performance Practice：上記の挙動変更に合わせて、説明文に「メトロノーム併用しない場合は、冒頭に主音が鳴ってからスタートします」を追記</li>
+                    <li>Integrated Performance Practice：③和音の拍子設定が反映されていなかったバグを修正</li>
+                    <li>Integrated Performance Practice：メトロノームなしの場合、冒頭に主音を2秒鳴らしてからスタートする仕様に変更</li>
                 </ul>
+
                 <p><strong>2026年7月17日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>新ツール「Orchestra Excerpt」を追加。抽象的な訓練用の音型ではなく、実際のオーケストラ・レパートリー（マーラー交響曲第5番第2楽章・第3楽章の難所）から抽出した音符を教材として使用</li>
-                    <li>Orchestra Excerpt：実際のスキャン楽譜を画像として表示し、それを見ながら音名・音高を思い浮かべて歌う→「答えを見る」で小節ごとに区切ったドレミ・ドイツ音名を照合する形式を実装</li>
-                    <li>Orchestra Excerpt：音声再生ロジックに、正確な音程間隔（度数・方向）を指定できる仕組みを追加。従来の「前の音に最も近い音を自動選択」する方式では、実際の楽譜にある大きな跳躍（5度・7度上行など）が誤って逆方向・小さい音程に丸められてしまう問題を解消し、実際の跳躍方向を正確に音声へ反映できるようにした</li>
-                    <li>Orchestra Excerpt：複数の難所（小節範囲）をグループとして登録し、トグルで切り替えられる機能を実装。現在マーラー5番第2楽章・第3楽章の計6箇所を収録</li>
+                    <li>新ツール「Orchestra Excerpt」を追加。マーラー交響曲第5番の難所6箇所を収録。楽譜画像を見ながら音名を確認し、音声で正解を聴ける</li>
                 </ul>
+
                 <p><strong>2026年7月13日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Score Reading：単音モードの、臨時記号ありの出現比率を、40%から70%に引き上げ。視唱の準備段階として、臨時記号なしとの難易度差を明確につけるため。和音・度数・連続音符など、他のモードには影響しないよう、単音専用の関数として分離</li>
-                    <li>Melody Dictation Trainer：聴音（単音）モードの、臨時記号ありの出現比率も、同様に40%から70%に引き上げ。Fes・Ces・Eis・Hなどの異名同音を含む出題頻度が高まり、より実践的な聴音訓練になった</li>
+                    <li>Score Reading・Melody Dictation Trainer：臨時記号ありの出題比率を40%から70%に引き上げ</li>
                 </ul>
+
                 <p><strong>2026年7月12日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Score Reading：新しい出題モード「連続音符」を追加。2〜6音（各20%の確率でランダム）が、実際の旋律・和声とは無関係に並ぶ。単音の認識は高速化してきた一方、跳躍を含む複数音符の連続認識が本命の課題という診断に基づき、視唱・発声を切り離し、純粋な視覚的認識速度だけを測定できるようにした</li>
-                    <li>Score Reading：「連続音符」に、実際の楽譜の文法を反映。同じ音の高さが出題の中で再度出現した場合、最初についた臨時記号がそのまま有効（2回目以降は記号を非表示、正解の音名は1回目と同じ）とし、稀に（約10%）ナチュラル（♮）で明示的に打ち消すパターンも追加</li>
-                    <li>Score Reading：「連続音符」専用の特訓オプション「五線の両端（1番線・5番線）に特化」を追加。単音判定・連続音符の両方で、五線の1番線・5番線とその周辺での間違いが多いという発見を受け、その箇所だけに出題を絞り込めるようにした。現在の音部記号（ハ音記号／ト音記号）に応じて、該当する音の高さを自動的に計算</li>
-                    <li>Score Reading：「🔊 音を聴く」を、連続音符モードでは、和音のように同時にではなく、1音ずつ時間差（0.5秒間隔）で再生するよう変更</li>
+                    <li>Score Reading：「連続音符」モードを追加（2〜6音をランダムに連続出題）</li>
+                    <li>Score Reading：連続音符モードに「五線の両端に特化」オプションを追加</li>
+                    <li>Score Reading：連続音符モードの「音を聴く」を1音ずつ時間差再生に変更</li>
                 </ul>
+
                 <p><strong>2026年7月11日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Score Reading：和音モードで、主和音の基本形・第一転回・第二転回が、選ばれた調の長調・短調に関わらず、常に長三和音（長調）として生成されていた不具合を修正。短調が選ばれた場合は、正しく短三和音（ラ・ド・ミなど）が生成されるように変更</li>
-                    <li>Score Reading：上記修正に伴い発見した、第二の不具合を修正。第一転回形では、根音がオクターブ上に移動するため、長調・短調の判定ロジック（根音と3度上の音のMIDI差分で判定）が、常に「長調」にフォールバックしてしまっていた（短三和音でも長調と誤表示）。オクターブの違いをmod 12で正規化することで、転回形でも正しく長調・短調を判定できるように修正</li>
-                    <li>上記2件の修正により、和音問題における長調・短調の出現比率が、修正前の約2:1（長調に偏る）から、ほぼ1:1（均等）に是正されたことを、5000回のシミュレーションで検証</li>
+                    <li>Score Reading：和音モードで短調を選んでも常に長三和音が生成されていたバグを修正</li>
                 </ul>
+
                 <p><strong>2026年7月9日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Integrated Performance Practice：②ピタゴラス音階のドロップダウンを、⑤⑦⑧⑨⑩と同じ5度圏順・平行調個別列挙の単一ドロップダウン（18選択肢）に統一</li>
-                    <li>Melody Dictation Trainer：③聴音の説明に「異名同音（例：Fes と E）も正解とします」の注意書きを追加</li>
-                    <li>Melody Dictation Trainer：①視唱準備トレで、判定ボタン（✓ できた／✗ まだ難しい）が再生中にも表示されてしまっていた不具合を修正。再生が終わってから表示されるよう変更</li>
-                    <li>Melody Dictation Trainer：②リズムで「🔊 正解を聞く」ボタンを追加（自分で叩いた後、正解のリズムを聴き直して比較できる）</li>
-                    <li>Melody Dictation Trainer：④視唱の「正解を再生」ボタンを「🔊 正解を聞く」に名称統一（②リズムと表記を揃え、判定前に確認する流れを明確化）</li>
+                    <li>Integrated Performance Practice：②ピタゴラス音階のドロップダウンを5度圏順・18選択肢に統一</li>
+                    <li>Melody Dictation Trainer：視唱準備トレで判定ボタンが再生中に表示されていたバグを修正</li>
+                    <li>Melody Dictation Trainer：リズムモードに「正解を聴く」ボタンを追加</li>
                 </ul>
+
                 <p><strong>2026年7月7日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Integrated Performance Practice：ピタゴラス5度圏の計算値の誤りを修正（D・E・Ab・Eb・Bbの主音が正しいピッチクラスで鳴っていなかった不具合を解消）。①主音ロングトーン・③和音・④12調ローテーションすべてに影響していた根本原因を修正</li>
-                    <li>Integrated Performance Practice：④12調ローテーションの調表示を、ポジション表記から「弦・ポジション・指番号」の3要素表記に変更（例：「ト長調・ト短調 (G線 1st 開放弦/C線 3rd 2指)」）</li>
-                    <li>Integrated Performance Practice：③和音のドロップダウン表記を①と統一（「ハ長調・ハ短調」形式に）</li>
-                    <li>Integrated Performance Practice：②ピタゴラス音階のgetTonicLow()にイ長調（A）の基準音が未定義だった不具合を修正</li>
-                    <li>Integrated Performance Practice：②⑤⑦⑧⑨⑩の調ドロップダウンを、長調・短調が別々の選択肢だったため短調パターンが実質的に一度も再生されていなかった不具合を修正。5度圏順に長調と平行短調を個別に列挙した単一ドロップダウン（18選択肢）に統一</li>
+                    <li>Integrated Performance Practice：ピタゴラス5度圏の周波数計算の誤りを修正（①③④に影響していた根本原因）</li>
+                    <li>Integrated Performance Practice：調ドロップダウンを5度圏順・短調を個別列挙した18選択肢に統一</li>
                 </ul>
+
                 <p><strong>2026年7月6日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Melody Dictation Trainer：「視唱準備トレ」を新設（音階・分散3度・4度・5度・6度・半音階、ハ長調／イ短調、テンポを上げながら「できた／まだ難しい」で判定し、平均テンポ・成功率を記録）</li>
-                    <li>Melody Dictation Trainer：モード名・並び順を整理（視唱準備トレ→リズム→聴音→視唱）、「狙いと使い方」を最下部に集約</li>
-                    <li>Melody Dictation Trainer：「音高あり」「リズム」にも、テンポ・成功率の記録機能を追加</li>
-                    <li>Score Reading：和音のスラッシュ表記（例：E/H）に対応</li>
-                    <li>Score Reading・Melody Dictation Trainer：「記録をリセット」ボタンの説明を追記</li>
-                    <li>Pure Intonation Tuner：音量スライダーを400%まで拡張し、再生中の音にもリアルタイムに反映されるよう修正</li>
-                    <li>Pure Intonation Tuner・Beautiful Intonation Training・Integrated Performance Practice：「ボーイングの安定性を測る」機能を追加（マイクでロングトーンを32秒間録音し、音量の標準偏差を測定。右手・弓の運動制御のベンチマークとして活用）</li>
-                    <li>Beautiful Intonation Training：音階・分散和音のスタートボタンを「3秒後」開始に変更、デフォルトBPMを120に変更</li>
-                    <li>Beautiful Intonation Training：練習プロセスを整理し、「練習のポイント」を折りたたみ式に</li>
-                    <li>Integrated Performance Practice：フレッシュの7つの和音を機能和声（借用ⅰ・Ⅰ・ⅵ・Ⅳ・借用ⅳ・減七・Ⅴ7）として整理し、表示をXm/Y・X/Y・Xdim7・X7形式に統一</li>
+                    <li>Melody Dictation Trainer：「視唱準備トレ」モードを新設（音階・分散3〜6度・半音階をテンポ指定で練習）</li>
+                    <li>Pure Intonation Tuner：音量スライダーを400%まで拡張</li>
+                    <li>Beautiful Intonation Training：スタートを3秒後開始に変更、デフォルトBPMを120に変更</li>
+                    <li>Integrated Performance Practice：フレッシュの7和音の表示形式を統一</li>
                 </ul>
+
                 <p><strong>2026年7月4日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>iOS（iPhone）で音が出ない問題を修正（全5ツール共通）</li>
-                    <li>Score Reading：度数モードにも音声確認機能を追加</li>
-                    <li>Pure Intonation Tuner：フラジオモードに「2オクターブ上」オプションを追加（プロ向けダブルハーモニクス対応）</li>
-                    <li>Pure Intonation Tuner：各重音ボタンに周波数比率（3:2、5:4など）を表示</li>
-                    <li>Pure Intonation Tuner：デチューン（うねり）機能を完全5度のみに限定し誤解を防止</li>
-                    <li>Beautiful Intonation Training：フラジオに「2オクターブ上」オプションを追加</li>
-                    <li>Beautiful Intonation Training：音階練習に合奏時の共鳴の目安を追記</li>
-                    <li>Integrated Performance Practice：ヘ長調・ニ短調・イ長調・イ短調を全セクションに追加</li>
-                    <li>Android端末で「開始」ボタンが正しく新規タブで開くよう修正</li>
-                    <li>Google Analyticsを導入</li>
-                    <li>Netlifyのクレジット制限を回避するため、GitHub Pagesに移行</li>
+                    <li>全アプリ共通：iOSで音が出ない問題を修正</li>
+                    <li>GitHub Pagesに移行</li>
+                    <li>Score Reading：度数モードに音声確認機能を追加</li>
+                    <li>Pure Intonation Tuner：フラジオに「2オクターブ上」オプションを追加、各ボタンに周波数比率を表示</li>
+                    <li>Integrated Performance Practice：ヘ長調・ニ短調・イ長調・イ短調を追加</li>
                 </ul>
 
                     </div>
