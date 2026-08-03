@@ -82,10 +82,10 @@
 <body>
 
 <div class="wrap">
+  <a href="index.html" style="display:inline-block;margin-bottom:10px;font-size:13px;font-weight:600;color:#2c5d92;text-decoration:none;">← トップページに戻る</a>
   <header>
-    <a href="index.html" style="display:block;margin-bottom:8px;font-size:13px;font-weight:600;color:#2c5d92;text-decoration:none;">← トップページに戻る</a>
     <div class="title-container">
-      <h1>Pure Intonation Tuner<span style="display:inline-block;background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px;">v3</span></h1>
+      <h1>Pure Intonation Tuner<span style="display:inline-block;background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px;">v2</span></h1>
       
     </div>
     <div class="description">
@@ -155,38 +155,6 @@
       </button>
     </div>
 
-    <details style="margin-top:14px">
-      <summary>▶️ ボーイングの安定性を測る（右手・弓のベンチマーク）</summary>
-      <div style="padding:10px 0;font-size:13px;color:var(--muted);line-height:1.8;font-weight:600">
-        これまでの機能は、主に左手（音程）に関わるものでした。ここでは、右手（弓）の運動制御を測ります。<br><br>
-        <strong>上手い人ほど、ロングトーンの音量が一定に保てます。</strong>音量を一定に保てて初めて、意図したクレッシェンド・デクレッシェンドなどの変化をつけられます。ツールの音は鳴らさず、メトロノームのみで拍を確認しながら、ご自身の音をマイクで録音し、音量（振幅）の変動係数（%）を測定します。<br><br>
-        <strong>使い方：</strong>下のボタンを押すと、マイクの使用許可が求められます。許可後、1小節分のカウントイン（空振り）→ダウンボウ2小節（8秒）→アップボウ2小節（8秒）→ダウンボウ2小節（8秒）→アップボウ2小節（8秒）、合計32秒間、任意の音（開放弦など）のロングトーンを弾いてください（テンポ＝四分音符60、4拍子固定）。<br><br>
-        測定機器や環境によって、絶対的な数値は変わります。他人と比べるものではなく、<strong>同じ環境で繰り返し測り、自分自身の変動係数が小さくなっていくかを確認する</strong>、目安としてお使いください。32秒間、安定させ続けようとすること自体が、良い練習になります。
-      </div>
-      <div class="control-row">
-        <button id="vt-start">▶️ 測定スタート（32秒）</button>
-      </div>
-      <div id="vt-status" style="font-size:13px;color:var(--muted);font-weight:700;margin:8px 0"></div>
-      <div id="vt-results" style="display:none">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
-          <tr style="background:var(--card)">
-            <th style="padding:6px;border:1px solid var(--line)">全体(32秒)<br><span style="font-size:11px;font-weight:600;color:var(--muted)">変動係数(%)</span></th>
-            <th style="padding:6px;border:1px solid var(--line)">1区間(ダウン)<br><span style="font-size:11px;font-weight:600;color:var(--muted)">変動係数(%)</span></th>
-            <th style="padding:6px;border:1px solid var(--line)">2区間(アップ)<br><span style="font-size:11px;font-weight:600;color:var(--muted)">変動係数(%)</span></th>
-            <th style="padding:6px;border:1px solid var(--line)">3区間(ダウン)<br><span style="font-size:11px;font-weight:600;color:var(--muted)">変動係数(%)</span></th>
-            <th style="padding:6px;border:1px solid var(--line)">4区間(アップ)<br><span style="font-size:11px;font-weight:600;color:var(--muted)">変動係数(%)</span></th>
-          </tr>
-          <tr>
-            <td style="padding:6px;border:1px solid var(--line);text-align:center" id="vt-overall">–</td>
-            <td style="padding:6px;border:1px solid var(--line);text-align:center" id="vt-seg1">–</td>
-            <td style="padding:6px;border:1px solid var(--line);text-align:center" id="vt-seg2">–</td>
-            <td style="padding:6px;border:1px solid var(--line);text-align:center" id="vt-seg3">–</td>
-            <td style="padding:6px;border:1px solid var(--line);text-align:center" id="vt-seg4">–</td>
-          </tr>
-        </table>
-      </div>
-      <div id="vt-history" style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8"></div>
-    </details>
   </section>
 
   <section>
@@ -962,118 +930,6 @@ function playClick(time, isAccent) {
   osc.connect(gain); gain.connect(ctx.destination);
   osc.start(time); osc.stop(time + 0.08);
 }
-
-/* ---- 音量安定性測定（右手・弓のベンチマーク） ---- */
-let vtActive=false, vtData=[], vtHistory=[];
-let vtMicStream=null, vtAnalyser=null;
-
-function stdDev(arr){
-  if(arr.length===0) return 0;
-  const mean=arr.reduce((a,b)=>a+b,0)/arr.length;
-  const variance=arr.reduce((a,b)=>a+Math.pow(b-mean,2),0)/arr.length;
-  return Math.sqrt(variance);
-}
-
-function mean(arr){
-  if(arr.length===0) return 0;
-  return arr.reduce((a,b)=>a+b,0)/arr.length;
-}
-
-function coefficientOfVariation(arr){
-  if(arr.length===0) return 0;
-  const m=mean(arr);
-  if(m===0) return 0;
-  const sd=stdDev(arr);
-  return (sd/m)*100;
-}
-
-async function startVolumeTest(){
-  if(vtActive) return;
-  let stream;
-  try{
-    stream = await navigator.mediaDevices.getUserMedia({audio:true});
-  }catch(e){
-    document.getElementById('vt-status').textContent='マイクの使用が許可されませんでした。ブラウザの設定をご確認ください。';
-    return;
-  }
-  vtMicStream=stream;
-  await initAudio();
-  const ctx=audioCtx;
-  const micSource=ctx.createMediaStreamSource(stream);
-  vtAnalyser=ctx.createAnalyser();
-  vtAnalyser.fftSize=2048;
-  micSource.connect(vtAnalyser);
-
-  vtActive=true;
-  vtData=[];
-  document.getElementById('vt-start').disabled=true;
-  document.getElementById('vt-results').style.display='none';
-  document.getElementById('vt-status').textContent='カウントイン中…';
-
-  const bpm=60, beatSec=60/bpm;
-  const countInBeats=4;
-  const perfBeats=32;
-  const startTime=ctx.currentTime+0.15;
-
-  for(let i=0;i<countInBeats+perfBeats;i++){
-    playClick(startTime+i*beatSec, i%4===0);
-  }
-
-  const recordStart=startTime+countInBeats*beatSec;
-  const recordEnd=recordStart+perfBeats*beatSec;
-  const bufferLen=vtAnalyser.fftSize;
-  const dataArray=new Uint8Array(bufferLen);
-
-  function sampleLoop(){
-    if(!vtActive) return;
-    const now=ctx.currentTime;
-    if(now<recordStart){
-      document.getElementById('vt-status').textContent='カウントイン中…';
-    } else if(now<recordEnd){
-      vtAnalyser.getByteTimeDomainData(dataArray);
-      let sumSq=0;
-      for(let i=0;i<bufferLen;i++){ const v=(dataArray[i]-128)/128; sumSq+=v*v; }
-      const rms=Math.sqrt(sumSq/bufferLen);
-      vtData.push({t:now-recordStart, v:rms});
-      document.getElementById('vt-status').textContent='測定中… '+(now-recordStart).toFixed(1)+' 秒 / 32秒';
-    }
-    if(now<recordEnd+0.15){
-      requestAnimationFrame(sampleLoop);
-    } else {
-      finishVolumeTest();
-    }
-  }
-  requestAnimationFrame(sampleLoop);
-}
-
-function finishVolumeTest(){
-  vtActive=false;
-  document.getElementById('vt-start').disabled=false;
-  if(vtMicStream){ vtMicStream.getTracks().forEach(t=>t.stop()); vtMicStream=null; }
-
-  const allV=vtData.map(d=>d.v);
-  const overallCV=coefficientOfVariation(allV);
-  const segs=[[],[],[],[]];
-  vtData.forEach(d=>{ const idx=Math.min(3,Math.floor(d.t/8)); segs[idx].push(d.v); });
-  const segCVs=segs.map(s=>coefficientOfVariation(s));
-
-  document.getElementById('vt-status').textContent='測定完了（32秒間）';
-  document.getElementById('vt-results').style.display='';
-  document.getElementById('vt-overall').textContent=overallCV.toFixed(1)+'%';
-  document.getElementById('vt-seg1').textContent=segCVs[0].toFixed(1)+'%';
-  document.getElementById('vt-seg2').textContent=segCVs[1].toFixed(1)+'%';
-  document.getElementById('vt-seg3').textContent=segCVs[2].toFixed(1)+'%';
-  document.getElementById('vt-seg4').textContent=segCVs[3].toFixed(1)+'%';
-
-  vtHistory.push(overallCV);
-  const histDiv=document.getElementById('vt-history');
-  if(vtHistory.length>0){
-    histDiv.textContent='このセッションでの履歴（全体の変動係数、古い順）：'+vtHistory.map(v=>v.toFixed(1)+'%').join(' → ');
-  }
-}
-
-document.getElementById('vt-start').addEventListener('click', startVolumeTest);
-
 
 async function startMetro() {
   if (metroTimer) stopMetro();
