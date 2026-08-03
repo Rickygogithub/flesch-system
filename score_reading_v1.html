@@ -140,7 +140,7 @@
       <span>度数：出題の形</span>
       <span class="seg" id="seg-intervallayout">
         <button data-v="stacked" class="on">重音（同時に鳴る）</button>
-        <button data-v="broken">分散（2音を順番に、8分音符で）</button>
+        <button data-v="broken">分散（2音を順番に）</button>
       </span>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -156,7 +156,7 @@
     単音・和音モードでは「🔊 音を聴く」で正解の音を1秒間のロングトーンでA=442基準で確認できます（和音は3／4音同時に鳴ります）。歌ってから鳴らして、音程を耳で確認する練習にも使えます。<br>
     ドイツ音名：B♮=H、B♭=B、♯は語尾 -is（Fis 等）、♭は語尾 -es（Des 等、E♭=Es・A♭=As）。<br>
     「和音」はその調の主和音（基本形・第一転回・第二転回）に加え、減七・属七の和音（4音）もランダムに出題されます。<br>
-    「度数」は実際の和声かどうかは考慮しません。「🔊 音を聴く」で2音同時に確認できます（変則的な音の組み合わせにも対応、マーラーなど複雑な楽曲対策に活用できます）。「出題の形」を「分散」にすると、重音ではなく、8分音符2つとして左から右へ順番に出題されます（実際の楽曲では重音より単音の連なりで度数を判断する場面が多いため）。この場合「🔊 音を聴く」も2音を時間差で再生します。<br>
+    「度数」は実際の和声かどうかは考慮しません。「🔊 音を聴く」で2音同時に確認できます（変則的な音の組み合わせにも対応、マーラーなど複雑な楽曲対策に活用できます）。「出題の形」を「分散」にすると、重音ではなく、2音を左から右へ順番に出題されます（実際の楽曲では重音より単音の連なりで度数を判断する場面が多いため）。この場合「🔊 音を聴く」も2音を時間差で再生します。<br>
     「連続音符」は2〜6音（各20%の確率でランダム）が、実際の旋律・和声とは無関係に、ランダムに並びます。左から右へ、順番に音名を読み上げてください。跳躍を含む、複数の音符を、瞬時に、連続して認識する力を鍛えます。実際の楽譜と同じく、同じ音の高さが、出題の中で再度出現した場合、最初についた臨時記号が、そのまま有効（2回目以降は記号を表示しません）です。稀に、ナチュラル（♮）で、明示的に打ち消すパターンも出題されます。「🔊 音を聴く」では、和音のように同時にではなく、1音ずつ、時間差（0.5秒間隔）で再生されます。「五線の両端に特化」をオンにすると、1番線・5番線とその、すぐ上下（現在の音部記号における、間違いやすい箇所）だけに、出題を絞り込めます。<br>
     「調号」は♯・♭0〜6個の範囲で出題し、同じ調号を持つ長調・短調の両方を答えます。<br>
     記録はこのセッション内のみ（再読み込みでリセット）。
@@ -230,11 +230,13 @@ function germanKeyName(tonicLetter,accMap,isMajor){
   const ger=germanName(tonicLetter,accMap[tonicLetter]);
   return isMajor ? (ger+'-Dur') : (ger.charAt(0).toLowerCase()+ger.slice(1)+'-moll');
 }
+let lastKeySigIdx = -1;
 function pickKeySig(){
-  const low=KEYSIG_LIST.filter(k=>k.sharps<=3&&k.flats<=3);
-  const high=KEYSIG_LIST.filter(k=>k.sharps>3||k.flats>3);
-  const group = Math.random()<2/3 ? low : high;
-  return group[Math.floor(Math.random()*group.length)];
+  // 13パターン均等・直前と同じ調号を避ける
+  const indices = KEYSIG_LIST.map((_,i)=>i).filter(i=>i!==lastKeySigIdx);
+  const idx = indices[Math.floor(Math.random()*indices.length)];
+  lastKeySigIdx = idx;
+  return KEYSIG_LIST[idx];
 }
 
 let clef='alto';

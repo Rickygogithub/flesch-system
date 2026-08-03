@@ -85,7 +85,7 @@
   <header>
     <a href="index.html" style="display:block;margin-bottom:8px;font-size:13px;font-weight:600;color:#2c5d92;text-decoration:none;">← トップページに戻る</a>
     <div class="title-container">
-      <h1>Pure Intonation Tuner<span style="display:inline-block;background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px;">v2</span></h1>
+      <h1>Pure Intonation Tuner<span style="display:inline-block;background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px;">v3</span></h1>
       
     </div>
     <div class="description">
@@ -187,6 +187,43 @@
       </div>
       <div id="vt-history" style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8"></div>
     </details>
+  </section>
+
+  <section>
+    <h2>任意の主音を鳴らす</h2>
+    <p style="font-size:13px; color:var(--muted); line-height:1.7; margin-bottom:14px;">
+      ピタゴラス音律でA=442Hzを基準に算出した主音を鳴らします。外出先での音程確認などに。
+    </p>
+    <div class="inner-controls">
+      <div class="control-row" style="gap:10px; flex-wrap:wrap;">
+        <select id="tonic-note" style="font-size:15px; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink);" onchange="updateTonicFreqDisplay()">
+          <option value="C">C（ハ）</option>
+          <option value="G">G（ト）</option>
+          <option value="D">D（ニ）</option>
+          <option value="A" selected>A（イ）</option>
+          <option value="E">E（ホ）</option>
+          <option value="H">H（ロ）</option>
+          <option value="Fis">Fis（嬰ヘ）</option>
+          <option value="F">F（ヘ）</option>
+          <option value="B">B（変ロ）</option>
+          <option value="Es">Es（変ホ）</option>
+          <option value="As">As（変イ）</option>
+          <option value="Des">Des（変ニ）</option>
+          <option value="Ges">Ges（変ト）</option>
+        </select>
+        <select id="tonic-octave" style="font-size:15px; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink);" onchange="updateTonicFreqDisplay()">
+          <option value="2">2オクターブ（チェロ低域）</option>
+          <option value="3">3オクターブ（ヴィオラ低域）</option>
+          <option value="4" selected>4オクターブ（中央）</option>
+          <option value="5">5オクターブ（ヴァイオリン中域）</option>
+          <option value="6">6オクターブ（ヴァイオリン高域）</option>
+        </select>
+        <button class="tone-btn" id="btn-tonic-single" onclick="toggleTonic()" style="min-width:100px;">
+          <span class="notes">▶ 鳴らす</span>
+          <span class="freq" id="freq-tonic-display"></span>
+        </button>
+      </div>
+    </div>
   </section>
 
   <div class="description" style="margin-top:-8px; margin-bottom:16px;">
@@ -622,6 +659,60 @@ function scheduleTone(freq, startTime, isPiano = false, isLowerString = false, i
   activeVoices.push({ osc, gain: gainNode });
 }
 
+
+// ピタゴラス音律で全12音の周波数を返す（A=442基準、5度連鎖）
+function getAllTonicFreqs() {
+  const A4 = getAFreq();
+  const fifth = 3 / 2;
+  // 5度圏: A基準で各音を算出し、4オクターブ内（C4〜B4相当）に正規化
+  const steps = {
+    'C':  -3, 'Des': -8, 'D':  -2, 'Es': -7,
+    'E':  -1, 'F':   -4, 'Fis': 3, 'G':  -2 + 0,
+    'As': -7, 'A':    0, 'B':  -5, 'H':   2
+  };
+  // 正確な5度圏計算
+  const freqs = {};
+  const noteSteps = {
+    'A':   0, 'E':   1, 'H':   2, 'Fis': 3,
+    'Des': -8,'G':  -2, 'D':  -1, 'As': -7,
+    'Es': -6, 'B':  -5, 'F':  -4, 'C':  -3
+  };
+  for (const [note, n] of Object.entries(noteSteps)) {
+    let freq = A4 * Math.pow(fifth, n);
+    // C4〜B4の範囲（A4=442基準の1オクターブ内）に正規化
+    while (freq < A4 * Math.pow(2, -9/12) * 0.999) freq *= 2;
+    while (freq > A4 * Math.pow(2,  3/12) * 1.001) freq /= 2;
+    freqs[note] = freq; // これがオクターブ4の基準値
+  }
+  return freqs;
+}
+
+function getTonicFreq() {
+  const note = document.getElementById('tonic-note').value;
+  const octave = parseInt(document.getElementById('tonic-octave').value);
+  const freqs = getAllTonicFreqs(); // オクターブ4基準
+  const baseFreq = freqs[note];
+  return baseFreq * Math.pow(2, octave - 4);
+}
+
+function updateTonicFreqDisplay() {
+  const freq = getTonicFreq();
+  document.getElementById('freq-tonic-display').textContent = freq.toFixed(1) + ' Hz';
+}
+
+async function toggleTonic() {
+  const targetId = 'btn-tonic-single';
+  if (currentActiveId === targetId) { stopAll(); return; }
+  stopAll();
+  await initAudio();
+  const freq = getTonicFreq();
+  const now = audioCtx.currentTime;
+  scheduleTone(freq, now, false, false, 'vla');
+  const btn = document.getElementById(targetId);
+  if (btn) btn.classList.add('active');
+  currentActiveId = targetId;
+}
+
 // A-Tune セクションのトグル制御
 async function toggleATune(mode) {
   const targetId = `btn-A-${mode}`;
@@ -821,6 +912,7 @@ function updateFreqLabels() {
 document.getElementById('base-freq').addEventListener('input', (e) => {
   document.getElementById('base-freq-val').textContent = `${Number(e.target.value).toFixed(1)} Hz`;
   updateFreqLabels();
+  updateTonicFreqDisplay();
 });
 let lastAppliedVolRatio = 1.0; // スライダー操作で「直前の音量比」からの相対変化を計算するための基準値
 document.getElementById('master-volume').addEventListener('input', (e) => {
@@ -839,6 +931,7 @@ document.getElementById('master-volume').addEventListener('input', (e) => {
 });
 
 updateFreqLabels();
+updateTonicFreqDisplay();
 
 // うねりスライダーのラベル更新
 ['vla','vln'].forEach(type => {

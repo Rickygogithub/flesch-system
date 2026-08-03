@@ -78,10 +78,14 @@
         <option value="D">ニ長調・ニ短調</option>
         <option value="A">イ長調・イ短調</option>
         <option value="E">ホ長調・ホ短調</option>
-        <option value="Ab">変イ長調・変イ短調</option>
-        <option value="Eb">変ホ長調・変ホ短調</option>
-        <option value="Bb">変ロ長調・変ロ短調</option>
+        <option value="B">ロ長調・ロ短調</option>
+        <option value="Fis">嬰ヘ長調・嬰ヘ短調</option>
         <option value="F">ヘ長調・ヘ短調</option>
+        <option value="Bb">変ロ長調・変ロ短調</option>
+        <option value="Eb">変ホ長調・変ホ短調</option>
+        <option value="Ab">変イ長調・変イ短調</option>
+        <option value="Des">変ニ長調・変ニ短調</option>
+        <option value="Ges">変ト長調・変ト短調</option>
       </select>
     </div>
     <div class="opt"><span>高音を重ねる</span>
@@ -168,10 +172,10 @@
         <option value="D">ニ長調・ニ短調</option>
         <option value="A">イ長調・イ短調</option>
         <option value="E">ホ長調・ホ短調</option>
-        <option value="Ab">変イ長調・変イ短調</option>
-        <option value="Eb">変ホ長調・変ホ短調</option>
-        <option value="Bb">変ロ長調・変ロ短調</option>
         <option value="F">ヘ長調・ヘ短調</option>
+        <option value="Bb">変ロ長調・変ロ短調</option>
+        <option value="Eb">変ホ長調・変ホ短調</option>
+        <option value="Ab">変イ長調・変イ短調</option>
       </select>
     </div>
     <div class="opt"><span>メトロノームを併用</span>
@@ -261,10 +265,14 @@
         <option value="D">ニ長調・ニ短調</option>
         <option value="A">イ長調・イ短調</option>
         <option value="E">ホ長調・ホ短調</option>
-        <option value="Ab">変イ長調・変イ短調</option>
-        <option value="Eb">変ホ長調・変ホ短調</option>
-        <option value="Bb">変ロ長調・変ロ短調</option>
+        <option value="B">ロ長調・ロ短調</option>
+        <option value="Fis">嬰ヘ長調・嬰ヘ短調</option>
         <option value="F">ヘ長調・ヘ短調</option>
+        <option value="Bb">変ロ長調・変ロ短調</option>
+        <option value="Eb">変ホ長調・変ホ短調</option>
+        <option value="Ab">変イ長調・変イ短調</option>
+        <option value="Des">変ニ長調・変ニ短調</option>
+        <option value="Ges">変ト長調・変ト短調</option>
       </select>
     </div>
     <div class="opt"><span>メトロノームを併用</span>
@@ -624,7 +632,11 @@ const TONIC_FIFTHS_FROM_A = {
   'Ab': -7, 'Abm': -7,
   'Cism': 4,          // 嬰ハ短調
   'Fism': 3,          // 嬰ヘ短調
-  'Hm': 2             // ロ短調
+  'Hm': 2,            // ロ短調
+  'B': 2,             // ロ長調
+  'Fis': 3, 'Fism_maj': 3,  // 嬰ヘ長調
+  'Des': -8, 'Desm': -8,    // 変ニ長調・短調
+  'Ges': -9, 'Gesm': -9     // 変ト長調・短調
 };
 // 5度連鎖で求めた比率を、目的の音域（approxMidiの近く）に正規化する。
 function tonicFreqFromFifths(fifthsFromA, approxMidi){
@@ -695,13 +707,20 @@ function getTonicLow(key){
   if(key==='Eb') return 51;  // 変ホ長調：ミ♭3
   if(key==='Ab') return 56;  // 変イ長調：ラ♭3
   if(key==='F') return 53;   // ヘ長調：ファ3
+  if(key==='B') return 59;   // ロ長調：シ3
+  if(key==='Fis') return 54; // 嬰ヘ長調：ファ♯3
+  if(key==='Des') return 49; // 変ニ長調：レ♭3
+  if(key==='Ges') return 54; // 変ト長調：ソ♭3
+  if(key==='Desm') return 49; // 変ニ短調：レ♭3
+  if(key==='Gesm') return 54; // 変ト短調：ソ♭3
   return TONIC_LOW;          // ド3(48)
 }
 
 function isMinor(key){
   return key==='Am' || key==='Em' || key==='Dm' || 
          key==='Gm' || key==='Cm' || key==='Fm' || 
-         key==='Cism' || key==='Fism' || key==='Hm';
+         key==='Cism' || key==='Fism' || key==='Hm' ||
+         key==='Desm' || key==='Gesm';
 }
 
 // パターン（BARS配列）が書かれている際の「基準」となる仮想主音MIDI値。
@@ -1432,6 +1451,14 @@ async function startLT(){
   else if(key==='Ab') { tonicLowMidi=56; tonicHighMidi=56+36; }
   else if(key==='Eb') { tonicLowMidi=51; tonicHighMidi=51+36; }
   else if(key==='Bb') { tonicLowMidi=58; tonicHighMidi=58+36; }
+  else if(key==='A') { tonicLowMidi=57; tonicHighMidi=57+36; }
+  else if(key==='Gm') { tonicLowMidi=55; tonicHighMidi=55+36; }
+  else if(key==='Cm') { tonicLowMidi=48; tonicHighMidi=48+36; }
+  else if(key==='Fm') { tonicLowMidi=53; tonicHighMidi=53+36; }
+  else if(key==='B') { tonicLowMidi=59; tonicHighMidi=59+36; }
+  else if(key==='Fis') { tonicLowMidi=54; tonicHighMidi=54+36; }
+  else if(key==='Des') { tonicLowMidi=49; tonicHighMidi=49+36; }
+  else if(key==='Ges') { tonicLowMidi=54; tonicHighMidi=54+36; }
   else { tonicLowMidi=TONIC_LOW; tonicHighMidi=TONIC_LOW+36; } // C
   
   const LOW_FREQ = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], tonicLowMidi);

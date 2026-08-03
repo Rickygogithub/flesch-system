@@ -49,7 +49,7 @@
 <body>
 <div class="wrap">
   <a href="index.html" style="display:inline-block;margin-bottom:10px;font-size:13px;font-weight:600;color:#2c5d92;text-decoration:none;">← トップページに戻る</a>
-  <h1>Melody Dictation Trainer<span class="badge">v2</span></h1>
+  <h1>Melody Dictation Trainer<span class="badge">v3</span></h1>
   <div class="sub">▶️ 設定から「視唱準備トレ」「リズム」「聴音」「視唱」のモードを選択。
   <br>・「視唱準備トレ」は跳躍や半音階を含む高速で歌い、楽譜を脳内で音にする瞬発力を上げる練習
   <br>・「リズム」でリズムを鍛え、「聴音」で音感を養い、統合演習として「視唱」は楽譜を見て簡易な旋律を歌う練習
@@ -159,6 +159,7 @@
           <button data-v="p4">4度</button>
           <button data-v="p5">5度</button>
           <button data-v="p6">6度</button>
+          <button data-v="p7">7度</button>
           <button data-v="chroma">半音階</button>
         </span>
       </div>
@@ -272,10 +273,10 @@
     <details style="margin-bottom:8px">
       <summary>▶️ ① 視唱準備トレ</summary>
       <div class="footnote" style="margin-top:6px">
-        Score Readingの単音・重音の視唱と、この先の小節単位の視唱との間には、大きな段差があります。ここでは、1オクターブの音階、フレッシュの分散3度・4度・5度・6度、そして半音階を、指定したテンポで、システムと一緒に歌う練習をします。<br><br>
-        正確な音程を確認するソルフェージュではなく、跳躍や隙間のない音の動きに、頭と口がどれだけ速く反応できるかという、回路の速度そのものを鍛えることが目的です。3度だけでなく4度・5度・6度も揃えることで、様々な広さの跳躍に対応する内的な音程感覚を、視唱の基礎として体系的にカバーできます。<br><br>
+        Score Readingの単音・重音の視唱と、この先の小節単位の視唱との間には、大きな段差があります。ここでは、1オクターブの音階、フレッシュの分散3度・4度・5度・6度・7度、そして半音階を、指定したテンポで、システムと一緒に歌う練習をします。<br><br>
+        正確な音程を確認するソルフェージュではなく、跳躍や隙間のない音の動きに、頭と口がどれだけ速く反応できるかという、回路の速度そのものを鍛えることが目的です。3度だけでなく4度・5度・6度・7度も揃えることで、様々な広さの跳躍に対応する内的な音程感覚を、視唱の基礎として体系的にカバーできます。<br><br>
         使い方：「スタート」を押すと、主音（3秒）→選んだ種類のパターンが、設定したテンポで流れます。楽譜を見ながら、声に出して（またはドレミを心の中で思い浮かべながら）一緒に歌ってください。ついていけたら「✓ できた」、まだ厳しければ「✗ まだ難しい」を選び、テンポスライダーを調整して次に挑戦してください。「できた」時のテンポの平均が、回路の太さの目安になります。慣れてきたら、楽譜を見ずに挑戦してみてください。半音階は調性の足場がないため、最も負荷の高い練習です。<br><br>
-        分散3度・4度・5度・6度・半音階は楽譜が横に長くなるため、画面をスクロールしながらご利用ください。
+        分散3度・4度・5度・6度・7度・半音階は楽譜が横に長くなるため、画面をスクロールしながらご利用ください。
       </div>
     </details>
 
@@ -462,6 +463,8 @@ const WARMUP_PATTERNS={
     p5Desc: [{letter:'G',octave:4},{letter:'C',octave:4},{letter:'F',octave:4},{letter:'B',octave:3},{letter:'E',octave:4},{letter:'A',octave:3},{letter:'D',octave:4},{letter:'G',octave:3},{letter:'C',octave:4},{letter:'F',octave:3},{letter:'B',octave:3},{letter:'E',octave:3},{letter:'A',octave:3},{letter:'D',octave:3},{letter:'C',octave:3}],
     p6Asc:  [{letter:'C',octave:3},{letter:'A',octave:3},{letter:'D',octave:3},{letter:'B',octave:3},{letter:'E',octave:3},{letter:'C',octave:4},{letter:'F',octave:3},{letter:'D',octave:4},{letter:'G',octave:3},{letter:'E',octave:4},{letter:'A',octave:3},{letter:'F',octave:4},{letter:'B',octave:3},{letter:'G',octave:4},{letter:'C',octave:4}],
     p6Desc: [{letter:'A',octave:4},{letter:'C',octave:4},{letter:'G',octave:4},{letter:'B',octave:3},{letter:'F',octave:4},{letter:'A',octave:3},{letter:'E',octave:4},{letter:'G',octave:3},{letter:'D',octave:4},{letter:'F',octave:3},{letter:'C',octave:4},{letter:'E',octave:3},{letter:'B',octave:3},{letter:'D',octave:3},{letter:'C',octave:3}],
+    p7Asc:  [{letter:'C',octave:3},{letter:'B',octave:3},{letter:'D',octave:3},{letter:'C',octave:4},{letter:'E',octave:3},{letter:'D',octave:4},{letter:'F',octave:3},{letter:'E',octave:4},{letter:'G',octave:3},{letter:'F',octave:4},{letter:'A',octave:3},{letter:'G',octave:4},{letter:'B',octave:3},{letter:'A',octave:4},{letter:'C',octave:4}],
+    p7Desc: [{letter:'B',octave:4},{letter:'C',octave:4},{letter:'A',octave:4},{letter:'B',octave:3},{letter:'G',octave:4},{letter:'A',octave:3},{letter:'F',octave:4},{letter:'G',octave:3},{letter:'E',octave:4},{letter:'F',octave:3},{letter:'D',octave:4},{letter:'E',octave:3},{letter:'C',octave:4},{letter:'D',octave:3},{letter:'C',octave:3}],
     chromaAsc:  [{letter:'C',octave:3},{letter:'C',octave:3,acc:'#'},{letter:'D',octave:3},{letter:'D',octave:3,acc:'#'},{letter:'E',octave:3},{letter:'F',octave:3},{letter:'F',octave:3,acc:'#'},{letter:'G',octave:3},{letter:'G',octave:3,acc:'#'},{letter:'A',octave:3},{letter:'B',octave:3,acc:'b'},{letter:'B',octave:3,acc:'nat'}],
     chromaDesc: [{letter:'C',octave:4},{letter:'B',octave:3},{letter:'B',octave:3,acc:'b'},{letter:'A',octave:3},{letter:'G',octave:3,acc:'#'},{letter:'G',octave:3,acc:'nat'},{letter:'F',octave:3,acc:'#'},{letter:'F',octave:3,acc:'nat'},{letter:'E',octave:3},{letter:'D',octave:3,acc:'#'},{letter:'D',octave:3,acc:'nat'},{letter:'C',octave:3,acc:'#'}],
     root:{letter:'C',octave:3}
@@ -495,6 +498,7 @@ function warmupGetSeq(){
   if(warmupType==='p4') return {asc:pat.p4Asc, desc:pat.p4Desc, hasHold:false, noteDur:'arp'};
   if(warmupType==='p5') return {asc:pat.p5Asc, desc:pat.p5Desc, hasHold:false, noteDur:'arp'};
   if(warmupType==='p6') return {asc:pat.p6Asc, desc:pat.p6Desc, hasHold:false, noteDur:'arp'};
+  if(warmupType==='p7') return {asc:pat.p7Asc, desc:pat.p7Desc, hasHold:false, noteDur:'arp'};
   return {asc:pat.chromaAsc, desc:pat.chromaDesc, hasHold:true, noteDur:'16th'};
 }
 function drawRestGlyph(x,yMid){
