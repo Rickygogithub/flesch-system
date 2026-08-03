@@ -449,6 +449,16 @@
         <div style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <p style="font-weight: 700; font-size: 1.1rem; color: #0f1722; margin: 0 0 16px;">📋 アップデート履歴</p>
             <div style="font-size: 0.95rem; line-height: 2; color: #555;">
+                <p><strong>2026年8月3日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>Melody Dictation Trainer（v3）：視唱準備トレに「7度」を追加。ハ長調の音階音のみを使った分散7度（上行・下降）を、既存の3〜6度・半音階と同じ構造で実装。ト音記号・アルト記号ともに対応。説明文も「3度・4度・5度・6度・7度・半音階」に更新</li>
+                    <li>Integrated Performance Practice（v3）：①主音ロングトーンの調ドロップダウンを9調から13調に拡張。ロ長調・ロ短調（B）・嬰ヘ長調・嬰ヘ短調（Fis）・変ニ長調・変ニ短調（Des）・変ト長調・変ト短調（Ges）を追加し、5度圏の#系・♭系それぞれ6個まで完結。選択肢を5度圏順（C→G→D→A→E→B→Fis→F→Bb→Eb→Ab→Des→Ges）に整列。③和音セクションは引き続き従来の9調</li>
+                </ul>
+
+                <details style="margin-top: 8px;">
+                    <summary style="cursor: pointer; font-weight: 700; color: #2c5d92; user-select: none; font-size: 0.95rem;">▼ 以前のアップデート履歴を見る</summary>
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e8eaed;">
+
                 <p><strong>2026年8月2日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>Integrated Performance Practice：ホ短調（E-moll）主和音の基本形（Em/E）でMIDIノート番号の誤りを修正。最上声部が58（B♭）になっていたためE-G-B♭（減三和音）が鳴っていた。正しくは59（B）で、E-G-B（短三和音）に修正。比率 1:1.2:1.5 を確認</li>
@@ -466,10 +476,6 @@
                     <li>Integrated Performance Practice：和音セクションの減七和音の表記を全調で短三度の積み重ね（短3度×3）に統一。ダブルフラットを使用し、教本表記より理論的な正確さを優先（実際の演奏上は平均律的に弾かざるを得ないが、理論としての積み重ね構造を明示）。あわせて一部の属七和音の表記誤りも訂正</li>
                 </ul>
 
-                <details style="margin-top: 8px;">
-                    <summary style="cursor: pointer; font-weight: 700; color: #2c5d92; user-select: none; font-size: 0.95rem;">▼ 以前のアップデート履歴を見る</summary>
-                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e8eaed;">
-
                 <p><strong>2026年7月31日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>全アプリ共通：ユーザーからiOS 26環境で音が出ないという報告を受け調査。マナーモード（消音スイッチ）がオンになっていたことが原因と判明し、解除で解決。これを受け、index.htmlおよび全アプリの説明文の下に「音が出ない場合のチェックリスト」を折りたたみタブで追加。マナーモード・音量・Safariの自動再生設定・Bluetooth・iOS 26特有のAudioContext問題・低電力モードなど、考えうる原因と対処法を網羅</li>
@@ -486,13 +492,6 @@
                     <li>Score Reading：和音モードの「🔊 音を聴く」の動作を変更。従来の全音同時再生から、低音から高音へ0.7秒間隔で分散再生した後、0.5秒おいて全音同時再生する仕様に変更。各音を歌いながら追えるようになり、視唱との接続が深まる。周波数計算は根音をピタゴラス音律、他の音を根音からの純正律比率で計算</li>
                     <li>Score Reading：和音モードで、フラット4〜6個・シャープ4〜6個の調（Des-Dur・As-Dur・Ges-Dur・Eis-Dur・H-Dur・Fis-Durなど）のaccMapが正しく生成されていなかったバグを修正。該当する調で減七和音の第4音が誤った音名（例：BがHとして）生成される問題が解消される</li>
                     <li>Melody Dictation Trainer：聴音モードに「中央1オクターブ」モードを追加。C4〜B4の1オクターブに音域を限定し、基準音なしで出題。各ピッチの固有の色合いを覚えることを目的とした訓練。音律はハ長調ベースのピタゴラス音律。臨時記号「なし（ハ長調7音）」「あり（12音）」の切り替えが可能。再生は3秒間、何度でも聴き直せる。2問連続で同じ音が出ないよう制御</li>
-                </ul>
-
-                <details style="margin-top: 8px;">
-                    <summary style="cursor: pointer; font-weight: 700; color: #2c5d92; user-select: none; font-size: 0.95rem;">▼ すべてのアップデート履歴を見る</summary>
-                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e8eaed;">
-                <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>全アプリ（Score Reading・Melody Dictation Trainer・Pure Intonation Tuner・Beautiful Intonation Training・Integrated Performance Practice・Orchestra Excerpt）共通：iOS 26で一部の操作後に音が鳴らなくなる不具合を修正。iOS 26からAudioContextに新たに追加された「interrupted」状態（着信・タブ切り替え・画面ロックなどで遷移）を検知してresumeするよう対応</li>
                 </ul>
                 <p><strong>2026年7月26日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
@@ -584,8 +583,6 @@
                     <li>Google Analyticsを導入</li>
                     <li>Netlifyのクレジット制限を回避するため、GitHub Pagesに移行</li>
                 </ul>
-                    </div>
-                </details>
 
                     </div>
                 </details>
