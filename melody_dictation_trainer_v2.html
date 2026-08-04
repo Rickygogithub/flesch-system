@@ -386,9 +386,10 @@ let dictType='single', dictUseAcc=false, dictLowMidi=60, dictHighMidi=84;
 let dictMode='normal'; // 'normal' or 'octave1'
 
 // ハ長調ベースのピタゴラス音律（C4=基準）
-// C4のHz: A4=442 → C4 = 442 * 2^(-9/12) ≈ 263.16Hz（平均律）
-// ピタゴラスではC4を五度圏でA4から計算: A4→D4→G4→C4 = 442*(2/3)^3*4 ≈ 263.94Hz
-const C4_PYTH = 442 * Math.pow(2/3, 3) * 4; // ≈263.94Hz
+// C4のHz: A4=442 → C4 = 442 * 2^(-9/12) ≈ 262.81Hz（平均律）
+// ピタゴラスではC4を5度圏でA4から下降3回で計算: A4→D4→G3→C3 = 442*(2/3)^3 ≈ 130.96Hz
+// それを1オクターブ上げてC4とする（*4 にすると C5 になり、1オクターブ高く鳴ってしまう）
+const C4_PYTH = 442 * Math.pow(2/3, 3) * 2; // ≈261.93Hz
 const PYTH_RATIOS_FROM_C = {
   'C':  1,
   'D':  9/8,
