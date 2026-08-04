@@ -409,8 +409,10 @@ const PYTH_RATIOS_FROM_C = {
   'Ab': 128/81,
   'A#': 59049/32768,
   'Bb': 16/9,
-  'B#': 2,
-  'Cb': 243/128
+  'E#': 177147/131072, // 5度11回上：Fより+23.46セント
+  'Fb': 8192/6561,     // 5度8回下 ：Eより-23.46セント
+  'B#': 531441/262144, // 5度12回上：Cより+23.46セント（MIDIは1オクターブ上のCと同じ）
+  'Cb': 2048/2187      // 5度7回下 ：Bより-23.46セント（MIDIは1オクターブ下のBと同じ）
 };
 
 function pythFreqFromPitch(p){
@@ -700,7 +702,7 @@ function warmupPlayClickAt(ctx,time,isAccent){
   osc.start(time); osc.stop(time+0.06);
 }
 function warmupToneAt(ctx,pitch,t,dur,peak){
-  const freq=442*Math.pow(2,(pitch.midi-69)/12);
+  const freq=pythFreqFromPitch(pitch);  // ピタゴラス音律（IPPの楽器練習と音程を揃える）
   const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
   const gain=ctx.createGain();
   gain.gain.setValueAtTime(0.0001,t);
@@ -1297,7 +1299,7 @@ function playReferenceAndTarget(){
     // 通常モード: 基準音A=442を0.7秒→出題音0.9秒
     playTone(442, t0, 0.7);
     const t1=t0+1.0;
-    currentDictNotes.forEach(p=>{ playTone(442*Math.pow(2,(p.midi-69)/12), t1, 0.9); });
+    currentDictNotes.forEach(p=>{ playTone(pythFreqFromPitch(p), t1, 0.9); });  // 基準Aから5度連鎖で取れるようピタゴラス
   }
 }
 function newDictNote(){
@@ -1379,6 +1381,12 @@ function updateDictStats(){
 /* ---------- 共通 ---------- */
 function ensureCtx(){ 
   if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); 
+  // iOSでは着信やアプリ切替の後に 'interrupted' になることがある。
+  // この状態は resume() では戻らないため、AudioContextを作り直す（作り直しは同期的に完了する）。
+  if(audioCtx.state==='interrupted'){
+    try{ audioCtx.close(); }catch(e){}
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  }
   if(audioCtx.state==='suspended') audioCtx.resume().catch(e=>console.error('Audio resume failed:',e));
   return audioCtx; 
 }

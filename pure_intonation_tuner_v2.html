@@ -477,8 +477,14 @@ let currentActiveId = null;
 
 async function initAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') {
+  if (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted') {
     try{ await audioCtx.resume(); }catch(e){ console.error('Audio resume failed:', e); }
+  }
+  // iOSでは着信やアプリ切替の後に 'interrupted' になることがある。
+  // この状態は resume() では戻らないため、AudioContextを作り直す。
+  if (audioCtx.state === 'interrupted') {
+    try{ await audioCtx.close(); }catch(e){}
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
 }
 
@@ -647,9 +653,13 @@ function getAllTonicFreqs() {
   };
   for (const [note, n] of Object.entries(noteSteps)) {
     let freq = A4 * Math.pow(fifth, n);
-    // C4〜B4の範囲（A4=442基準の1オクターブ内）に正規化
-    while (freq < A4 * Math.pow(2, -9/12) * 0.999) freq *= 2;
-    while (freq > A4 * Math.pow(2,  3/12) * 1.001) freq /= 2;
+    // ピタゴラスのC4（A4から5度3回下降→1オクターブ上げ）を下端とする1オクターブに正規化する。
+    // 平均律のC4（≈262.81Hz）を下端にすると、ピタゴラスのC4（≈261.93Hz）がわずかに下回り、
+    // Cだけ余分に2倍されて1オクターブ高く鳴ってしまう。
+    const c4Pyth = A4 * Math.pow(2/3, 3) * 2; // ≈261.93Hz（他アプリと共通の基準）
+    const EPS = 1e-9;
+    while (freq < c4Pyth - EPS) freq *= 2;
+    while (freq >= c4Pyth * 2 - EPS) freq /= 2;
     freqs[note] = freq; // これがオクターブ4の基準値
   }
   return freqs;

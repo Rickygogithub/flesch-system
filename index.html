@@ -460,6 +460,14 @@
                     <li>Integrated Performance Practice：セクション番号を①〜⑨に繰り上げ（12調ローテーション削除後の欠番を解消）。あわせて説明文どうしの参照のズレ（重音4度・重音オクターブが引用する節番号など）も解消</li>
                     <li>Integrated Performance Practice：③和音の説明文が、削除済みの12調ローテーションを参照していた記述を修正</li>
                     <li>全アプリ：使われていない関数・定数・変数を整理（動作の変更なし）</li>
+                    <li>Score Reading：音を平均律からピタゴラス音律に変更。同時に鳴る和音・重音は最低音を基準にした純正律に変更。これにより、D♯とE♭のような異名同音が23.46セント（ピタゴラスコンマ）違って響くようになり、書き分けの意味が耳でも確認できる</li>
+                    <li>Melody Dictation Trainer：視唱準備トレを平均律からピタゴラス音律に変更。Integrated Performance Practiceで同じ音型を楽器で弾くときと音程が揃った</li>
+                    <li>Melody Dictation Trainer：聴音（基準音あり）を平均律からピタゴラス音律に変更。基準のAから5度の連鎖で音を取る、弦楽器の実際の取り方と一致するようにした。なお視唱は読譜速度の訓練のため平均律のまま</li>
+                    <li>Melody Dictation Trainer：ピタゴラス音律の比率表で、B♯とC♭の値が誤っていたのを修正し、E♯とF♭を追加（未定義のため平均律で鳴っていた）</li>
+                    <li>全アプリ：iOSで着信やアプリ切り替えの後に音が出なくなることがある問題に対応。AudioContextが「中断（interrupted）」状態になると復帰処理が働かなかったため、この状態を検知して作り直すようにした（これまでIntegrated Performance Practiceのみ対応済みだった）</li>
+                    <li>Pure Intonation Tuner：「任意の主音を鳴らす」で、ハ音（C）だけが1オクターブ高く鳴っていたバグを修正。オクターブを揃える処理の基準に平均律のCを使っていたため、ピタゴラスのCがわずかに下回り、余分に2倍されていた</li>
+                    <li>Orchestra Excerpt：音を平均律からピタゴラス音律に変更。楽譜の音名と臨時記号から音程を決めるため、D♯とE♭のような書き分けが音にも反映される</li>
+                    <li>Beautiful Intonation Training：「ボーイングの安定性を測る」機能を削除（Integrated Performance Practice・Pure Intonation Tunerと揃えた）。あわせて未使用のメトロノーム処理と、閉じ忘れていたHTMLタグも整理</li>
                 </ul>
 
                 <details style="margin-top: 8px;">

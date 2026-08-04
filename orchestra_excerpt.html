@@ -233,6 +233,32 @@ function flatten(measures){
   return flat;
 }
 
+/* ---- ピタゴラス音律 ----
+   音名（nd.n）と臨時記号（nd.a）から比率を決めるので、
+   MIDI番号が同じでもD♯とE♭は23.46セント違って響く。
+   オーケストラの音型は旋律なので、他アプリと同じくピタゴラスで鳴らす。 */
+const C4_PYTH = 442 * Math.pow(2/3, 3) * 2; // ≈261.93Hz（全アプリ共通の基準）
+const PYTH_RATIOS_FROM_C = {
+  'C':1, 'D':9/8, 'E':81/64, 'F':4/3, 'G':3/2, 'A':27/16, 'B':243/128,
+  'C#':2187/2048, 'Db':256/243,
+  'D#':19683/16384,'Eb':32/27,
+  'E#':177147/131072,'Fb':8192/6561,
+  'F#':729/512,   'Gb':1024/729,
+  'G#':6561/4096, 'Ab':128/81,
+  'A#':59049/32768,'Bb':16/9,
+  'B#':531441/262144, 'Cb':2048/2187
+};
+// 綴りから比率を引き、MIDI番号に最も近いオクターブへ合わせる
+// （B♯やC♭のように音名のオクターブとMIDIのオクターブがずれる綴りにも対応できる）
+function pythFreqOf(midi, letter, acc){
+  const ratio = PYTH_RATIOS_FROM_C[letter + (acc||'')];
+  const et = 442 * Math.pow(2,(midi-69)/12);
+  if(ratio===undefined) return et;            // 未定義の綴りは平均律で代用
+  let f = C4_PYTH * ratio;
+  while(f < et/1.4) f *= 2;
+  while(f > et*1.4) f /= 2;
+  return f;
+}
 function buildAudioSeq(measures){
   const flat=flatten(measures);
   const seq=[];
@@ -268,7 +294,7 @@ function buildAudioSeq(measures){
       }
     }
     if(nd.oct) midi += nd.oct*12;
-    seq.push(midi);
+    seq.push({midi, letter:nd.n, acc:nd.a||''});  // 綴りを保持してピタゴラスで鳴らせるようにする
     prev=midi;
   });
   return seq;
@@ -314,8 +340,14 @@ function reveal(){
 
 async function ensureCtx(){
   if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-  if(audioCtx.state==='suspended'){
+  if(audioCtx.state==='suspended'||audioCtx.state==='interrupted'){
     try{ await audioCtx.resume(); }catch(e){ console.error(e); }
+  }
+  // iOSでは着信やアプリ切替の後に 'interrupted' になることがある。
+  // この状態は resume() では戻らないため、AudioContextを作り直す。
+  if(audioCtx.state==='interrupted'){
+    try{ await audioCtx.close(); }catch(e){}
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
   }
   return audioCtx;
 }
@@ -327,10 +359,10 @@ async function playSequence(){
   const t0=ctx.currentTime+1.0;
   const noteDur=0.28;
   const gap=0.32;
-  midiSeq.forEach((midi,i)=>{
-    if(midi===null) return; // 休符：無音のまま時間だけ経過
+  midiSeq.forEach((nt,i)=>{
+    if(nt===null) return; // 休符：無音のまま時間だけ経過
     const start=t0+i*gap;
-    const freq=442*Math.pow(2,(midi-69)/12);
+    const freq=pythFreqOf(nt.midi, nt.letter, nt.acc);
     const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
     const gain=ctx.createGain();
     gain.gain.setValueAtTime(0.0001,start);
