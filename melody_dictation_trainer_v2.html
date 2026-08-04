@@ -491,6 +491,20 @@ function warmupBuildPitch(n){
   const octShift = (clefMode==='treble') ? 1 : 0;
   return buildPitch(n.letter, n.octave + octShift, n.acc||'');
 }
+// 7度パターンはハ長調にのみ定義されている。イ短調では選べないようにする
+// （選択したまま切り替えると pat.p7Asc が undefined になり、視唱準備トレが動作しなくなる）
+function syncWarmupTypeAvailability(){
+  const seg=document.getElementById('seg-warmup-type');
+  if(!seg) return;
+  const btn7=seg.querySelector('button[data-v="p7"]');
+  if(!btn7) return;
+  const allow=!!(WARMUP_PATTERNS[warmupKey] && WARMUP_PATTERNS[warmupKey].p7Asc);
+  btn7.style.display=allow?'':'none';
+  if(!allow && warmupType==='p7'){
+    warmupType='p6';
+    [...seg.children].forEach(x=>x.classList.toggle('on', x.dataset.v==='p6'));
+  }
+}
 function warmupGetSeq(){
   const pat=WARMUP_PATTERNS[warmupKey];
   if(warmupType==='scale') return {asc:pat.scaleAsc, desc:pat.scaleDesc, hasHold:true, noteDur:'16th'};
@@ -500,9 +514,6 @@ function warmupGetSeq(){
   if(warmupType==='p6') return {asc:pat.p6Asc, desc:pat.p6Desc, hasHold:false, noteDur:'arp'};
   if(warmupType==='p7') return {asc:pat.p7Asc, desc:pat.p7Desc, hasHold:false, noteDur:'arp'};
   return {asc:pat.chromaAsc, desc:pat.chromaDesc, hasHold:true, noteDur:'16th'};
-}
-function drawRestGlyph(x,yMid){
-  return `<path d="M${x-2},${yMid-9} C${x+6},${yMid-7} ${x-6},${yMid-1} ${x+4},${yMid+1} C${x-4},${yMid+3} ${x+6},${yMid+9} ${x-2},${yMid+11}" stroke="#16202b" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
 }
 // 2分休符：五線の中央線の上に乗る、塗りつぶしの四角
 function drawHalfRestGlyph(x,midLineY){
@@ -550,15 +561,6 @@ function warmupDrawStem(n){
   return `<line x1="${n.x+5.5}" y1="${n.y-1}" x2="${n.x+5.5}" y2="${n.stemTopBase}" stroke="#16202b" stroke-width="1.4"/>`;
 }
 // 16分音符の並びを、4個ずつの連桁グループに分割して描画
-function warmupLayoutSixteenths(pitches, xStart, headsRef, stemsRef){
-  let x=xStart;
-  const infos=[];
-  pitches.forEach(p=>{ const info=warmupPrepNote(p,x,false); headsRef.push(info.svg); infos.push(info); x+=30; });
-  for(let i=0;i<infos.length;i+=4){
-    stemsRef.push(warmupDrawBeamGroup(infos.slice(i,i+4)));
-  }
-  return x;
-}
 // タイ（同音を結ぶ弧線）
 function warmupDrawTie(n1,n2){
   const midX=(n1.x+n2.x)/2, y=Math.max(n1.y,n2.y)+11;
@@ -1255,7 +1257,6 @@ function buildDictPool(lowMidi, highMidi){
   return pool;
 }
 let lastDictMidi = null;
-function dictPickAcc(){ if(!dictUseAcc) return ''; const r=Math.random(); if(r<0.3) return ''; return r<0.65?'#':'b'; }
 function dictMakeChord(){
   const key=pickKey(dictUseAcc);
   const accMap=keySignatureMap(key.sharps,key.flats);
@@ -1533,7 +1534,7 @@ document.getElementById('seg-appmode').addEventListener('click',e=>{
     newPhrase();
   }
 });
-document.getElementById('seg-warmup-key').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;warmupKey=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));document.getElementById('warmup-judge').style.display='none';drawWarmupScore();});
+document.getElementById('seg-warmup-key').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;warmupKey=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));syncWarmupTypeAvailability();document.getElementById('warmup-judge').style.display='none';drawWarmupScore();});
 document.getElementById('seg-warmup-type').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;warmupType=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));document.getElementById('warmup-judge').style.display='none';drawWarmupScore();});
 document.getElementById('seg-contour').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;contourMode=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newPhrase();});
 document.getElementById('seg-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;useAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newPhrase();});
@@ -1549,6 +1550,7 @@ document.getElementById('rmeasures').onchange=e=>{rMeasures=Number(e.target.valu
 document.getElementById('bpm').oninput=e=>{document.getElementById('bpmval').textContent=e.target.value+' BPM';};
 
 applyModeVisibility();
+syncWarmupTypeAvailability();
 drawWarmupScore();
 </script>
 </body>

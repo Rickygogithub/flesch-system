@@ -331,9 +331,10 @@ function makeSequence(){
 // 根音(letter,octave)から、根音を基準にした半音のリスト(intervalSemis)で和音を組み立てる。
 // 文字は3度ずつダイアトニックに進め、実際に必要な半音との差を臨時記号(diff)として付与する。
 // accMapは調号の臨時記号を含む（例：{F:'#', C:'#', ...}）
-function buildStackedChord(rootLetter,rootOctave,intervalSemis,accMap){
+function buildStackedChord(rootLetter,rootOctave,intervalSemis,accMap,rootOffset){
   const li0=LIDX[rootLetter]+rootOctave*7;
-  const rootNatural=(rootOctave+1)*12+SEMI[rootLetter];
+  // rootOffset：根音を「文字の本位音」から半音単位でずらす（減七の導音など、調号で変化する根音に対応）
+  const rootNatural=(rootOctave+1)*12+SEMI[rootLetter]+(rootOffset||0);
   const notes=[];
   for(let n=0;n<intervalSemis.length;n++){
     const li=li0+2*n;
@@ -370,7 +371,7 @@ const CHORD_TYPES=[
   {id:'inv1',    label:'主和音の第一転回', intervals:[0,4,7],    invertible:true, forcePos:1},
   {id:'inv2',    label:'主和音の第二転回', intervals:[0,4,7],    invertible:true, forcePos:2},
   {id:'dim7',    label:'減七の和音',        intervals:[0,3,6,9],  invertible:false},
-  {id:'dom7',    label:'属七の和音',        intervals:[-5,-1,2,5],invertible:false} // Vの根音から見た属七(下属からの相対ではなく、Iの完全4度下=属音を根音とする)
+  {id:'dom7',    label:'属七の和音',        intervals:[0,4,7,10],invertible:false} // 属音を根音とする属七の和音
 ];
 
 // 基準音から「文字を何個進めるか」「半音を何個進めるか」を指定して、正確な音高（文字＋臨時記号）を計算する
@@ -388,12 +389,14 @@ function buildPitchFromMidiStep(baseNote, letterSteps, semitoneSteps){
 }
 
 function makeChord(){
-  const key=pickKey();
-  const accMap=keySignatureMap(key.sharps,key.flats);
-  const c=diatonicCandidates().filter(x=>x.letter===key.tonic);
-  const typeChoice=CHORD_TYPES[Math.floor(Math.random()*CHORD_TYPES.length)];
-
   for(let t=0;t<80;t++){
+    // 調・和音種は毎回この中で選び直す。
+    // （ループの外で1回だけ選ぶと、音域が狭いときにその組み合わせが成立せず、
+    //   80回すべて失敗して「和音モードなのに単音が出る」不具合になる）
+    const key=pickKey();
+    const accMap=keySignatureMap(key.sharps,key.flats);
+    const c=diatonicCandidates().filter(x=>x.letter===key.tonic);
+    const typeChoice=CHORD_TYPES[Math.floor(Math.random()*CHORD_TYPES.length)];
     const tonicPos=c.length?c[Math.floor(Math.random()*c.length)]:{letter:key.tonic,octave:4};
     let notes=null, typeLabel=typeChoice.label;
 
@@ -408,7 +411,13 @@ function makeChord(){
     } else if(typeChoice.id==='dim7'){
       const li=LIDX[tonicPos.letter]+tonicPos.octave*7-1;
       const leadLetter=LETTERS[((li%7)+7)%7]; const leadOctave=Math.floor(li/7);
-      notes=buildStackedChord(leadLetter,leadOctave,[0,3,6,9],accMap);
+      // 減七の根音は「主音の半音下＝導音」。調号を反映した主音から求める
+      // （文字の本位音をそのまま使うと、♯♭系の調で全音下になり和音が破綻する）
+      const tonicAccForLead=accMap[tonicPos.letter]||'';
+      const tonicMidiForLead=(tonicPos.octave+1)*12+SEMI[tonicPos.letter]
+        +(tonicAccForLead==='#'?1:tonicAccForLead==='b'?-1:0);
+      const leadOffset=(tonicMidiForLead-1)-((leadOctave+1)*12+SEMI[leadLetter]);
+      notes=buildStackedChord(leadLetter,leadOctave,[0,3,6,9],accMap,leadOffset);
     } else {
       const isMinorKey = key.name.indexOf('短調')!==-1;
       const triadIntervals = isMinorKey ? [0,3,7] : [0,4,7];
