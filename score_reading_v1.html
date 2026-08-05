@@ -127,6 +127,7 @@
         <option value="48,88">高音含む（C3–E6）</option>
         <option value="53,72">アルト記号中心（F3–C5）</option>
         <option value="48,77" selected>低～中（C3–F5）</option>
+        <option value="84,98">e線ハイポジション（C6–D7）</option>
       </select>
     </div>
     <div class="opt" id="edgeFocusOpt" style="display:none">
@@ -290,7 +291,8 @@ const PYTH_RATIOS_FROM_C = {
   'B#':531441/262144, 'Cb':2048/2187
 };
 // 純正律比率（根音＝最低音から見た音程）。IPPの③和音と同じ定義。
-const JI_FROM_BASS = {0:1, 1:16/15, 2:9/8, 3:6/5, 4:5/4, 5:4/3, 6:7/5, 7:3/2, 8:8/5, 9:5/3, 10:7/4, 11:15/8};
+// 10（短7度）は属七の第7音＝主調の第4音にあたるため、5度連鎖と整合する 16/9 を使う。
+const JI_FROM_BASS = {0:1, 1:16/15, 2:9/8, 3:6/5, 4:5/4, 5:4/3, 6:7/5, 7:3/2, 8:8/5, 9:5/3, 10:16/9, 11:15/8};
 function pythFreqOf(p){
   const acc = (p.acc==='n') ? '' : (p.acc||'');   // 明示的ナチュラルは本位音として扱う
   const ratio = PYTH_RATIOS_FROM_C[p.letter+acc];
@@ -298,13 +300,15 @@ function pythFreqOf(p){
   return C4_PYTH * ratio * Math.pow(2, p.octave-4);
 }
 // 同時に鳴る和音・重音：最低音をピタゴラスで置き、その上を純正律比率で積む
-function chordFreqs(notes){
+function chordFreqs(notes, et){
   const sorted=[...notes].sort((a,b)=>a.midi-b.midi);
   const baseFreq=pythFreqOf(sorted[0]), baseMidi=sorted[0].midi;
   const map=new Map();
   sorted.forEach(p=>{
     const diff=p.midi-baseMidi, oct=Math.floor(diff/12);
-    map.set(p, baseFreq*JI_FROM_BASS[diff-oct*12]*Math.pow(2,oct));
+    // 減七は純正律の値が一意に定まらないため、根音の上を平均律で積む
+    map.set(p, et ? baseFreq*Math.pow(2,diff/12)
+                  : baseFreq*JI_FROM_BASS[diff-oct*12]*Math.pow(2,oct));
   });
   return map;
 }
@@ -775,7 +779,8 @@ async function playCurrentSound(){
   const gap = isSeq ? 0.5 : 0; // 連続音符・分散度数は0.5秒間隔でずらして再生
   // 同時に鳴る場合（和音・重音の度数）は純正律、時間差で鳴る場合はピタゴラス
   const simultaneous = !isSeq && current.length>1;
-  const jiMap = simultaneous ? chordFreqs(current) : null;
+  const isDim7 = !!(current._chordType && current._chordType.indexOf('減七')>=0);
+  const jiMap = simultaneous ? chordFreqs(current, isDim7) : null;
   current.forEach((p,i)=>{
     const start=t0+i*gap;
     const freq = simultaneous ? jiMap.get(p) : pythFreqOf(p);

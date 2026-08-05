@@ -415,6 +415,19 @@ const PYTH_RATIOS_FROM_C = {
   'Cb': 2048/2187      // 5度7回下 ：Bより-23.46セント（MIDIは1オクターブ下のBと同じ）
 };
 
+// 同時に鳴る音の純正律比率（最低音を1とする）。Score Reading と同一。
+const JI_FROM_BASS = {0:1, 1:16/15, 2:9/8, 3:6/5, 4:5/4, 5:4/3, 6:7/5, 7:3/2, 8:8/5, 9:5/3, 10:16/9, 11:15/8};
+// 同時に鳴る和音：最低音をピタゴラスで置き、その上を純正律比率で積む
+function chordFreqs(notes){
+  const sorted=[...notes].sort((a,b)=>a.midi-b.midi);
+  const baseFreq=pythFreqFromPitch(sorted[0]), baseMidi=sorted[0].midi;
+  const map=new Map();
+  sorted.forEach(p=>{
+    const diff=p.midi-baseMidi, oct=Math.floor(diff/12);
+    map.set(p, baseFreq*JI_FROM_BASS[diff-oct*12]*Math.pow(2,oct));
+  });
+  return map;
+}
 function pythFreqFromPitch(p){
   // p.letter: C,D,E,F,G,A,B  p.acc: '#','b',''
   const key = p.letter + (p.acc==='#'?'#': p.acc==='b'?'b':'');
@@ -1299,7 +1312,13 @@ function playReferenceAndTarget(){
     // 通常モード: 基準音A=442を0.7秒→出題音0.9秒
     playTone(442, t0, 0.7);
     const t1=t0+1.0;
-    currentDictNotes.forEach(p=>{ playTone(pythFreqFromPitch(p), t1, 0.9); });  // 基準Aから5度連鎖で取れるようピタゴラス
+    // 単音はピタゴラス（基準Aから5度連鎖）。和音は同時に鳴るので純正律。
+    if(currentDictNotes.length>1){
+      const jiMap=chordFreqs(currentDictNotes);
+      currentDictNotes.forEach(p=>{ playTone(jiMap.get(p), t1, 0.9); });
+    } else {
+      currentDictNotes.forEach(p=>{ playTone(pythFreqFromPitch(p), t1, 0.9); });
+    }
   }
 }
 function newDictNote(){

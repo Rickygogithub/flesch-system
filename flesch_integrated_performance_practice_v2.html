@@ -565,7 +565,16 @@ const TONIC_LOW=48;        // C3（音階・半音階・低高ロングトーン
 const TONIC_MID=60;        // C4（和音の主音）
 
 /* ---- 純正律（根音基準・オクターブ保持） ---- */
-const JI={0:1, 1:16/15, 2:9/8, 3:6/5, 4:5/4, 5:4/3, 6:7/5, 7:3/2, 8:8/5, 9:5/3, 10:7/4, 11:15/8};
+// 同時に鳴る音の純正律比率（最低音＝根音を1とする）。
+// 10（短7度）は属七の第7音＝主調の第4音にあたるため、5度連鎖と整合する 16/9 を使う。
+// 6（減5度）は減七でしか現れず、減七は平均律で鳴らすため実際には使われない。
+const JI={0:1, 1:16/15, 2:9/8, 3:6/5, 4:5/4, 5:4/3, 6:7/5, 7:3/2, 8:8/5, 9:5/3, 10:16/9, 11:15/8};
+// 減七の和音専用：根音だけピタゴラスで置き、その上は平均律で積む。
+// 減七は短3度3つの積み重ねという構造上、純正律の値が一意に定まらないため。
+function etFreqFromRoot(tonicFreq, tonicMidi, rootMidi, noteMidi){
+  const rootFreq=pythFreqFromTonic(tonicFreq, tonicMidi, rootMidi);
+  return rootFreq*Math.pow(2,(noteMidi-rootMidi)/12);
+}
 function jiFreqFromTonic(tonicFreq, tonicMidi, rootMidi, noteMidi){
   // 和音の根音も、主音と同じ5度連鎖の基準から導く（①②④⑤⑥⑦⑧⑨と一貫させる）。
   const rootFreq=pythFreqFromTonic(tonicFreq, tonicMidi, rootMidi);
@@ -614,6 +623,11 @@ function playClickAt(time, accent){
    → 異名同音の綴りは昇り・下りで共通（シ♭のみ例外）なので、
      12音すべてを1つのテーブルで表せる。 */
 const PYTH_FIFTHS={0:0,1:7,2:2,3:9,4:4,5:-1,6:6,7:1,8:8,9:3,10:-2,11:5};
+/* 短調用：第2音・第3音・第6音は♭側の綴り（5度を下る側）で解釈する。
+   上の表は半音階の上行綴り（ド♯・レ♯・ソ♯）を前提としているため、
+   短調の音階でそのまま使うと短3度が増2度、短6度が増5度として計算され、
+   それぞれピタゴラスコンマ（23.46セント）分だけ高く鳴ってしまう。       */
+const PYTH_FIFTHS_MINOR={0:0,1:-5,2:2,3:-3,4:4,5:-1,6:6,7:1,8:-4,9:3,10:-2,11:5};
 
 // 各調の主音は、A(442Hz)から実際に5度を連鎖させて求める（チューナーアプリと同じ考え方）。
 // 値は「Aから5度いくつ分か」（上+ / 下-）。
@@ -646,11 +660,11 @@ function tonicFreqFromFifths(fifthsFromA, approxMidi){
   return freq;
 }
 // 主音そのものの周波数（5度連鎖で確定済み）から、調内の他の音の周波数を求める。
-function pythFreqFromTonic(tonicFreq, tonicMidi, midi){
+function pythFreqFromTonic(tonicFreq, tonicMidi, midi, minor){
   const diff=midi-tonicMidi;
   const pc=((diff%12)+12)%12;
   const octave=Math.floor(diff/12);
-  const n=PYTH_FIFTHS[pc];
+  const n=(minor?PYTH_FIFTHS_MINOR:PYTH_FIFTHS)[pc];
   let ratio=Math.pow(1.5,n);
   while(ratio>=2) ratio/=2;
   while(ratio<1) ratio*=2;
@@ -837,6 +851,10 @@ const CHORDS_BY_KEY = {
     ]
   }
 };
+// 減七の和音に「平均律で鳴らす」印をつける（ラベルから自動判別）。
+Object.values(CHORDS_BY_KEY).forEach(cfg=>{
+  cfg.chords.forEach(c=>{ if(c.label.indexOf('減七')>=0) c.et=true; });
+});
 function buildChords(){
   const key=document.getElementById('ch-key').value;
   const cfg=CHORDS_BY_KEY[key];
@@ -848,7 +866,10 @@ function buildChords(){
   const add=(s,freq,d,p)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p});};
   cfg.chords.forEach((c,i)=>{
     labelMap[step]=(i+1)+'. '+c.label;
-    c.notes.forEach(m=>add(step, jiFreqFromTonic(tonicFreqCh,tonicMidi,c.root,m), meterCh*4, 0.18)); // 拍子の拍数ぶん
+    c.notes.forEach(m=>add(step, c.et
+      ? etFreqFromRoot(tonicFreqCh,tonicMidi,c.root,m)   // 減七：平均律
+      : jiFreqFromTonic(tonicFreqCh,tonicMidi,c.root,m), // それ以外：純正律
+      meterCh*4, 0.18)); // 拍子の拍数ぶん
     step+=meterCh*4;
   });
   const finalLabel = cfg.finalLabel;
@@ -867,7 +888,7 @@ function buildThirds(){
   const add=(s,freq,d,p,delay)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p,delaySteps:delay||0});};
   const tonicLow = getRefTonicMidi(key); // 各調のパターンは全てハ長調(48)／イ短調(57)基準で書かれているため、参照用の固定値を使う
   const tonicFreq3 = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
-  const pf=(midi)=>pythFreqFromTonic(tonicFreq3, tonicLow, midi);
+  const pf=(midi)=>pythFreqFromTonic(tonicFreq3, tonicLow, midi, isMinor(key));
   const meter=Number(document.getElementById('th-meter').value);
   const longTone=document.getElementById('th-longtone').checked;
   const noteUnitDur=longTone?meter*4:1;     // brokenモード：1音あたりの長さ
@@ -990,7 +1011,7 @@ function buildThirdsPrep(){
   const mode=document.getElementById('tp-mode').value; // 'single' or 'double'
   const tonicLow = getRefTonicMidi(key); // パターンはハ長調(48)／イ短調(57)基準で固定
   const tonicFreq5 = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
-  const pf=(m)=>pythFreqFromTonic(tonicFreq5, tonicLow, m);
+  const pf=(m)=>pythFreqFromTonic(tonicFreq5, tonicLow, m, isMinor(key));
   const fullScale=majorScaleMidis(24,50); // 広めの自然音階ラダー（ハ長調・イ短調共通の白鍵7音）
 
   let BARS, gSharpKey;
@@ -1065,7 +1086,7 @@ function buildFourths(){
   const mode=document.getElementById('fo-mode').value; // 'single' or 'double'
   const tonicLow = getRefTonicMidi(key);
   const tonicFreq6 = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
-  const pf=(m)=>pythFreqFromTonic(tonicFreq6, tonicLow, m);
+  const pf=(m)=>pythFreqFromTonic(tonicFreq6, tonicLow, m, isMinor(key));
 
   // ⑥と同じ基準音（Karman版から確認済みの素材）をそのまま再利用する（パターンはハ長調(48)／イ短調(57)基準で固定）
   let BARS;
@@ -1123,7 +1144,7 @@ function buildScale(){
   const key=document.getElementById('sc-key').value;
   const tonicLow = getRefTonicMidi(key); // 度数パターンはハ長調(48)／イ短調(57)基準で固定。実際の調の周波数はtonicFreqSc側で反映する
   const tonicFreqSc = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
-  const pf=(midi)=>pythFreqFromTonic(tonicFreqSc, tonicLow, midi);
+  const pf=(midi)=>pythFreqFromTonic(tonicFreqSc, tonicLow, midi, isMinor(key));
 
   // 度数パターン（1=主音...7=導音）。22番目（index21）でちょうど3オクターブの主音に到達し、そこから対称に下る。
   const groupsDeg=[
@@ -1185,7 +1206,7 @@ function buildOctaves(){
   const mode=document.getElementById('oc-mode').value; // 'single' or 'double'
   const tonicLow = getRefTonicMidi(key);
   const tonicFreq7 = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
-  const pf=(m)=>pythFreqFromTonic(tonicFreq7, tonicLow, m);
+  const pf=(m)=>pythFreqFromTonic(tonicFreq7, tonicLow, m, isMinor(key));
 
   // ⑦と同じ基準音（上声部・Karman版から確認済みの素材）をそのまま再利用する（パターンはハ長調(48)／イ短調(57)基準で固定）
   let BARS;
@@ -1246,7 +1267,7 @@ function buildSixths(){
   const mode=document.getElementById('sx-mode').value; // 'single' or 'double'
   const tonicLow = getRefTonicMidi(key);
   const tonicFreq8 = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
-  const pf=(m)=>pythFreqFromTonic(tonicFreq8, tonicLow, m);
+  const pf=(m)=>pythFreqFromTonic(tonicFreq8, tonicLow, m, isMinor(key));
   const fullScale=majorScaleMidis(24,50);
 
   let BARS, gSharpKey;
