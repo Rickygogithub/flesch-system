@@ -448,7 +448,15 @@
     <div class="container" style="margin-top: 30px;">
         <div style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <p style="font-weight: 700; font-size: 1.1rem; color: #0f1722; margin: 0 0 16px;">📋 アップデート履歴</p>
-            <div style="font-size: 0.95rem; line-height: 2; color: #555;">
+            <div style="font-size: 0.95rem; line-height: 2; color: #555;" id="changelog-container">
+                <p><strong>2026年8月10日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>Melody Dictation Trainer：聴音モードに「低音（A221基準）」「混合（基準音ランダム）」を追加。従来は基準音が常にA=442（884Hz上限）で固定されており、低音域（ヴィオラのC線付近など）の出題時にオクターブ以上の判断が頻発していた。低音モードは基準A=221（約221Hz）でC3〜C5（約131〜526Hz）をカバーし、混合モードは出題ごとに基準音221/442をランダムに切り替え、実際の演奏に近い音域の行き来を訓練できるようにした</li>
+                </ul>
+                <p><strong>2026年8月9日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>Pure Intonation Tuner：「任意の主音を鳴らす」機能で、Ges（変ト）を選択しても音が鳴らないバグを修正。周波数計算テーブル（noteSteps）にGesのキーが存在しておらず、UIの選択肢とJS側の実装が食い違っていたことが原因。Fisの異名同音として、ピタゴラスコンマ（23.46セント）分低い、独立した周波数（-9ステップ）で正しく鳴るようにした。あわせて、どこからも参照されていなかった未使用のコード（古い実装の残骸）を削除</li>
+                </ul>
                 <p><strong>2026年8月5日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>Integrated Performance Practice：①〜⑨の短調で、第3音・第6音がピタゴラス音律に統一。短3度（32/27）・短6度（128/81）が正確に鳴るようになった。これまでピタゴラスコンマ（23.46セント）分だけ高く鳴っていた</li>
@@ -480,10 +488,6 @@
                     <li>Orchestra Excerpt：音を平均律からピタゴラス音律に変更。楽譜の音名と臨時記号から音程を決めるため、D♯とE♭のような書き分けが音にも反映される</li>
                     <li>Beautiful Intonation Training：「ボーイングの安定性を測る」機能を削除（Integrated Performance Practice・Pure Intonation Tunerと揃えた）。あわせて未使用のメトロノーム処理と、閉じ忘れていたHTMLタグも整理</li>
                 </ul>
-
-                <details style="margin-top: 8px;">
-                    <summary style="cursor: pointer; font-weight: 700; color: #2c5d92; user-select: none; font-size: 0.95rem;">▼ 以前のアップデート履歴を見る</summary>
-                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e8eaed;">
 
                 <p><strong>2026年8月3日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
@@ -603,9 +607,6 @@
                     <li>Pure Intonation Tuner：フラジオに「2オクターブ上」オプションを追加、各ボタンに周波数比率を表示</li>
                     <li>Integrated Performance Practice：ヘ長調・ニ短調・イ長調・イ短調を追加</li>
                 </ul>
-
-                    </div>
-                </details>
             </div>
         </div>
     </div>
@@ -630,5 +631,59 @@
             updateVisitCount();
         </script>
     </footer>
+
+    <script>
+        // アップデート履歴：直近1日分だけ表示し、残りは折りたたむ
+        (function() {
+            const container = document.getElementById('changelog-container');
+            if (!container) return;
+            const children = Array.from(container.children);
+
+            // <p><strong>日付</strong></p> と、直後の <ul> を1組の「日」としてグループ化
+            const days = [];
+            for (let i = 0; i < children.length; i++) {
+                const el = children[i];
+                if (el.tagName === 'P' && el.querySelector('strong')) {
+                    const group = document.createElement('div');
+                    group.className = 'changelog-day-group';
+                    group.appendChild(el);
+                    // 次が<ul>なら同じグループに含める
+                    if (children[i + 1] && children[i + 1].tagName === 'UL') {
+                        group.appendChild(children[i + 1]);
+                        i++;
+                    }
+                    days.push(group);
+                }
+            }
+            if (days.length === 0) return;
+
+            // 最新の1日分だけ表示し、それ以外は非表示にして詰め直す
+            container.innerHTML = '';
+            days.forEach((group, idx) => {
+                if (idx > 0) group.style.display = 'none';
+                container.appendChild(group);
+            });
+
+            if (days.length > 1) {
+                const toggleWrap = document.createElement('div');
+                toggleWrap.style.marginTop = '4px';
+                const toggleBtn = document.createElement('button');
+                toggleBtn.textContent = `過去の履歴を表示（他${days.length - 1}日分）`;
+                toggleBtn.style.cssText = 'font-size:0.85rem; padding:6px 12px; border:1px solid #c9d0da; border-radius:6px; background:#f5f7fa; color:#555; cursor:pointer;';
+                let expanded = false;
+                toggleBtn.addEventListener('click', () => {
+                    expanded = !expanded;
+                    days.forEach((group, idx) => {
+                        if (idx > 0) group.style.display = expanded ? '' : 'none';
+                    });
+                    toggleBtn.textContent = expanded
+                        ? '過去の履歴を隠す'
+                        : `過去の履歴を表示（他${days.length - 1}日分）`;
+                });
+                toggleWrap.appendChild(toggleBtn);
+                container.appendChild(toggleWrap);
+            }
+        })();
+    </script>
 </body>
 </html>

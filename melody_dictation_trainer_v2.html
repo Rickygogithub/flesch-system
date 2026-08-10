@@ -229,7 +229,9 @@
     <div id="dict-settings" style="display:none">
       <div class="opt"><span>聴音モード</span>
         <span class="seg" id="seg-dict-mode">
-          <button data-v="normal" class="on">通常（基準音あり）</button>
+          <button data-v="normal" class="on">通常（A442基準）</button>
+          <button data-v="low">低音（A221基準）</button>
+          <button data-v="mixed">混合（基準音ランダム）</button>
           <button data-v="octave1">中央1オクターブ</button>
         </span>
       </div>
@@ -383,7 +385,13 @@ let clefMode='treble'; // 'treble' or 'alto'
 let useAcc=true, lowMidi=60, highMidi=84, measures=1, contourMode='random';
 let timeSigLabel='4/4', restMin=0, restMax=0, rMeasures=1, rhythmRandom=false;
 let dictType='single', dictUseAcc=false, dictLowMidi=60, dictHighMidi=84;
-let dictMode='normal'; // 'normal' or 'octave1'
+let dictMode='normal'; // 'normal' | 'low' | 'mixed' | 'octave1'
+let dictTonicFreq=442; // 現在の出題で使う基準音（Hz）。mixedモードでは出題ごとに221/442を切り替える
+// 基準音ごとの既定音域（MIDI）。A3=57(221Hz), A4=69(442Hz), C3=48, C5=72, A5=81
+const DICT_TONIC_RANGE = {
+  442: [57, 81], // A3(221Hz)〜A5(884Hz)
+  221: [48, 72]  // C3(約131Hz)〜C5(約526Hz)
+};
 
 // ハ長調ベースのピタゴラス音律（C4=基準）
 // C4のHz: A4=442 → C4 = 442 * 2^(-9/12) ≈ 262.81Hz（平均律）
@@ -1309,8 +1317,8 @@ function playReferenceAndTarget(){
     const freq = pythFreqFromPitch(currentDictNotes[0]);
     playTone(freq, t0, 3.0);
   } else {
-    // 通常モード: 基準音A=442を0.7秒→出題音0.9秒
-    playTone(442, t0, 0.7);
+    // 通常/低音/混合モード: 基準音（442 or 221Hz）を0.7秒→出題音0.9秒
+    playTone(dictTonicFreq, t0, 0.7);
     const t1=t0+1.0;
     // 単音はピタゴラス（基準Aから5度連鎖）。和音は同時に鳴るので純正律。
     if(currentDictNotes.length>1){
@@ -1322,6 +1330,17 @@ function playReferenceAndTarget(){
   }
 }
 function newDictNote(){
+  // 基準音と音域の決定：low/normalは固定、mixedは出題ごとにランダムで221/442を選ぶ
+  if(dictMode==='low'){
+    dictTonicFreq=221;
+    [dictLowMidi,dictHighMidi]=DICT_TONIC_RANGE[221];
+  } else if(dictMode==='mixed'){
+    dictTonicFreq = Math.random()<0.5 ? 221 : 442;
+    [dictLowMidi,dictHighMidi]=DICT_TONIC_RANGE[dictTonicFreq];
+  } else if(dictMode==='normal'){
+    dictTonicFreq=442;
+    if(!DICT_TONIC_RANGE[442].includes(dictLowMidi)) {} // 音域セレクタでの手動選択を優先（下の分岐では上書きしない）
+  }
   if(dictMode==='octave1'){
     // 中央1オクターブモード
     currentDictNotes=[pickOctave1Note()];
@@ -1356,7 +1375,7 @@ function newDictNote(){
   dictRevealed=false;
   const placeholder = dictMode==='octave1'
     ? '🔊 出題音が鳴ります（基準音なし）<br>頭の中でA=442を鳴らし、音名を思い浮かべたら「答えを見る」'
-    : '🔊 基準音(A)に続いて'+(dictType==='chord'?'和音':'出題音')+'が鳴ります<br>'+(dictType==='chord'?'和音':'音名')+'を思い浮かべたら「答えを見る」';
+    : '🔊 基準音(A='+dictTonicFreq+')に続いて'+(dictType==='chord'?'和音':'出題音')+'が鳴ります<br>'+(dictType==='chord'?'和音':'音名')+'を思い浮かべたら「答えを見る」';
   document.getElementById('score').innerHTML='<div class="placeholder">'+placeholder+'</div>';
   document.getElementById('dict-judge').style.display='none';
   document.getElementById('play').style.display='';
@@ -1537,9 +1556,10 @@ document.getElementById('seg-dict-mode').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   dictMode=b.dataset.v;
   [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
-  // 中央1オクターブモードでは音域セレクタと出題種別を非表示
+  // 中央1オクターブ/低音/混合モードでは音域セレクタを非表示（自動で決まるため）
   const isOct1 = dictMode==='octave1';
-  document.getElementById('dict-range-row').style.display = isOct1?'none':'';
+  const isAutoRange = dictMode==='octave1' || dictMode==='low' || dictMode==='mixed';
+  document.getElementById('dict-range-row').style.display = isAutoRange?'none':'';
   document.getElementById('seg-dict-type').closest('.opt').style.display = isOct1?'none':'';
   newDictNote();
 });

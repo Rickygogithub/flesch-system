@@ -634,22 +634,17 @@ function scheduleTone(freq, startTime, isPiano = false, isLowerString = false, i
 }
 
 
-// ピタゴラス音律で全12音の周波数を返す（A=442基準、5度連鎖）
+// ピタゴラス音律で全13音の周波数を返す（A=442基準、5度連鎖）
 function getAllTonicFreqs() {
   const A4 = getAFreq();
   const fifth = 3 / 2;
-  // 5度圏: A基準で各音を算出し、4オクターブ内（C4〜B4相当）に正規化
-  const steps = {
-    'C':  -3, 'Des': -8, 'D':  -2, 'Es': -7,
-    'E':  -1, 'F':   -4, 'Fis': 3, 'G':  -2 + 0,
-    'As': -7, 'A':    0, 'B':  -5, 'H':   2
-  };
-  // 正確な5度圏計算
+  // 5度圏: A基準で各音の5度連鎖ステップ数
   const freqs = {};
   const noteSteps = {
     'A':   0, 'E':   1, 'H':   2, 'Fis': 3,
     'Des': -8,'G':  -2, 'D':  -1, 'As': -7,
-    'Es': -6, 'B':  -5, 'F':  -4, 'C':  -3
+    'Es': -6, 'B':  -5, 'F':  -4, 'C':  -3,
+    'Ges': -9 // Fis（+3）の異名同音側。ピタゴラスコンマ（23.46セント）分、Fisより低い別の音として鳴る
   };
   for (const [note, n] of Object.entries(noteSteps)) {
     let freq = A4 * Math.pow(fifth, n);
