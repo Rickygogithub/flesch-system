@@ -78,8 +78,11 @@
         <option value="D">ニ長調・ニ短調</option>
         <option value="A">イ長調・イ短調</option>
         <option value="E">ホ長調・ホ短調</option>
+        <option value="Cism">嬰ハ短調（ホ長調の平行調）</option>
         <option value="B">ロ長調・ロ短調</option>
+        <option value="Gism">嬰ト短調（ロ長調の平行調）</option>
         <option value="Fis">嬰ヘ長調・嬰ヘ短調</option>
+        <option value="Dism">嬰ニ短調（嬰ヘ長調の平行調）</option>
         <option value="F">ヘ長調・ヘ短調</option>
         <option value="Bb">変ロ長調・変ロ短調</option>
         <option value="Eb">変ホ長調・変ホ短調</option>
@@ -115,7 +118,13 @@
   <!-- ② 音階 -->
   <section>
     <h2>② ピタゴラス音階</h2>
-    <div class="hint">主音から3オクターブ、1音1拍で昇降する、最も基本的な音階です（3拍子・14小節）。短調は旋律的短音階。</div>
+    <div class="hint">主音から、2または3オクターブ、1音1拍で昇降する、最も基本的な音階です。短調は旋律的短音階。</div>
+    <div class="opt"><span>オクターブ数</span>
+      <select id="sc-octaves">
+        <option value="2">2オクターブ</option>
+        <option value="3" selected>3オクターブ</option>
+      </select>
+    </div>
     <div class="opt"><span>調</span>
       <select id="sc-key">
         <option value="C" selected>ハ長調</option>
@@ -128,14 +137,22 @@
         <option value="Fism">嬰ヘ短調</option>
         <option value="E">ホ長調</option>
         <option value="Cism">嬰ハ短調</option>
-        <option value="Ab">変イ長調</option>
-        <option value="Fm">ヘ短調</option>
-        <option value="Eb">変ホ長調</option>
-        <option value="Cm">ハ短調</option>
-        <option value="Bb">変ロ長調</option>
-        <option value="Gm">ト短調</option>
+        <option value="B">ロ長調</option>
+        <option value="Gism">嬰ト短調</option>
+        <option value="Fis">嬰ヘ長調</option>
+        <option value="Dism">嬰ニ短調</option>
         <option value="F">ヘ長調</option>
         <option value="Dm">ニ短調</option>
+        <option value="Bb">変ロ長調</option>
+        <option value="Gm">ト短調</option>
+        <option value="Eb">変ホ長調</option>
+        <option value="Cm">ハ短調</option>
+        <option value="Ab">変イ長調</option>
+        <option value="Fm">ヘ短調</option>
+        <option value="Des">変ニ長調</option>
+        <option value="Bbm">変ロ短調</option>
+        <option value="Ges">変ト長調</option>
+        <option value="Ebm">変ホ短調</option>
       </select>
     </div>
     <div class="opt"><span>メトロノームを併用</span>
@@ -644,6 +661,8 @@ const TONIC_FIFTHS_FROM_A = {
   'Ab': -7, 'Abm': -7,
   'Cism': 4,          // 嬰ハ短調
   'Fism': 3,          // 嬰ヘ短調
+  'Gism': 5,          // 嬰ト短調（ロ長調の平行調）
+  'Dism': 6,          // 嬰ニ短調（嬰ヘ長調の平行調）
   'Hm': 2,            // ロ短調
   'B': 2,             // ロ長調
   'Fis': 3,           // 嬰ヘ長調
@@ -681,6 +700,10 @@ function getTonicLow(key){
   if(key==='Fm') return 53;  // ヘ短調：ファ3
   if(key==='Cism') return 49;  // 嬰ハ短調：ド♯3
   if(key==='Fism') return 54;  // 嬰ヘ短調：ファ♯3
+  if(key==='Gism') return 56;  // 嬰ト短調：ソ♯3
+  if(key==='Dism') return 51;  // 嬰ニ短調：レ♯3
+  if(key==='Bbm') return 58;   // 変ロ短調：シ♭3
+  if(key==='Ebm') return 51;   // 変ホ短調：ミ♭3
   if(key==='Hm') return 59;   // ロ短調：シ3
   if(key==='A') return 57;   // イ長調：ラ3
   if(key==='G') return 55;   // ト長調：ソ3
@@ -703,6 +726,7 @@ function isMinor(key){
   return key==='Am' || key==='Em' || key==='Dm' || 
          key==='Gm' || key==='Cm' || key==='Fm' || 
          key==='Cism' || key==='Fism' || key==='Hm' ||
+         key==='Gism' || key==='Dism' || key==='Bbm' || key==='Ebm' ||
          key==='Desm' || key==='Gesm';
 }
 
@@ -1139,20 +1163,37 @@ function buildFourths(){
   return {noteMap,totalSteps:step,tonicFreq:tonicFreq6};
 }
 
-/* ================= ②音階（ドレミファソラシド・3オクターブ） ================= */
+/* ================= ②音階（ドレミファソラシド・2/3オクターブ） ================= */
+// オクターブ数に応じて、上行→頂点→下行の度数列を動的に生成する。
+// 3オクターブ時の挙動は、従来のgroupsDeg方式と完全に一致することを検証済み。
+function buildDegreeSequence(octaves){
+  const upCount = octaves*7; // 上行する度数の数（1度から始まり、最後は導音(7)で終わる）
+  const up=[]; for(let i=0;i<upCount;i++) up.push((i%7)+1);
+  const down=[1]; // 最高音（次オクターブの主音）から下行開始
+  for(let i=upCount-1;i>=1;i--) down.push((i%7)+1);
+  const allDeg = up.concat(down);
+  allDeg.push(1); // 末尾の保持音（主音に帰着）
+  return allDeg;
+}
 function buildScale(){
   const key=document.getElementById('sc-key').value;
+  const octaves=Number(document.getElementById('sc-octaves').value);
   const tonicLow = getRefTonicMidi(key); // 度数パターンはハ長調(48)／イ短調(57)基準で固定。実際の調の周波数はtonicFreqSc側で反映する
   const tonicFreqSc = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], getTonicLow(key));
   const pf=(midi)=>pythFreqFromTonic(tonicFreqSc, tonicLow, midi, isMinor(key));
 
-  // 度数パターン（1=主音...7=導音）。22番目（index21）でちょうど3オクターブの主音に到達し、そこから対称に下る。
-  const groupsDeg=[
-    [1,2,3],[4,5,6],[7,1,2],[3,4,5],[6,7,1],[2,3,4],[5,6,7],
-    [1,7,6],[5,4,3],[2,1,7],[6,5,4],[3,2,1],[7,6,5],[4,3,2]
-  ];
-  const allDeg=[].concat(...groupsDeg);
-  allDeg.push(1); // 末尾の保持音（主音）
+  const allDeg = buildDegreeSequence(octaves);
+  // 2オクターブのみ：4音区切り・7+7+2のリズム構造にするため、頂点を2回（2拍で伸ばした後、1拍で弾き直す）にする。
+  // 3オクターブは、従来通り3連符・3拍子のまま変更しない。
+  let degSeqForRhythm = allDeg;
+  let customDurs = null;
+  if(octaves===2){
+    const upCount = octaves*7; // 14
+    const up = allDeg.slice(0, upCount); // 14音
+    const down = allDeg.slice(upCount+1, allDeg.length-1); // 頂点を除いた、下行13音
+    degSeqForRhythm = up.concat([1,1], down, [1]); // 頂点を2回（up側の1回・弾き直し1回）
+    customDurs = new Array(up.length).fill(4).concat([8,4], new Array(down.length).fill(4), [8]);
+  }
 
   const LETTER_BY_DEG_MAJOR={1:'ド',2:'レ',3:'ミ',4:'ファ',5:'ソ',6:'ラ',7:'シ'};
   const LETTER_BY_DEG_MINOR={1:'ラ',2:'シ',3:'ド',4:'レ',5:'ミ',6:'ファ',7:'ソ'};
@@ -1175,11 +1216,13 @@ function buildScale(){
   }
 
   const midis=[];
-  allDeg.forEach((deg,idx)=>{
+  degSeqForRhythm.forEach((deg,idx)=>{
     const letter=LETTER_BY_DEG[deg];
     let midi=stepOne(letter);
     if(isMinor(key)){
-      const ascendingPhase = idx<21; // 上行域だけ、ファ・ソ（第6・7音）を半音上げる（メロディックマイナー）
+      // 上行域の境界：2オクターブ専用リズムでは、頂点の1回目（伸ばす方）まで。3オクターブは従来通りoctaves*7。
+      const ascendUpTo = (octaves===2) ? (octaves*7 + 1) : (octaves*7);
+      const ascendingPhase = idx < ascendUpTo;
       if(ascendingPhase && (letter==='ファ'||letter==='ソ')) midi+=1;
     }
     midis.push(midi);
@@ -1192,7 +1235,10 @@ function buildScale(){
 
   midis.forEach((m,i)=>{
     const isLast=(i===midis.length-1);
-    const dur = longTone ? meterSc*4 : (isLast?8:4); // 通常は1音=1拍（4ステップ）。末尾だけ2分音符（8ステップ）。
+    let dur;
+    if(longTone){ dur=meterSc*4; }
+    else if(customDurs){ dur=customDurs[i]; } // 2オクターブ：頂点(2拍)・頂点弾き直し(1拍)・末尾(2拍)、他は1拍
+    else{ dur=(isLast?8:4); } // 3オクターブ：従来通り、末尾のみ2拍
     add(step,pf(m),dur,isLast?0.30:0.26);
     step+=dur;
   });
@@ -1446,6 +1492,9 @@ async function startLT(){
   else if(key==='Cm') { tonicLowMidi=48; tonicHighMidi=48+36; }
   else if(key==='Fm') { tonicLowMidi=53; tonicHighMidi=53+36; }
   else if(key==='B') { tonicLowMidi=59; tonicHighMidi=59+36; }
+  else if(key==='Cism') { tonicLowMidi=49; tonicHighMidi=49+36; }
+  else if(key==='Gism') { tonicLowMidi=56; tonicHighMidi=56+36; }
+  else if(key==='Dism') { tonicLowMidi=51; tonicHighMidi=51+36; }
   else if(key==='Fis') { tonicLowMidi=54; tonicHighMidi=54+36; }
   else if(key==='Des') { tonicLowMidi=49; tonicHighMidi=49+36; }
   else if(key==='Ges') { tonicLowMidi=54; tonicHighMidi=54+36; }
