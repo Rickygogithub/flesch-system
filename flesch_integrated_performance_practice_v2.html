@@ -182,7 +182,7 @@
   <!-- ③ 和音 -->
   <section>
     <h2>③ 和音</h2>
-    <div class="hint">7つの和音（純正律）が各6拍ずつ順に鳴ります。調性は5度圏の順番に沿って C, G, D, A, E, Ab, Eb, Bb, F の順。</div>
+    <div class="hint">7つの和音（純正律）が各6拍ずつ順に鳴ります。調は5度圏に沿ってC〜Gesまで（#6・♭6）選べます。</div>
     <div class="opt"><span>調</span>
       <select id="ch-key">
         <option value="C" selected>ハ長調・ハ短調</option>
@@ -190,10 +190,14 @@
         <option value="D">ニ長調・ニ短調</option>
         <option value="A">イ長調・イ短調</option>
         <option value="E">ホ長調・ホ短調</option>
+        <option value="B">ロ長調・ロ短調</option>
+        <option value="Fis">嬰ヘ長調・嬰ヘ短調</option>
         <option value="F">ヘ長調・ヘ短調</option>
         <option value="Bb">変ロ長調・変ロ短調</option>
         <option value="Eb">変ホ長調・変ホ短調</option>
         <option value="Ab">変イ長調・変イ短調</option>
+        <option value="Des">変ニ長調・変ニ短調</option>
+        <option value="Ges">変ト長調・変ト短調</option>
       </select>
     </div>
     <div class="opt"><span>メトロノームを併用</span>
@@ -872,6 +876,62 @@ const CHORDS_BY_KEY = {
       {label:'ラ♭ / レ♭ / ファ♭　|　変ニ短調／Des-moll主和音の第二転回（Desm/Ab）', root:61, notes:[68,73,76]},
       {label:'ラ♭ / ド♭ / ミ♭♭ / ソ♭♭　|　イ長調／A-Dur減七の和音（Abdim7）', root:68, notes:[68,71,74,77]},
       {label:'ラ♭ / ド / ミ♭ / ソ♭　|　変ニ長調／Des-Dur属七の和音（Ab7）', root:68, notes:[68,72,75,78]}
+    ]
+  },
+  B: {
+    tonicMidi: 59, // シ4
+    finalNote: 64, // ミ
+    finalLabel: '♪ ミを単音で3拍（E-Dur属七の主音・解決音）',
+    chords: [
+      {label:'シ / レ / ファ♯　|　ロ短調／H-moll主和音の基本形（Hm/H）', root:59, notes:[59,62,66]},
+      {label:'シ / レ♯ / ファ♯　|　ロ長調／H-Dur主和音の基本形（H/H）', root:59, notes:[59,63,66]},
+      {label:'シ / レ♯ / ソ♯　|　嬰ト短調／Gis-moll主和音の第一転回（Gism/H）', root:68, notes:[59,63,68]},
+      {label:'シ / ミ / ソ♯　|　ホ長調／E-Dur主和音の第二転回（E/H）', root:64, notes:[59,64,68]},
+      {label:'シ / ミ / ソ　|　ホ短調／E-moll主和音の第二転回（Em/H）', root:64, notes:[59,64,67]},
+      {label:'シ / レ / ファ / ソ♯　|　ハ長調／C-Dur減七の和音（Hdim7）', root:59, notes:[59,62,65,68]},
+      {label:'シ / レ♯ / ファ♯ / ラ　|　ホ長調／E-Dur属七の和音（H7）', root:59, notes:[59,63,66,69]}
+    ]
+  },
+  Fis: {
+    tonicMidi: 66, // ファ♯4
+    finalNote: 71, // シ
+    finalLabel: '♪ シを単音で3拍（H-Dur属七の主音・解決音）',
+    chords: [
+      {label:'ファ♯ / ラ / ド♯　|　嬰ヘ短調／Fis-moll主和音の基本形（Fism/Fis）', root:66, notes:[66,69,73]},
+      {label:'ファ♯ / ラ♯ / ド♯　|　嬰ヘ長調／Fis-Dur主和音の基本形（Fis/Fis）', root:66, notes:[66,70,73]},
+      {label:'ファ♯ / ラ♯ / レ♯　|　嬰ニ短調／Dis-moll主和音の第一転回（Dism/Fis）', root:75, notes:[66,70,75]},
+      {label:'ファ♯ / シ / レ♯　|　ロ長調／H-Dur主和音の第二転回（H/Fis）', root:71, notes:[66,71,75]},
+      {label:'ファ♯ / シ / レ　|　ロ短調／H-moll主和音の第二転回（Hm/Fis）', root:71, notes:[66,71,74]},
+      {label:'ファ♯ / ラ / ド / レ♯　|　ト長調／G-Dur減七の和音（Fisdim7）', root:66, notes:[66,69,72,75]},
+      {label:'ファ♯ / ラ♯ / ド♯ / ミ　|　ロ長調／H-Dur属七の和音（Fis7）', root:66, notes:[66,70,73,76]}
+    ]
+  },
+  Des: {
+    tonicMidi: 61, // レ♭4
+    finalNote: 66, // ソ♭
+    finalLabel: '♪ ソ♭を単音で3拍（Ges-Dur属七の主音・解決音）',
+    chords: [
+      {label:'レ♭ / ファ♭ / ラ♭　|　変ニ短調／Des-moll主和音の基本形（Desm/Des）', root:61, notes:[61,64,68]},
+      {label:'レ♭ / ファ / ラ♭　|　変ニ長調／Des-Dur主和音の基本形（Des/Des）', root:61, notes:[61,65,68]},
+      {label:'レ♭ / ファ / シ♭　|　変ロ短調／B-moll主和音の第一転回（Bbm/Des）', root:70, notes:[61,65,70]},
+      {label:'レ♭ / ソ♭ / シ♭　|　変ト長調／Ges-Dur主和音の第二転回（Ges/Des）', root:66, notes:[61,66,70]},
+      {label:'レ♭ / ソ♭ / ラ　|　変ト短調／Ges-moll主和音の第二転回（Gesm/Des）', root:66, notes:[61,66,69]},
+      {label:'レ♭ / ファ♭ / ソ / シ♭　|　ニ長調／D-Dur減七の和音（Desdim7）', root:61, notes:[61,64,67,70]},
+      {label:'レ♭ / ファ / ラ♭ / シ　|　変ト長調／Ges-Dur属七の和音（Des7）', root:61, notes:[61,65,68,71]}
+    ]
+  },
+  Ges: {
+    tonicMidi: 54, // ソ♭4
+    finalNote: 59, // シ（異名同音的にド♭）
+    finalLabel: '♪ シを単音で3拍（H-Dur属七の主音・解決音）',
+    chords: [
+      {label:'ソ♭ / ラ / レ♭　|　変ト短調／Ges-moll主和音の基本形（Gesm/Ges）', root:54, notes:[54,57,61]},
+      {label:'ソ♭ / シ♭ / レ♭　|　変ト長調／Ges-Dur主和音の基本形（Ges/Ges）', root:54, notes:[54,58,61]},
+      {label:'ソ♭ / シ♭ / ミ♭　|　変ホ短調／Es-moll主和音の第一転回（Esm/Ges）', root:63, notes:[54,58,63]},
+      {label:'ソ♭ / シ / ミ♭　|　ロ長調／H-Dur主和音の第二転回（H/Ges）', root:59, notes:[54,59,63]},
+      {label:'ソ♭ / シ / レ　|　ロ短調／H-moll主和音の第二転回（Hm/Ges）', root:59, notes:[54,59,62]},
+      {label:'ソ♭ / ラ / ド / ミ♭　|　変イ長調／As-Dur減七の和音（Gesdim7）', root:54, notes:[54,57,60,63]},
+      {label:'ソ♭ / シ♭ / レ♭ / ファ　|　ロ長調／H-Dur属七の和音（Ges7）', root:54, notes:[54,58,61,64]}
     ]
   }
 };
