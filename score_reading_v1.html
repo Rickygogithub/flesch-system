@@ -26,7 +26,7 @@
   .answer{margin-top:14px;min-height:64px;text-align:center}
   .answer .names{font-size:25px;font-weight:800;letter-spacing:.5px;color:#0f1722}
   .answer .hint{color:var(--muted);font-size:13px;font-weight:600;margin-top:4px}
-  .answer.placeholder{color:var(--muted);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .answer.placeholder{color:var(--muted);font-size:14px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center}
   .controls{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
   button{font-family:inherit;border:none;border-radius:10px;padding:13px 16px;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent);flex:1;min-width:120px}
   button:active{transform:translateY(1px)}
@@ -159,7 +159,7 @@
     「和音」はその調の主和音（基本形・第一転回・第二転回）に加え、減七・属七の和音（4音）もランダムに出題されます。<br>
     「度数」は実際の和声かどうかは考慮しません。「🔊 音を聴く」で2音同時に確認できます（変則的な音の組み合わせにも対応、マーラーなど複雑な楽曲対策に活用できます）。「出題の形」を「分散」にすると、重音ではなく、2音を左から右へ順番に出題されます（実際の楽曲では重音より単音の連なりで度数を判断する場面が多いため）。この場合「🔊 音を聴く」も2音を時間差で再生します。<br>
     「連続音符」は2〜6音（各20%の確率でランダム）が、実際の旋律・和声とは無関係に、ランダムに並びます。左から右へ、順番に音名を読み上げてください。跳躍を含む、複数の音符を、瞬時に、連続して認識する力を鍛えます。実際の楽譜と同じく、同じ音の高さが、出題の中で再度出現した場合、最初についた臨時記号が、そのまま有効（2回目以降は記号を表示しません）です。稀に、ナチュラル（♮）で、明示的に打ち消すパターンも出題されます。「🔊 音を聴く」では、和音のように同時にではなく、1音ずつ、時間差（0.5秒間隔）で再生されます。「五線の両端に特化」をオンにすると、1番線・5番線とその、すぐ上下（現在の音部記号における、間違いやすい箇所）だけに、出題を絞り込めます。<br>
-    「調号」は♯・♭0〜6個の範囲で出題し、同じ調号を持つ長調・短調の両方を答えます。<br>
+    「調号」は♯・♭0〜6個の範囲で出題し、同じ調号を持つ長調・短調の両方を答えます（オプション：属調・下属調もできれば）。<br>
     記録はこのセッション内のみ（再読み込みでリセット）。
   </div>
 </div>
@@ -238,6 +238,50 @@ function pickKeySig(){
   const idx = indices[Math.floor(Math.random()*indices.length)];
   lastKeySigIdx = idx;
   return KEYSIG_LIST[idx];
+}
+// 属調（5度上・シャープ+1/フラット-1）・下属調（5度下・シャープ-1/フラット+1）を、
+// 同じKEYSIG_LISTの中から、fifths値（sharps-flats）で探す。
+// 範囲（♯♭6個まで）を超える場合はnullを返す。
+function fifthsOf(entry){ return entry.sharps - entry.flats; }
+function findByFifths(fifths){
+  return KEYSIG_LIST.find(e => fifthsOf(e) === fifths) || null;
+}
+function getNeighborKeys(entry){
+  const f = fifthsOf(entry);
+  return {
+    dominant: findByFifths(f+1),      // 属調：5度上
+    subdominant: findByFifths(f-1)    // 下属調：5度下
+  };
+}
+// 属調・下属調の表示用HTML。シャープ/フラットが1つ増減する方向を、あわせて示す。
+function describeFifthsChange(fromEntry, toEntry){
+  const before = fifthsOf(fromEntry), after = fifthsOf(toEntry);
+  if(after > before){
+    return before>=0 ? '♯が1つ増える' : '♭が1つ減る';
+  } else {
+    return before<=0 ? '♭が1つ増える' : '♯が1つ減る';
+  }
+}
+function keySigCountLabel(entry){
+  const f=fifthsOf(entry);
+  return f===0 ? '調号なし' : f>0 ? `♯${f}個` : `♭${-f}個`;
+}
+function buildNeighborKeyHtml(baseEntry, dominant, subdominant){
+  if(!dominant && !subdominant) return '';
+  let html='<div class="hint" style="margin-top:6px;">';
+  if(dominant){
+    html+=`属調（主音の5度上）：${dominant.major}／${dominant.minor}（${keySigCountLabel(dominant)}、${describeFifthsChange(baseEntry,dominant)}）`;
+  } else {
+    html+='属調（主音の5度上）：範囲外（♯7個以上）';
+  }
+  html+='<br>';
+  if(subdominant){
+    html+=`下属調（主音の5度下）：${subdominant.major}／${subdominant.minor}（${keySigCountLabel(subdominant)}、${describeFifthsChange(baseEntry,subdominant)}）`;
+  } else {
+    html+='下属調（主音の5度下）：範囲外（♭7個以上）';
+  }
+  html+='</div>';
+  return html;
 }
 
 let clef='alto';
@@ -695,9 +739,11 @@ function newCard(){
   if(mode==='keysig'){
     const entry=pickKeySig();
     const accMap=keySignatureMap(entry.sharps,entry.flats);
+    const neighbors=getNeighborKeys(entry);
     current={_isKeysig:true,_major:entry.major,_minor:entry.minor,
       _majorGerman:germanKeyName(entry.tonicMajor,accMap,true),
-      _minorGerman:germanKeyName(entry.tonicMinor,accMap,false)};
+      _minorGerman:germanKeyName(entry.tonicMinor,accMap,false),
+      _baseEntry:entry, _dominant:neighbors.dominant, _subdominant:neighbors.subdominant};
     revealed=false;
     drawKeySig(entry);
   } else {
@@ -714,7 +760,7 @@ function newCard(){
   }
   const ans=document.getElementById('answer');
   ans.className='answer placeholder';
-  ans.textContent = mode==='keysig' ? '長調・短調の両方を思い浮かべてから「答えを見る」'
+  ans.innerHTML = mode==='keysig' ? '長調・短調の両方を思い浮かべてから「答えを見る」<div style="width:100%;font-size:0.85em;color:#888;margin-top:6px;">（オプション：属調・下属調と、♯、♭の個数も答える）</div>'
     : mode==='sequence' ? '左から順に、音名を思い浮かべてから「答えを見る」'
     : '音名を思い浮かべてから「答えを見る」';
   document.getElementById('judge').style.display='none';
@@ -731,7 +777,8 @@ function reveal(){
   ans.className='answer';
   if(current._isKeysig){
     ans.innerHTML='<div class="names">'+current._major+'／'+current._majorGerman+'　／　'+current._minor+'／'+current._minorGerman+'</div>'+
-      '<div class="hint">（同じ調号に長調・短調の2つの可能性があります）</div>';
+      '<div class="hint">（同じ調号に長調・短調の2つの可能性があります）</div>'+
+      buildNeighborKeyHtml(current._baseEntry, current._dominant, current._subdominant);
   } else {
     const doremi=current.map(p=>p.nameDoremi).join(' ');
     const ger=current.map(p=>p.nameGerman).join(' ');
