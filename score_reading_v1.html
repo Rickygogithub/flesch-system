@@ -113,6 +113,7 @@
         <button data-v="chord">和音</button>
         <button data-v="interval">度数</button>
         <button data-v="keysig">調号</button>
+        <button data-v="keysig-rev">調性→調号</button>
       </span>
     </div>
     <div class="opt"><span>臨時記号（♯・♭）</span>
@@ -746,6 +747,18 @@ function newCard(){
       _baseEntry:entry, _dominant:neighbors.dominant, _subdominant:neighbors.subdominant};
     revealed=false;
     drawKeySig(entry);
+  } else if(mode==='keysig-rev'){
+    const entry=pickKeySig();
+    const isMajorQuestion = Math.random()<0.5;
+    const accMap=keySignatureMap(entry.sharps,entry.flats);
+    const questionJa = isMajorQuestion ? entry.major : entry.minor;
+    const questionDe = isMajorQuestion
+      ? germanKeyName(entry.tonicMajor,accMap,true)
+      : germanKeyName(entry.tonicMinor,accMap,false);
+    current={_isKeysigRev:true,_entry:entry,_questionJa:questionJa,_questionDe:questionDe};
+    revealed=false;
+    document.getElementById('score').innerHTML =
+      '<div style="text-align:center;padding:40px 0;font-size:28px;font-weight:800;color:#16202b;">'+questionJa+'／'+questionDe+'</div>';
   } else {
     let pitches;
     if(mode==='single') pitches=[makeNote()];
@@ -761,6 +774,7 @@ function newCard(){
   const ans=document.getElementById('answer');
   ans.className='answer placeholder';
   ans.innerHTML = mode==='keysig' ? '長調・短調の両方を思い浮かべてから「答えを見る」<div style="width:100%;font-size:0.85em;color:#888;margin-top:6px;">（オプション：属調・下属調と、♯、♭の個数も答える）</div>'
+    : mode==='keysig-rev' ? '調号の種類（♯か♭か）と、その数、そしてどの音につくかを思い浮かべてから「答えを見る」'
     : mode==='sequence' ? '左から順に、音名を思い浮かべてから「答えを見る」'
     : '音名を思い浮かべてから「答えを見る」';
   document.getElementById('judge').style.display='none';
@@ -779,6 +793,12 @@ function reveal(){
     ans.innerHTML='<div class="names">'+current._major+'／'+current._majorGerman+'　／　'+current._minor+'／'+current._minorGerman+'</div>'+
       '<div class="hint">（同じ調号に長調・短調の2つの可能性があります）</div>'+
       buildNeighborKeyHtml(current._baseEntry, current._dominant, current._subdominant);
+  } else if(current._isKeysigRev){
+    const entry=current._entry;
+    drawKeySig(entry);
+    ans.innerHTML='<div class="names">'+keySigCountLabel(entry)+'</div>'+
+      '<div class="hint">（同じ調号を持つ、もう一方の調：'+
+      (current._questionJa===entry.major ? entry.minor : entry.major)+'）</div>';
   } else {
     const doremi=current.map(p=>p.nameDoremi).join(' ');
     const ger=current.map(p=>p.nameGerman).join(' ');
