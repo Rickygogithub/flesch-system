@@ -241,10 +241,10 @@
           <button data-v="chord">和音</button>
         </span>
       </div>
-      <div class="opt"><span>臨時記号（♯・♭）</span>
-        <span class="seg" id="seg-dict-acc">
-          <button data-v="on">混ぜる</button>
-          <button data-v="off" class="on">なし</button>
+      <div class="opt" id="dict-chordset-row" style="display:none"><span>和音の種類</span>
+        <span class="seg" id="seg-dict-chordset">
+          <button data-v="tonic" class="on">主和音のみ</button>
+          <button data-v="extended">転回・属七・減七を含む</button>
         </span>
       </div>
       <div class="opt" id="dict-range-row"><span>音域</span>
@@ -384,7 +384,8 @@ let appMode='warmup';
 let clefMode='treble'; // 'treble' or 'alto'
 let useAcc=true, lowMidi=60, highMidi=84, measures=1, contourMode='random';
 let timeSigLabel='4/4', restMin=0, restMax=0, rMeasures=1, rhythmRandom=false;
-let dictType='single', dictUseAcc=false, dictLowMidi=60, dictHighMidi=84;
+let dictType='single', dictUseAcc=true, dictLowMidi=60, dictHighMidi=84; // 聴音は常に臨時記号あり（なしモードは削除）
+let dictChordSet='tonic'; // 'tonic'（主和音のみ）| 'extended'（転回・属七・減七を含む）
 let dictMode='normal'; // 'normal' | 'low' | 'mixed' | 'octave1'
 let dictTonicFreq=442; // 現在の出題で使う基準音（Hz）。mixedモードでは出題ごとに221/442を切り替える
 // 基準音ごとの既定音域（MIDI）。A3=57(221Hz), A4=69(442Hz), C3=48, C5=72, A5=81
@@ -426,13 +427,15 @@ const PYTH_RATIOS_FROM_C = {
 // 同時に鳴る音の純正律比率（最低音を1とする）。Score Reading と同一。
 const JI_FROM_BASS = {0:1, 1:16/15, 2:9/8, 3:6/5, 4:5/4, 5:4/3, 6:7/5, 7:3/2, 8:8/5, 9:5/3, 10:16/9, 11:15/8};
 // 同時に鳴る和音：最低音をピタゴラスで置き、その上を純正律比率で積む
-function chordFreqs(notes){
+// et=true のときは最低音の上を平均律で積む（減七は純正律の値が一意に定まらないため）
+function chordFreqs(notes, et){
   const sorted=[...notes].sort((a,b)=>a.midi-b.midi);
   const baseFreq=pythFreqFromPitch(sorted[0]), baseMidi=sorted[0].midi;
   const map=new Map();
   sorted.forEach(p=>{
     const diff=p.midi-baseMidi, oct=Math.floor(diff/12);
-    map.set(p, baseFreq*JI_FROM_BASS[diff-oct*12]*Math.pow(2,oct));
+    map.set(p, et ? baseFreq*Math.pow(2,diff/12)
+                  : baseFreq*JI_FROM_BASS[diff-oct*12]*Math.pow(2,oct));
   });
   return map;
 }
@@ -468,7 +471,7 @@ function pickOctave1Note(){
   return buildPitch(base.letter, base.octave, base.acc);
 }
 let count=0, currentPhrase=null, audioCtx=null;
-let currentDictNotes=null, currentDictKeyName=null, dictRevealed=false, dictStartTime=0, dictElapsed=0;
+let currentDictNotes=null, currentDictKeyName=null, currentDictChordType=null, dictRevealed=false, dictStartTime=0, dictElapsed=0;
 let dictTotal=0, dictCorrect=0, dictTimeSum=0;
 let warmupKey='C', warmupType='scale', warmupTotal=0, warmupOk=0, warmupOkBpmSum=0, warmupJudged=false, warmupMetro=false;
 let prTotal=0, prOk=0, prOkBpmSum=0;
@@ -1281,11 +1284,33 @@ function buildDictPool(lowMidi, highMidi){
   return pool;
 }
 let lastDictMidi = null;
+let lastDictChordSig=null;
+function dictChordSignature(chord){
+  if(!chord) return null;
+  return (chord._key||'')+'|'+(chord._chordType||'')+'|'+chord.map(p=>p.midi).join(',');
+}
+// 直前の出題と同じ和音（調・種類・実音すべて一致）が連続しないようにする。
+// 生成自体は毎回、調・和音種を均等な確率で選び直しており、この関数はその結果を
+// 「直前と同じでなければ採用」というフィルタとしてかける（単音モードの直前midi回避と同じ考え方）。
+function dictGenerateChordAvoidingRepeat(genFn){
+  let chord=null;
+  for(let i=0;i<20;i++){
+    chord=genFn();
+    if(!chord) continue;
+    const sig=dictChordSignature(chord);
+    if(sig!==lastDictChordSig){ lastDictChordSig=sig; return chord; }
+  }
+  // 音域が極端に狭いなどで20回とも直前と同じだった場合は、やむを得ずそのまま採用
+  if(chord) lastDictChordSig=dictChordSignature(chord);
+  return chord;
+}
 function dictMakeChord(){
-  const key=pickKey(dictUseAcc);
-  const accMap=keySignatureMap(key.sharps,key.flats);
-  const cand=diatonicCandidates(dictLowMidi,dictHighMidi).filter(x=>x.letter===key.tonic);
   for(let t=0;t<40;t++){
+    // 調は毎回選び直す（固定すると、音域が狭いときにその調では組めず、
+    // 40回すべて失敗して単音にフォールバックしてしまうため。Score Readingと同じ対策）
+    const key=pickKey(dictUseAcc);
+    const accMap=keySignatureMap(key.sharps,key.flats);
+    const cand=diatonicCandidates(dictLowMidi,dictHighMidi).filter(x=>x.letter===key.tonic);
     const root=cand.length?cand[Math.floor(Math.random()*cand.length)]:{letter:key.tonic,octave:4};
     const notes=[]; let li=LIDX[root.letter]+root.octave*7; let ok=true;
     for(let n=0;n<3;n++){
@@ -1298,13 +1323,155 @@ function dictMakeChord(){
   }
   return null;
 }
-function playTone(freq,t,dur){
+// ── 拡張和音（転回形・属七・減七）────────────────────────────────
+// Score Reading の makeChord と同じ定義・同じ組み立て方を移植したもの。
+// 表記（ラベル・調名）も Score Reading に揃える。
+const DICT_CHORD_TYPES=[
+  {id:'root', label:'主和音の基本形',   intervals:[0,4,7]},
+  {id:'inv1', label:'主和音の第一転回', intervals:[0,4,7], forcePos:1},
+  {id:'inv2', label:'主和音の第二転回', intervals:[0,4,7], forcePos:2},
+  {id:'dim7', label:'減七の和音',       intervals:[0,3,6,9]},
+  {id:'dom7', label:'属七の和音',       intervals:[0,4,7,10]}
+];
+
+// 根音(letter,octave)から、半音のリストで和音を積み上げる。
+// 文字は3度ずつダイアトニックに進め、調号との差を臨時記号として付与する。
+// rootOffset：根音を文字の本位音から半音ずらす（減七の導音など、調号で変化する根音に対応）
+function dictBuildStackedChord(rootLetter,rootOctave,intervalSemis,accMap,rootOffset){
+  const li0=LIDX[rootLetter]+rootOctave*7;
+  const rootNatural=(rootOctave+1)*12+SEMI[rootLetter]+(rootOffset||0);
+  const notes=[];
+  for(let n=0;n<intervalSemis.length;n++){
+    const li=li0+2*n;
+    const letter=LETTERS[((li%7)+7)%7]; const octave=Math.floor(li/7);
+    const natural=(octave+1)*12+SEMI[letter];
+    const keyAcc=accMap[letter]||'';
+    const keyDefault=natural+(keyAcc==='#'?1:keyAcc==='b'?-1:0);
+    const targetMidi=rootNatural+intervalSemis[n];
+    const diff=targetMidi-keyDefault;
+    if(diff<-1||diff>1) return null;
+    let finalAcc=keyAcc;
+    if(diff===1)      finalAcc=(keyAcc==='b'?'':keyAcc==='#'?'x':'#');
+    else if(diff===-1) finalAcc=(keyAcc==='#'?'':keyAcc==='b'?'bb':'b');
+    // ダブルシャープ・ダブルフラットは、音名表記もピタゴラス比率表も未対応のため出題しない
+    if(finalAcc==='x'||finalAcc==='bb') return null;
+    notes.push(buildPitch(letter,octave,finalAcc));
+  }
+  return notes;
+}
+
+// 基準音から「文字を何個進めるか」「半音を何個進めるか」で、正確な音高を求める
+function dictPitchFromStep(baseNote, letterSteps, semitoneSteps){
+  const li=LIDX[baseNote.letter]+baseNote.octave*7+letterSteps;
+  const letter=LETTERS[((li%7)+7)%7]; const octave=Math.floor(li/7);
+  const natural=(octave+1)*12+SEMI[letter];
+  const diff=(baseNote.midi+semitoneSteps)-natural;
+  return {letter, octave, acc: diff===1?'#':diff===-1?'b':''};
+}
+
+// 実際に生成された音から長三和音・短三和音を判定する（転回形ではオクターブ差を正規化）
+function dictIsMajorFromNotes(notes, rootLetter){
+  const thirdLetter=LETTERS[(LIDX[rootLetter]+2)%7];
+  let rootNote=null, thirdNote=null;
+  for(const n of notes){
+    if(n.letter===rootLetter && !rootNote) rootNote=n;
+    if(n.letter===thirdLetter && !thirdNote) thirdNote=n;
+  }
+  if(!rootNote||!thirdNote) return true;
+  let semi=(thirdNote.midi-rootNote.midi)%12; if(semi<0) semi+=12;
+  if(semi===4) return true;
+  if(semi===3) return false;
+  return true;
+}
+
+const DICT_JP_ROOT={
+  'C':'ハ','D':'ニ','E':'ホ','F':'ヘ','G':'ト','A':'イ','B':'ロ','H':'ロ',
+  'Cis':'嬰ハ','Dis':'嬰ニ','Eis':'嬰ホ','Fis':'嬰ヘ','Gis':'嬰ト','Ais':'嬰イ','His':'嬰ロ',
+  'Ces':'変ハ','Des':'変ニ','Es':'変ホ','Fes':'変ヘ','Ges':'変ト','As':'変イ','Bes':'変ロ','B':'変ロ'
+};
+function dictJapaneseKeyName(letter, acc, isMajor){
+  return (DICT_JP_ROOT[germanName(letter,acc)]||'ハ') + (isMajor?'長調':'短調');
+}
+
+// 拡張和音の出題。調・和音種は毎回ループの中で選び直す
+// （外で1回だけ選ぶと、音域が狭いときに全試行が失敗して単音が出てしまうため）
+function dictMakeExtendedChord(){
+  // 和音の種類を先に均等な確率で1つ選び、音域内で組めるまで調・根音だけを選び直す。
+  // （種類も一緒に選び直してしまうと、音域内で組みやすい種類ほど結果的に多く選ばれてしまう）
+  const type=DICT_CHORD_TYPES[Math.floor(Math.random()*DICT_CHORD_TYPES.length)];
+  for(let t=0;t<80;t++){
+    const key=pickKey(dictUseAcc);
+    const accMap=keySignatureMap(key.sharps,key.flats);
+    const cand=diatonicCandidates(dictLowMidi,dictHighMidi).filter(x=>x.letter===key.tonic);
+    const tonicPos=cand.length?cand[Math.floor(Math.random()*cand.length)]:{letter:key.tonic,octave:4};
+    const rootLetter=tonicPos.letter;
+    let notes=null;
+
+    if(type.id==='dom7'){
+      // 主音を属音とする調（下属調）の属七＝主音の5度上を根音とする
+      const li=LIDX[tonicPos.letter]+tonicPos.octave*7+4;
+      notes=dictBuildStackedChord(LETTERS[((li%7)+7)%7], Math.floor(li/7), [0,4,7,10], accMap);
+    } else if(type.id==='dim7'){
+      // 減七の根音は「主音の半音下＝導音」。調号を反映した主音から求める
+      const li=LIDX[tonicPos.letter]+tonicPos.octave*7-1;
+      const leadLetter=LETTERS[((li%7)+7)%7], leadOctave=Math.floor(li/7);
+      const tAcc=accMap[tonicPos.letter]||'';
+      const tonicMidi=(tonicPos.octave+1)*12+SEMI[tonicPos.letter]+(tAcc==='#'?1:tAcc==='b'?-1:0);
+      const leadOffset=(tonicMidi-1)-((leadOctave+1)*12+SEMI[leadLetter]);
+      notes=dictBuildStackedChord(leadLetter, leadOctave, [0,3,6,9], accMap, leadOffset);
+    } else {
+      const isMinorKey=key.name.indexOf('短調')!==-1;
+      notes=dictBuildStackedChord(tonicPos.letter, tonicPos.octave, isMinorKey?[0,3,7]:[0,4,7], accMap);
+      if(notes && type.forcePos){
+        for(let i=0;i<type.forcePos;i++){
+          const low=notes.shift();
+          notes.push(buildPitch(low.letter, low.octave+1, low.acc));
+        }
+      }
+    }
+
+    if(!notes) continue;
+    if(notes.some(p=>p.midi<dictLowMidi-2||p.midi>dictHighMidi+2)) continue;
+
+    let namingLetter, namingAcc, isMajor;
+    if(type.id==='dom7'){
+      // 根音（属音）の完全4度上が主音。属七は長短を区別できないため常に長調表記
+      const tp=dictPitchFromStep(notes[0], 3, 5);
+      namingLetter=tp.letter; namingAcc=tp.acc; isMajor=true;
+    } else if(type.id==='dim7'){
+      // 根音（導音）の半音上が主音。減七も長短を区別できないため常に長調表記
+      const tp=dictPitchFromStep(notes[0], 1, 1);
+      namingLetter=tp.letter; namingAcc=tp.acc; isMajor=true;
+    } else {
+      const rootInChord=notes.find(n=>n.letter===rootLetter);
+      namingLetter=rootLetter;
+      namingAcc=rootInChord?rootInChord.acc:(accMap[rootLetter]||'');
+      isMajor=dictIsMajorFromNotes(notes, rootLetter);
+    }
+
+    notes._key=dictJapaneseKeyName(namingLetter, namingAcc, isMajor);
+    notes._chordType=type.label;
+    // 減七は短3度×3の積み重ねという構造上、純正律の値が一意に定まらないため平均律で鳴らす
+    notes._equalTemp=(type.id==='dim7');
+    return notes;
+  }
+  return null;
+}
+
+function playTone(freq,t,dur,sustain){
   const ctx=ensureCtx();
   const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
   const gain=ctx.createGain();
   gain.gain.setValueAtTime(0.0001,t);
   gain.gain.exponentialRampToValueAtTime(0.26,t+0.02);
-  gain.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  if(sustain){
+    // 減衰させず、鳴っている間は一定音量を保持する（和音の構成音を均等に聴き取れるようにするため）。
+    // 終了直前だけ短く下げて、プツッというクリックノイズを防ぐ。
+    gain.gain.setValueAtTime(0.26,t+dur-0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  } else {
+    gain.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  }
   osc.connect(gain); gain.connect(ctx.destination);
   osc.start(t); osc.stop(t+dur+0.05);
 }
@@ -1316,17 +1483,17 @@ function playReferenceAndTarget(){
     // 中央1オクターブモード: 基準音なし、ピタゴラス音律で2秒再生
     const freq = pythFreqFromPitch(currentDictNotes[0]);
     playTone(freq, t0, 3.0);
+  } else if(currentDictNotes.length>1){
+    // 和音モード: 基準音1秒 → 1秒の無音（脳内で保持） → 和音を2秒、減衰なしで再生（純正律）
+    playTone(dictTonicFreq, t0, 1.0);
+    const t1=t0+1.0+1.0;
+    const jiMap=chordFreqs(currentDictNotes, currentDictNotes._equalTemp);
+    currentDictNotes.forEach(p=>{ playTone(jiMap.get(p), t1, 2.0, true); });
   } else {
-    // 通常/低音/混合モード: 基準音（442 or 221Hz）を0.7秒→出題音0.9秒
+    // 単音モード（通常/低音/混合）: 基準音（442 or 221Hz）を0.7秒→出題音0.9秒（ピタゴラス、基準Aから5度連鎖）
     playTone(dictTonicFreq, t0, 0.7);
     const t1=t0+1.0;
-    // 単音はピタゴラス（基準Aから5度連鎖）。和音は同時に鳴るので純正律。
-    if(currentDictNotes.length>1){
-      const jiMap=chordFreqs(currentDictNotes);
-      currentDictNotes.forEach(p=>{ playTone(jiMap.get(p), t1, 0.9); });
-    } else {
-      currentDictNotes.forEach(p=>{ playTone(pythFreqFromPitch(p), t1, 0.9); });
-    }
+    currentDictNotes.forEach(p=>{ playTone(pythFreqFromPitch(p), t1, 0.9); });
   }
 }
 function newDictNote(){
@@ -1345,32 +1512,26 @@ function newDictNote(){
     // 中央1オクターブモード
     currentDictNotes=[pickOctave1Note()];
     currentDictKeyName=null;
+    currentDictChordType=null;
   } else if(dictType==='chord'){
-    let chord=dictMakeChord();
+    let chord = dictGenerateChordAvoidingRepeat(dictChordSet==='extended' ? dictMakeExtendedChord : dictMakeChord);
+    // 拡張和音が音域内で組めなかった場合は、主和音にフォールバックする
+    if(!chord && dictChordSet==='extended') chord=dictGenerateChordAvoidingRepeat(dictMakeChord);
     if(!chord){ const cand=diatonicCandidates(dictLowMidi,dictHighMidi); const c=cand[Math.floor(Math.random()*cand.length)]; chord=[buildPitch(c.letter,c.octave,'')]; chord._key=null; }
     currentDictNotes=chord;
     currentDictKeyName=chord._key||null;
+    currentDictChordType=chord._chordType||null;
   } else {
-    if(dictUseAcc){
-      // 臨時記号あり：Ces/Fes除外済みプールから均等・直前midi回避
-      const pool = buildDictPool(dictLowMidi, dictHighMidi);
-      const filtered = pool.length > 1 ? pool.filter(p => p.midi !== lastDictMidi) : pool;
-      const p = filtered[Math.floor(Math.random()*filtered.length)];
-      lastDictMidi = p.midi;
-      currentDictNotes=[p];
-    } else {
-      // 臨時記号なし：従来通りダイアトニック候補から
-      const cand=diatonicCandidates(dictLowMidi,dictHighMidi);
-      const filtered = cand.length > 1 ? cand.filter(c => {
-        const p = buildPitch(c.letter,c.octave,'');
-        return p.midi !== lastDictMidi;
-      }) : cand;
-      const c=filtered[Math.floor(Math.random()*filtered.length)];
-      const p=buildPitch(c.letter,c.octave,'');
-      lastDictMidi = p.midi;
-      currentDictNotes=[p];
-    }
+    // 単音モード：Ces/Fes除外済みプールから、直前のmidiと「基準音そのもの（A）」を避けて均等に選ぶ。
+    // 基準音と同じ音を出題すると、基準音がそのまま繰り返されただけになり、判別の意味がなくなるため。
+    const anchorMidi = dictTonicFreq===221 ? 57 : 69; // 221Hz=A3(57), 442Hz=A4(69)
+    const pool = buildDictPool(dictLowMidi, dictHighMidi).filter(p => p.midi !== anchorMidi);
+    const filtered = pool.length > 1 ? pool.filter(p => p.midi !== lastDictMidi) : pool;
+    const p = filtered[Math.floor(Math.random()*filtered.length)];
+    lastDictMidi = p.midi;
+    currentDictNotes=[p];
     currentDictKeyName=null;
+    currentDictChordType=null;
   }
   dictRevealed=false;
   const placeholder = dictMode==='octave1'
@@ -1397,7 +1558,7 @@ function revealDict(){
   const doremi=currentDictNotes.map(p=>p.nameDoremi).join(' ');
   const ger=currentDictNotes.map(p=>p.nameGerman).join(' ');
   let txt=doremi+'　/　'+ger;
-  if(currentDictKeyName) txt+='　|　'+currentDictKeyName+'の主和音';
+  if(currentDictKeyName) txt+='　|　'+currentDictKeyName+(currentDictChordType?'　'+currentDictChordType:'の主和音');
   namesDiv.textContent=txt;
   document.getElementById('score').appendChild(namesDiv);
   document.getElementById('play').style.display='none';
@@ -1561,6 +1722,7 @@ document.getElementById('seg-dict-mode').addEventListener('click',e=>{
   const isAutoRange = dictMode==='octave1' || dictMode==='low' || dictMode==='mixed';
   document.getElementById('dict-range-row').style.display = isAutoRange?'none':'';
   document.getElementById('seg-dict-type').closest('.opt').style.display = isOct1?'none':'';
+  syncDictChordSetRow();
   newDictNote();
 });
 document.getElementById('seg-appmode').addEventListener('click',e=>{
@@ -1586,8 +1748,13 @@ document.getElementById('seg-warmup-key').addEventListener('click',e=>{const b=e
 document.getElementById('seg-warmup-type').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;warmupType=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));document.getElementById('warmup-judge').style.display='none';drawWarmupScore();});
 document.getElementById('seg-contour').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;contourMode=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newPhrase();});
 document.getElementById('seg-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;useAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newPhrase();});
-document.getElementById('seg-dict-type').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictType=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
-document.getElementById('seg-dict-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictUseAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
+document.getElementById('seg-dict-type').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictType=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));syncDictChordSetRow();newDictNote();});
+document.getElementById('seg-dict-chordset').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictChordSet=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
+// 「和音の種類」は、和音モードのとき（中央1オクターブ以外）だけ表示する
+function syncDictChordSetRow(){
+  const show = dictType==='chord' && dictMode!=='octave1';
+  document.getElementById('dict-chordset-row').style.display = show ? '' : 'none';
+}
 document.getElementById('range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);lowMidi=lo;highMidi=hi;newPhrase();};
 document.getElementById('dict-range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);dictLowMidi=lo;dictHighMidi=hi;newDictNote();};
 document.getElementById('measures').onchange=e=>{measures=Number(e.target.value);newPhrase();};

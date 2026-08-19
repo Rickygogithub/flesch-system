@@ -507,6 +507,15 @@
         <div style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <p style="font-weight: 700; font-size: 1.1rem; color: #0f1722; margin: 0 0 16px;">📋 アップデート履歴</p>
             <div style="font-size: 0.95rem; line-height: 2; color: #555;" id="changelog-container">
+                <p><strong>2026年8月19日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>Melody Dictation Trainer：聴音の和音再生を、基準音1秒→1秒の無音（脳内で保持）→和音を2秒・減衰なしで再生するタイミングに変更（単音は従来通り）</li>
+                    <li>Melody Dictation Trainer：聴音の和音モードに「和音の種類」を追加。「主和音のみ」（従来通り）に加え、「転回・属七・減七を含む」を選択可能に。表記（主和音の基本形／第一転回／第二転回／減七の和音／属七の和音）や音律（減七は平均律、それ以外は根音をピタゴラス・上を純正律で積む）はScore Readingの和音モードと統一</li>
+                    <li>Melody Dictation Trainer：和音の聴音で、直前と同じ出題（調・和音種・実音すべて一致）が連続しないよう修正。あわせて、和音の種類ごとに音域内で組める確率が異なるため出題頻度に偏りが生じていたバグを修正（種類を先に均等な確率で選んでから、その種類のまま調・根音を選び直す方式に変更）</li>
+                    <li>Melody Dictation Trainer：主和音のみモードでも、調を毎回選び直すように変更（Score Readingと同じ対策）。音域が狭いときに同じ調でしか試行できず、全試行失敗して単音にフォールバックする不具合を防止</li>
+                    <li>Melody Dictation Trainer：聴音の「臨時記号（♯・♭）なし」モードを削除。調号0の2調（ハ長調・イ短調）しか選べず、主和音が実質2択で交互に出題されているように見えていた原因を解消し、常に14調から出題するよう変更（中央1オクターブモードも常に半音階12音から出題）</li>
+                    <li>Melody Dictation Trainer：単音モードで、出題音が基準音（A）とオクターブ違いなく完全に一致するケースを除外。基準音の直後に全く同じ音が出題され、判別の意味がなくなることを防止</li>
+                </ul>
                 <p><strong>2026年8月16日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>Integrated Performance Practice：①主音ロングトーンの調の選択肢に「嬰ハ短調（ホ長調の平行調）」「嬰ト短調（ロ長調の平行調）」「嬰ニ短調（嬰ヘ長調の平行調）」を追加。②ピタゴラス音階の調の選択肢を♯6・♭6までの26調（13長調＋13短調）にフル拡張。③和音にH（ロ長調）、Fis（嬰ヘ長調）、Des（変ニ長調）、Ges（変ト長調）の4調を追加（9調→13調、♯6・♭6までフルカバー）。実装の過程で、ロ長調のキー名が`H`と`B`で不一致になっており、選択すると無音になるバグを発見・修正</li>
