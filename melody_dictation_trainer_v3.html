@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Melody & Dictation Trainer - Flesch System Phase 2</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f1f3f6; --ink:#14181f; --muted:#3d4654;
+    --accent:#2c5d92; --good:#1f7a4d; --bad:#b23b3b; --line:#c9d0da; --card:#fbfbf7;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:'Yu Gothic','Hiragino Sans','Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:680px;margin:0 auto;padding:18px 16px 40px}
+  h1{font-size:18px;font-weight:800;margin:6px 0 2px;color:#0f1722}
+  .sub{color:var(--muted);font-size:13px;font-weight:600;margin-bottom:14px;line-height:1.7}
+  .badge{display:inline-block;background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px}
+  .stats{display:flex;gap:10px;margin-bottom:14px}
+  .stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:center}
+  .stat .v{font-size:20px;font-weight:800;color:#0f1722}
+  .stat .l{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px}
+  .cardarea{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;overflow-x:auto}
+  #score svg{display:block}
+  .controls{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .row{display:flex;gap:10px}
+  button{font-family:inherit;border:none;border-radius:10px;padding:13px 14px;font-size:14px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent);flex:1;min-width:120px}
+  button:active{transform:translateY(1px)}
+  button.alt{background:#5b6472}
+  button.primary{background:var(--good)}
+  button.bad{background:var(--bad)}
+  details{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 14px}
+  summary{cursor:pointer;padding:10px 0;font-size:14px;font-weight:700;color:var(--ink);list-style:none}
+  summary::-webkit-details-marker{display:none}
+  .opt{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-top:1px solid var(--line);font-size:14px;font-weight:600;color:var(--ink);gap:10px}
+  .opt:first-of-type{border-top:none}
+  select,input[type=range]{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-family:inherit;font-size:13.5px;font-weight:600}
+  input[type=range]{padding:0;width:140px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+  .seg button{flex:0 0 auto;min-width:0;border-radius:0;background:#fff;color:var(--muted);padding:7px 12px;font-weight:700;font-size:13px}
+  .seg button.on{background:var(--accent);color:#fff}
+  .footnote{color:var(--muted);font-size:12.5px;font-weight:600;margin-top:16px;line-height:1.75}
+  .reset{margin-top:10px;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:12.5px;font-weight:600;padding:8px 10px;flex:0 0 auto}
+  .bpmrow{display:flex;align-items:center;gap:10px}
+  .bpmval{font-weight:800;min-width:46px;text-align:right}
+  .placeholder{padding:30px 10px;text-align:center;color:var(--muted);font-size:14px;font-weight:600;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="index.html" style="display:inline-block;margin-bottom:10px;font-size:13px;font-weight:600;color:#2c5d92;text-decoration:none;">← トップページに戻る</a>
+  <h1>Melody Dictation Trainer<span class="badge">v3</span></h1>
+  <div class="sub">▶️ 設定から「視唱準備トレ」「リズム」「聴音」「視唱」のモードを選択。ト音記号・アルト記号は設定から切り替え可能です。
+  <br>・「視唱準備トレ」は跳躍や半音階を含む高速で歌い、楽譜を脳内で音にする瞬発力を上げる練習
+  <br>・「リズム」でリズムを練習し、「聴音」で音を聴き取る練習をし、「視唱」は楽譜を見て簡易な旋律を歌う練習
+  <br>・視唱の「自然な旋律」（実験的機能）は、順次進行を中心に、跳躍の後は逆方向へ戻る、主音で終止する、という一般的な旋律法則に沿ってフレーズを自動生成します。「ランダム」（実際の調性・和声を無視した配列）と使い分けてください。</div>
+  <!-- 音が出ない場合 -->
+  <details style="margin:10px 0 4px;border:1px solid #dde3ec;border-radius:8px;background:#f8f9fb;">
+    <summary style="padding:10px 14px;font-size:13px;font-weight:700;color:#2c5d92;cursor:pointer;user-select:none;">🔇 音が出ない場合のチェックリスト</summary>
+    <div style="padding:10px 16px 14px;font-size:12.5px;color:#333;line-height:1.8;">
+      <p style="margin:0 0 8px;font-weight:700;">iOS（iPhone・iPad）の場合</p>
+      <ol style="margin:0 0 12px;padding-left:18px;">
+        <li><b>マナーモード（消音スイッチ）を確認</b><br>iPhoneの側面スイッチがオレンジになっていたら解除してください</li>
+        <li><b>端末の音量を確認</b><br>音量ボタンでメディア音量が上がっているか確認してください</li>
+        <li><b>Safariの自動再生設定</b><br>設定アプリ → Safari → 自動再生 →「すべてのメディアを許可」に変更してください</li>
+        <li><b>Bluetoothデバイスの確認</b><br>イヤホン・スピーカーが接続されている場合は、そちらから音が出ていないか確認してください</li>
+        <li><b>着信・通話・タブ切り替え後に音が止まる場合</b><br>画面をタップしてから再度お試しください（iOS 26でのAudioContext問題に対応済みですが、まれに発生することがあります）</li>
+        <li><b>ホーム画面追加アプリとして使用している場合</b><br>アプリスイッチャーから完全に閉じて、再度開いてください</li>
+        <li><b>低電力モードがオンの場合</b><br>設定 → バッテリー → 低電力モードをオフにしてお試しください</li>
+      </ol>
+      <p style="margin:0 0 8px;font-weight:700;">Androidの場合</p>
+      <ol style="margin:0 0 12px;padding-left:18px;">
+        <li><b>マナーモード・サイレントモードを確認</b><br>通知パネルから解除してください</li>
+        <li><b>メディア音量を確認</b><br>着信音量とは別に、メディア音量を上げてください</li>
+      </ol>
+      <p style="margin:0 0 8px;font-weight:700;">共通</p>
+      <ol style="margin:0;padding-left:18px;">
+        <li><b>ブラウザを再読み込み</b><br>ページをリロードして、画面をタップしてから再度お試しください</li>
+        <li><b>別のブラウザで試す</b><br>Safari・Chrome・Edgeなど別のブラウザでお試しください</li>
+      </ol>
+    </div>
+  </details>
+
+
+  <div class="stats" id="main-stats" style="display:none">
+    <div class="stat"><div class="v" id="s-count">0</div><div class="l">練習したフレーズ数</div></div>
+    <div class="stat"><div class="v" id="pr-acc">–</div><div class="l">成功率</div></div>
+    <div class="stat"><div class="v" id="pr-bpm">–</div><div class="l">できた平均テンポ</div></div>
+  </div>
+  <div class="stats" id="dict-stats" style="display:none">
+    <div class="stat"><div class="v" id="dict-total">0</div><div class="l">出題数</div></div>
+    <div class="stat"><div class="v" id="dict-acc">–</div><div class="l">正答率</div></div>
+    <div class="stat"><div class="v" id="dict-time">–</div><div class="l">平均回答時間(秒)</div></div>
+  </div>
+  <div class="stats" id="warmup-stats">
+    <div class="stat"><div class="v" id="warmup-total">0</div><div class="l">試行回数</div></div>
+    <div class="stat"><div class="v" id="warmup-acc">–</div><div class="l">成功率</div></div>
+    <div class="stat"><div class="v" id="warmup-bpm">–</div><div class="l">できた平均テンポ</div></div>
+  </div>
+
+  <div class="cardarea"><div id="score"></div></div>
+
+  <div class="controls" id="pitch-rhythm-controls" style="display:none">
+    <button class="alt" id="click">メトロノームを聴く</button>
+    <button class="primary" id="play">🔊 正解を聞く</button>
+  </div>
+  <div class="row" id="pr-judge" style="display:none;margin-top:10px">
+    <button class="bad" id="pr-fail">✗ まだ難しい</button>
+    <button class="primary" id="pr-ok">✓ できた</button>
+  </div>
+  <div class="row" id="dict-judge" style="display:none;margin-top:10px">
+    <button class="bad" id="dict-wrong">✗ 間違えた</button>
+    <button class="primary" id="dict-right">✓ 正解</button>
+  </div>
+  <div class="controls" id="warmup-controls">
+    <button class="primary" id="warmup-start">▶️ スタート</button>
+    <button class="alt" id="warmup-metro-only">🎵 メトロノームのみ</button>
+  </div>
+  <div class="opt" id="warmup-metro-opt">
+    <span>メトロノーム併用（1小節空振り）</span>
+    <input type="checkbox" id="warmup-metro-check">
+  </div>
+  <div class="row" id="warmup-judge" style="display:none;margin-top:10px">
+    <button class="bad" id="warmup-fail">✗ まだ難しい</button>
+    <button class="primary" id="warmup-ok">✓ できた</button>
+  </div>
+  <div class="controls" id="next-controls" style="display:none">
+    <button id="next">次のフレーズ</button>
+  </div>
+
+  <details open>
+    <summary>▶️ 設定</summary>
+    <div class="opt"><span>記号</span>
+      <span class="seg" id="seg-clef">
+        <button data-v="treble" class="on">ト音記号</button>
+        <button data-v="alto">アルト記号</button>
+      </span>
+    </div>
+    <div class="opt"><span>モード</span>
+      <span class="seg" id="seg-appmode">
+        <button data-v="warmup" class="on">視唱準備トレ</button>
+        <button data-v="rhythm">リズム</button>
+        <button data-v="dictation">聴音</button>
+        <button data-v="pitch">視唱</button>
+      </span>
+    </div>
+
+    <div id="warmup-settings">
+      <div class="opt"><span>調</span>
+        <span class="seg" id="seg-warmup-key">
+          <button data-v="C" class="on">ハ長調</button>
+          <button data-v="Am">イ短調</button>
+        </span>
+      </div>
+      <div class="opt"><span>種類</span>
+        <span class="seg" id="seg-warmup-type">
+          <button data-v="scale" class="on">音階</button>
+          <button data-v="arp">分散3度</button>
+          <button data-v="p4">4度</button>
+          <button data-v="p5">5度</button>
+          <button data-v="p6">6度</button>
+          <button data-v="p7">7度</button>
+          <button data-v="chroma">半音階</button>
+        </span>
+      </div>
+    </div>
+
+    <div id="pitch-settings" style="display:none">
+      <div class="opt"><span>音の並び<span style="font-weight:400;color:var(--muted);font-size:11px"><br>（実験的機能）</span></span>
+        <span class="seg" id="seg-contour">
+          <button data-v="random" class="on">ランダム</button>
+          <button data-v="natural">自然な旋律</button>
+        </span>
+      </div>
+      <div class="opt"><span>臨時記号（♯・♭）</span>
+        <span class="seg" id="seg-acc">
+          <button data-v="on" class="on">混ぜる</button>
+          <button data-v="off">なし</button>
+        </span>
+      </div>
+      <div class="opt"><span>音域</span>
+        <select id="range">
+          <option value="60,84" selected>標準（C4–C6）</option>
+          <option value="60,91">高音含む（C4–G6）</option>
+          <option value="55,79">中低音（G3–G5）</option>
+          <option value="48,77">低音（C3–F5）</option>
+        </select>
+      </div>
+      <div class="opt"><span>小節数</span>
+        <select id="measures">
+          <option value="1" selected>1小節</option>
+          <option value="2">2小節</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="rhythm-settings" style="display:none">
+      <div class="opt"><span>設定方法</span>
+        <span class="seg" id="seg-rhythm-random">
+          <button data-v="off" class="on">固定</button>
+          <button data-v="on">ランダム</button>
+        </span>
+      </div>
+      <div id="rhythm-manual-settings">
+        <div class="opt"><span>拍子</span>
+          <select id="timesig">
+            <option value="2/4">2/4</option>
+            <option value="3/4">3/4</option>
+            <option value="4/4" selected>4/4</option>
+          </select>
+        </div>
+        <div class="opt"><span>冒頭の全休符小節数</span>
+          <select id="restlen">
+            <option value="0,0" selected>なし</option>
+            <option value="1,2">1〜2小節</option>
+            <option value="3,6">3〜6小節</option>
+          </select>
+        </div>
+        <div class="opt"><span>小節数</span>
+          <select id="rmeasures">
+            <option value="1" selected>1小節</option>
+            <option value="2">2小節</option>
+            <option value="3">3小節</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="dict-settings" style="display:none">
+      <div class="opt"><span>聴音モード</span>
+        <span class="seg" id="seg-dict-mode">
+          <button data-v="normal" class="on">通常（A442基準）</button>
+          <button data-v="low">低音（A221基準）</button>
+          <button data-v="mixed">混合（基準音ランダム）</button>
+          <button data-v="octave1">中央1オクターブ</button>
+        </span>
+      </div>
+      <div class="opt"><span>出題</span>
+        <span class="seg" id="seg-dict-type">
+          <button data-v="single" class="on">単音</button>
+          <button data-v="chord">和音</button>
+        </span>
+      </div>
+      <div class="opt" id="dict-acc-row"><span>臨時記号（♯・♭）</span>
+        <span class="seg" id="seg-dict-acc">
+          <button data-v="on" class="on">混ぜる</button>
+          <button data-v="off">なし</button>
+        </span>
+      </div>
+      <div class="opt" id="dict-chordset-row" style="display:none"><span>和音の種類</span>
+        <span class="seg" id="seg-dict-chordset">
+          <button data-v="tonic" class="on">主和音のみ</button>
+          <button data-v="extended">転回・属七・減七を含む</button>
+        </span>
+      </div>
+      <div class="opt" id="dict-range-row"><span>音域</span>
+        <select id="dict-range">
+          <option value="60,84" selected>標準（C4–C6）</option>
+          <option value="60,91">高音含む（C4–G6）</option>
+          <option value="55,79">中低音（G3–G5）</option>
+          <option value="48,77">低音（C3–F5）</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="opt"><span>テンポ</span>
+      <div class="bpmrow">
+        <input type="range" id="bpm" min="40" max="200" value="80">
+        <span class="bpmval" id="bpmval">80 BPM</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="reset" id="resetstats" style="flex:0 0 auto">記録をリセット</button>
+      <span style="font-size:12px;color:var(--muted);font-weight:600">モードを変えた時、仕切り直したい時などにクリックしてください</span>
+    </div>
+  </details>
+
+  <div style="margin-top:20px">
+    <div style="font-weight:800;font-size:14px;color:#0f1722;margin-bottom:8px">狙いと使い方</div>
+
+    <details style="margin-bottom:8px">
+      <summary>▶️ ① 視唱準備トレ</summary>
+      <div class="footnote" style="margin-top:6px">
+        Score Readingの単音・重音の視唱と、この先の小節単位の視唱との間には、大きな段差があります。ここでは、1オクターブの音階、フレッシュの分散3度・4度・5度・6度・7度、そして半音階を、指定したテンポで、システムと一緒に歌う練習をします。<br><br>
+        正確な音程を確認するソルフェージュではなく、跳躍や隙間のない音の動きに、頭と口がどれだけ速く反応できるかという、回路の速度そのものを鍛えることが目的です。3度だけでなく4度・5度・6度・7度も揃えることで、様々な広さの跳躍に対応する内的な音程感覚を、視唱の基礎として一通り練習できます。<br><br>
+        使い方：「スタート」を押すと、主音（3秒）→選んだ種類のパターンが、設定したテンポで流れます。楽譜を見ながら、声に出して（またはドレミを心の中で思い浮かべながら）一緒に歌ってください。ついていけたら「✓ できた」、まだ厳しければ「✗ まだ難しい」を選び、テンポスライダーを調整して次に挑戦してください。「できた」時のテンポの平均が、回路の太さの目安になります。慣れてきたら、楽譜を見ずに挑戦してみてください。半音階は調性の足場がないため、最も負荷の高い練習です。<br><br>
+        分散3度・4度・5度・6度・7度・半音階は楽譜が横に長くなるため、画面をスクロールしながらご利用ください。
+      </div>
+    </details>
+
+    <details style="margin-bottom:8px">
+      <summary>▶️ ② リズム</summary>
+      <div class="footnote" style="margin-top:6px">
+        「固定」を選択するとメトロノームによる1小節分のカウントイン（空振り）の後、設定した長さの休みが続き、その後に刻むべきリズムが始まります。小節の頭でクリックの音高が変わるので、休みの間も小節の頭を見失わないようにしてください。「ランダム」を選択すると「次のフレーズ」を押すだけで各拍子の課題が自動で生成されます。自分で叩いてみた後、「🔊 正解を聞く」で答えのリズムを確認できます。「✓ できた／✗ まだ難しい」で判定でき、平均テンポ・成功率が記録されます。小節数や設定によって、横スクロールが必要になることがあります。
+      </div>
+    </details>
+
+    <details style="margin-bottom:8px">
+      <summary>▶️ ③ 聴音</summary>
+      <div class="footnote" style="margin-top:6px">
+        基準音（A=442）に続いて単音または和音（実在する主和音）が鳴ります。音名を思い浮かべたら「答えを見る」で確認し、「✓ 正解」「✗ 間違えた」を選ぶと出題数・正答率・平均回答時間が記録されます。「🔊 もう一度聴く」で何度でも聴き直せます。<br><strong style="color:#b23b3b">※ 臨時記号ありの場合、CesとFesは出題しません（HおよびEと異名同音のため）。</strong>
+      </div>
+    </details>
+
+    <details style="margin-bottom:8px">
+      <summary>▶️ ④ 視唱</summary>
+      <div class="footnote" style="margin-top:6px">
+        メトロノームによる1小節分のカウントイン（空振り）の後、譜面が始まります。心の中で読む・声に出して歌う → 「メトロノームを聴く」で拍を取りながら練習する → 「🔊 正解を聞く」で確認 → 「✓ できた／✗ まだ難しい」で判定（できた時の平均テンポ・成功率が記録されます） → 「次のフレーズ」で新しい譜面へ。小節数や設定によって、横スクロールが必要になることがあります。
+      </div>
+      <div class="footnote" style="margin-top:8px; padding:8px 10px; background:#f5f3ee; border-left:3px solid #b0a090; border-radius:4px; font-size:12px; color:#666;">
+        【自然旋律モードについて】このモードは順次進行・跳躍後の回帰・主音終止という最低限の旋律法則をアルゴリズムで適用した自動生成旋律です。実際の音楽が持つ和声的な必然性・フレーズの呼吸・表現の意図は含まれていません。読譜回路の速度と精度を鍛えることを目的としており、音楽的な視唱訓練の代替にはなりません。音楽として意味のある旋律で視唱を深めたい方には、澤野立次郎「基礎から実習 ソルフェージュ」などの専門テキストを併用されることをお勧めします。<br><br>
+        一方、このアプリには専門テキストにない強みもあります。次々とランダムに新しい課題が生成されるため予測に頼れず、文脈なしで音符を読む純粋な回路が鍛えられます。また正解を即座に音声で確認できるため、答え合わせのハードルが下がります。音楽的な文脈がないこと・予測がつきにくいこと自体が、専門テキストとは異なる種類の訓練として機能します。両者を目的に応じて使い分けていただければと思います。
+      </div>
+    </details>
+  </div>
+</div>
+
+<script>
+const LETTERS=['C','D','E','F','G','A','B'];
+const LIDX={C:0,D:1,E:2,F:3,G:4,A:5,B:6};
+const SEMI={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+
+function germanName(letter,acc){
+  if(letter==='B'){ if(acc==='#') return 'His'; if(acc==='b') return 'B'; return 'H'; }
+  if(acc==='#') return letter+'is';
+  if(acc==='b'){ if(letter==='E') return 'Es'; if(letter==='A') return 'As'; return letter+'es'; }
+  return letter;
+}
+
+const SHARP_ORDER=['F','C','G','D','A','E','B'];
+const FLAT_ORDER=['B','E','A','D','G','C','F'];
+const KEYS=[
+  {name:'ハ長調',sharps:0,flats:0,tonic:'C'},
+  {name:'イ短調',sharps:0,flats:0,tonic:'A'},
+  {name:'ト長調',sharps:1,flats:0,tonic:'G'},
+  {name:'ホ短調',sharps:1,flats:0,tonic:'E'},
+  {name:'ニ長調',sharps:2,flats:0,tonic:'D'},
+  {name:'ロ短調',sharps:2,flats:0,tonic:'B'},
+  {name:'イ長調',sharps:3,flats:0,tonic:'A'},
+  {name:'嬰ヘ短調',sharps:3,flats:0,tonic:'F'},
+  {name:'ヘ長調',sharps:0,flats:1,tonic:'F'},
+  {name:'ニ短調',sharps:0,flats:1,tonic:'D'},
+  {name:'変ロ長調',sharps:0,flats:2,tonic:'B'},
+  {name:'ト短調',sharps:0,flats:2,tonic:'G'},
+  {name:'変ホ長調',sharps:0,flats:3,tonic:'E'},
+  {name:'ハ短調',sharps:0,flats:3,tonic:'C'}
+];
+function keySignatureMap(sharps,flats){
+  const acc={}; LETTERS.forEach(l=>acc[l]='');
+  for(let i=0;i<sharps;i++) acc[SHARP_ORDER[i]]='#';
+  for(let i=0;i<flats;i++) acc[FLAT_ORDER[i]]='b';
+  return acc;
+}
+function pickKey(useAcc){
+  if(!useAcc){ const plain=KEYS.filter(k=>k.sharps===0&&k.flats===0); return plain[Math.floor(Math.random()*plain.length)]; }
+  return KEYS[Math.floor(Math.random()*KEYS.length)];
+}
+function buildPitch(letter,octave,acc){
+  const off=acc==='#'?1:acc==='b'?-1:0;
+  const midi=(octave+1)*12+SEMI[letter]+off;
+  const sym=acc==='#'?'♯':acc==='b'?'♭':'';
+  return {letter,octave,acc,midi,nameDoremi:({C:'ド',D:'レ',E:'ミ',F:'ファ',G:'ソ',A:'ラ',B:'シ'})[letter]+sym,nameGerman:germanName(letter,acc)};
+}
+// アルト記号：C4が五線中央（stepIndex=0 → y=120）
+// ト音記号：B4が五線中央のすぐ上の第3線、実際にはG4が第2線なので
+//   ト音記号基準では B4 を stepIndex 0 とすると y=120（五線中央）になる
+//   G4 = B4 - 2 steps → stepIndex -2 → y = 120+12 = 132（第4線）
+//   ト音記号では stepIndex = (p.octave - 4)*7 + LIDX[p.letter] - 2
+function stepIndex(p){
+  if(clefMode==='treble'){
+    // ト音記号：G4が第2線(y=132)、B4が第3線(y=120)が中央
+    // B4 = octave4, letter B → LIDX[B]=6 → (4-4)*7+6 = 6
+    // 基準をB4=0にする: index = (octave-4)*7 + LIDX[letter] - 6
+    // ただし表示上はB4をy=120の位置に置く（五線中央）
+    return (p.octave - 4) * 7 + LIDX[p.letter] - 6;
+  }
+  // アルト記号: C4(octave4,letter C=0) → (4-4)*7+0=0 → y=120（五線中央）
+  return (p.octave - 4) * 7 + LIDX[p.letter];
+}
+function diatonicCandidates(lowMidi,highMidi){
+  const out=[];
+  for(let oct=1;oct<=7;oct++) for(const L of LETTERS){
+    const midi=(oct+1)*12+SEMI[L];
+    if(midi>=lowMidi&&midi<=highMidi) out.push({letter:L,octave:oct});
+  }
+  return out;
+}
+
+let appMode='warmup';
+let clefMode='treble'; // 'treble' or 'alto'
+let useAcc=true, lowMidi=60, highMidi=84, measures=1, contourMode='random';
+let timeSigLabel='4/4', restMin=0, restMax=0, rMeasures=1, rhythmRandom=false;
+let dictType='single', dictUseAcc=true, dictLowMidi=60, dictHighMidi=84; // dictUseAccは単音モード専用。和音は常に14調（下記 pickKey(true) 参照）
+let dictChordSet='tonic'; // 'tonic'（主和音のみ）| 'extended'（転回・属七・減七を含む）
+let dictMode='normal'; // 'normal' | 'low' | 'mixed' | 'octave1'
+let dictTonicFreq=442; // 現在の出題で使う基準音（Hz）。mixedモードでは出題ごとに221/442を切り替える
+// 基準音ごとの既定音域（MIDI）。A3=57(221Hz), A4=69(442Hz), C3=48, C5=72, A5=81
+const DICT_TONIC_RANGE = {
+  442: [57, 81], // A3(221Hz)〜A5(884Hz)
+  221: [48, 72]  // C3(約131Hz)〜C5(約526Hz)
+};
+
+// ハ長調ベースのピタゴラス音律（C4=基準）
+// C4のHz: A4=442 → C4 = 442 * 2^(-9/12) ≈ 262.81Hz（平均律）
+// ピタゴラスではC4を5度圏でA4から下降3回で計算: A4→D4→G3→C3 = 442*(2/3)^3 ≈ 130.96Hz
+// それを1オクターブ上げてC4とする（*4 にすると C5 になり、1オクターブ高く鳴ってしまう）
+const C4_PYTH = 442 * Math.pow(2/3, 3) * 2; // ≈261.93Hz
+const PYTH_RATIOS_FROM_C = {
+  'C':  1,
+  'D':  9/8,
+  'E':  81/64,
+  'F':  4/3,
+  'G':  3/2,
+  'A':  27/16,
+  'B':  243/128,
+  // 臨時記号
+  'C#': 2187/2048,
+  'Db': 256/243,
+  'D#': 19683/16384,
+  'Eb': 32/27,
+  'F#': 729/512,
+  'Gb': 1024/729,
+  'G#': 6561/4096,
+  'Ab': 128/81,
+  'A#': 59049/32768,
+  'Bb': 16/9,
+  'E#': 177147/131072, // 5度11回上：Fより+23.46セント
+  'Fb': 8192/6561,     // 5度8回下 ：Eより-23.46セント
+  'B#': 531441/262144, // 5度12回上：Cより+23.46セント（MIDIは1オクターブ上のCと同じ）
+  'Cb': 2048/2187      // 5度7回下 ：Bより-23.46セント（MIDIは1オクターブ下のBと同じ）
+};
+
+// 同時に鳴る音の純正律比率（最低音を1とする）。Score Reading と同一。
+const JI_FROM_BASS = {0:1, 1:16/15, 2:9/8, 3:6/5, 4:5/4, 5:4/3, 6:7/5, 7:3/2, 8:8/5, 9:5/3, 10:16/9, 11:15/8};
+// 同時に鳴る和音：最低音をピタゴラスで置き、その上を純正律比率で積む
+// et=true のときは最低音の上を平均律で積む（減七は純正律の値が一意に定まらないため）
+function chordFreqs(notes, et){
+  const sorted=[...notes].sort((a,b)=>a.midi-b.midi);
+  const baseFreq=pythFreqFromPitch(sorted[0]), baseMidi=sorted[0].midi;
+  const map=new Map();
+  sorted.forEach(p=>{
+    const diff=p.midi-baseMidi, oct=Math.floor(diff/12);
+    map.set(p, et ? baseFreq*Math.pow(2,diff/12)
+                  : baseFreq*JI_FROM_BASS[diff-oct*12]*Math.pow(2,oct));
+  });
+  return map;
+}
+function pythFreqFromPitch(p){
+  // p.letter: C,D,E,F,G,A,B  p.acc: '#','b',''
+  const key = p.letter + (p.acc==='#'?'#': p.acc==='b'?'b':'');
+  const ratio = PYTH_RATIOS_FROM_C[key] || Math.pow(2, (p.midi-60)/12);
+  const octDiff = p.octave - 4;
+  return C4_PYTH * ratio * Math.pow(2, octDiff);
+}
+
+// 中央1オクターブ候補（C4=60〜B4=71）
+const OCTAVE1_ALL  = [60,61,62,63,64,65,66,67,68,69,70,71]; // 12音
+const OCTAVE1_DIAT = [60,62,64,65,67,69,71]; // ハ長調7音のみ
+let lastOctave1Midi = null;
+
+function pickOctave1Note(){
+  const pool = dictUseAcc ? OCTAVE1_ALL : OCTAVE1_DIAT;
+  // 直前と同じ音を避ける
+  const filtered = pool.length > 1 ? pool.filter(m => m !== lastOctave1Midi) : pool;
+  const midi = filtered[Math.floor(Math.random()*filtered.length)];
+  lastOctave1Midi = midi;
+  // midiからpitchを生成
+  const MIDI_TO_PITCH = {
+    60:{letter:'C',acc:'',octave:4}, 61:{letter:'C',acc:'#',octave:4},
+    62:{letter:'D',acc:'',octave:4}, 63:{letter:'D',acc:'#',octave:4},
+    64:{letter:'E',acc:'',octave:4}, 65:{letter:'F',acc:'',octave:4},
+    66:{letter:'F',acc:'#',octave:4}, 67:{letter:'G',acc:'',octave:4},
+    68:{letter:'G',acc:'#',octave:4}, 69:{letter:'A',acc:'',octave:4},
+    70:{letter:'A',acc:'#',octave:4}, 71:{letter:'B',acc:'',octave:4}
+  };
+  const base = MIDI_TO_PITCH[midi];
+  return buildPitch(base.letter, base.octave, base.acc);
+}
+let count=0, currentPhrase=null, audioCtx=null;
+let currentDictNotes=null, currentDictKeyName=null, currentDictChordType=null, dictRevealed=false, dictStartTime=0, dictElapsed=0;
+let dictTotal=0, dictCorrect=0, dictTimeSum=0;
+let warmupKey='C', warmupType='scale', warmupTotal=0, warmupOk=0, warmupOkBpmSum=0, warmupJudged=false, warmupMetro=false;
+let prTotal=0, prOk=0, prOkBpmSum=0;
+
+/* ---------- 音階・分散3度・半音階（ウォームアップ） ---------- */
+const WARMUP_PATTERNS={
+  C:{
+    label:'ハ長調',
+    scaleAsc:  [{letter:'C',octave:3},{letter:'D',octave:3},{letter:'E',octave:3},{letter:'F',octave:3},{letter:'G',octave:3},{letter:'A',octave:3},{letter:'B',octave:3},{letter:'C',octave:4}],
+    scaleDesc: [{letter:'C',octave:4},{letter:'B',octave:3},{letter:'A',octave:3},{letter:'G',octave:3},{letter:'F',octave:3},{letter:'E',octave:3},{letter:'D',octave:3},{letter:'C',octave:3}],
+    arpAsc:  [{letter:'C',octave:3},{letter:'E',octave:3},{letter:'D',octave:3},{letter:'F',octave:3},{letter:'E',octave:3},{letter:'G',octave:3},{letter:'F',octave:3},{letter:'A',octave:3},{letter:'G',octave:3},{letter:'B',octave:3},{letter:'A',octave:3},{letter:'C',octave:4},{letter:'B',octave:3},{letter:'D',octave:4},{letter:'C',octave:4}],
+    arpDesc: [{letter:'E',octave:4},{letter:'C',octave:4},{letter:'D',octave:4},{letter:'B',octave:3},{letter:'C',octave:4},{letter:'A',octave:3},{letter:'B',octave:3},{letter:'G',octave:3},{letter:'A',octave:3},{letter:'F',octave:3},{letter:'G',octave:3},{letter:'E',octave:3},{letter:'F',octave:3},{letter:'D',octave:3},{letter:'C',octave:3}],
+    p4Asc:  [{letter:'C',octave:3},{letter:'F',octave:3},{letter:'D',octave:3},{letter:'G',octave:3},{letter:'E',octave:3},{letter:'A',octave:3},{letter:'F',octave:3},{letter:'B',octave:3},{letter:'G',octave:3},{letter:'C',octave:4},{letter:'A',octave:3},{letter:'D',octave:4},{letter:'B',octave:3},{letter:'E',octave:4},{letter:'C',octave:4}],
+    p4Desc: [{letter:'F',octave:4},{letter:'C',octave:4},{letter:'E',octave:4},{letter:'B',octave:3},{letter:'D',octave:4},{letter:'A',octave:3},{letter:'C',octave:4},{letter:'G',octave:3},{letter:'B',octave:3},{letter:'F',octave:3},{letter:'A',octave:3},{letter:'E',octave:3},{letter:'G',octave:3},{letter:'D',octave:3},{letter:'C',octave:3}],
+    p5Asc:  [{letter:'C',octave:3},{letter:'G',octave:3},{letter:'D',octave:3},{letter:'A',octave:3},{letter:'E',octave:3},{letter:'B',octave:3},{letter:'F',octave:3},{letter:'C',octave:4},{letter:'G',octave:3},{letter:'D',octave:4},{letter:'A',octave:3},{letter:'E',octave:4},{letter:'B',octave:3},{letter:'F',octave:4},{letter:'C',octave:4}],
+    p5Desc: [{letter:'G',octave:4},{letter:'C',octave:4},{letter:'F',octave:4},{letter:'B',octave:3},{letter:'E',octave:4},{letter:'A',octave:3},{letter:'D',octave:4},{letter:'G',octave:3},{letter:'C',octave:4},{letter:'F',octave:3},{letter:'B',octave:3},{letter:'E',octave:3},{letter:'A',octave:3},{letter:'D',octave:3},{letter:'C',octave:3}],
+    p6Asc:  [{letter:'C',octave:3},{letter:'A',octave:3},{letter:'D',octave:3},{letter:'B',octave:3},{letter:'E',octave:3},{letter:'C',octave:4},{letter:'F',octave:3},{letter:'D',octave:4},{letter:'G',octave:3},{letter:'E',octave:4},{letter:'A',octave:3},{letter:'F',octave:4},{letter:'B',octave:3},{letter:'G',octave:4},{letter:'C',octave:4}],
+    p6Desc: [{letter:'A',octave:4},{letter:'C',octave:4},{letter:'G',octave:4},{letter:'B',octave:3},{letter:'F',octave:4},{letter:'A',octave:3},{letter:'E',octave:4},{letter:'G',octave:3},{letter:'D',octave:4},{letter:'F',octave:3},{letter:'C',octave:4},{letter:'E',octave:3},{letter:'B',octave:3},{letter:'D',octave:3},{letter:'C',octave:3}],
+    p7Asc:  [{letter:'C',octave:3},{letter:'B',octave:3},{letter:'D',octave:3},{letter:'C',octave:4},{letter:'E',octave:3},{letter:'D',octave:4},{letter:'F',octave:3},{letter:'E',octave:4},{letter:'G',octave:3},{letter:'F',octave:4},{letter:'A',octave:3},{letter:'G',octave:4},{letter:'B',octave:3},{letter:'A',octave:4},{letter:'C',octave:4}],
+    p7Desc: [{letter:'B',octave:4},{letter:'C',octave:4},{letter:'A',octave:4},{letter:'B',octave:3},{letter:'G',octave:4},{letter:'A',octave:3},{letter:'F',octave:4},{letter:'G',octave:3},{letter:'E',octave:4},{letter:'F',octave:3},{letter:'D',octave:4},{letter:'E',octave:3},{letter:'C',octave:4},{letter:'D',octave:3},{letter:'C',octave:3}],
+    chromaAsc:  [{letter:'C',octave:3},{letter:'C',octave:3,acc:'#'},{letter:'D',octave:3},{letter:'D',octave:3,acc:'#'},{letter:'E',octave:3},{letter:'F',octave:3},{letter:'F',octave:3,acc:'#'},{letter:'G',octave:3},{letter:'G',octave:3,acc:'#'},{letter:'A',octave:3},{letter:'B',octave:3,acc:'b'},{letter:'B',octave:3,acc:'nat'}],
+    chromaDesc: [{letter:'C',octave:4},{letter:'B',octave:3},{letter:'B',octave:3,acc:'b'},{letter:'A',octave:3},{letter:'G',octave:3,acc:'#'},{letter:'G',octave:3,acc:'nat'},{letter:'F',octave:3,acc:'#'},{letter:'F',octave:3,acc:'nat'},{letter:'E',octave:3},{letter:'D',octave:3,acc:'#'},{letter:'D',octave:3,acc:'nat'},{letter:'C',octave:3,acc:'#'}],
+    root:{letter:'C',octave:3}
+  },
+  Am:{
+    label:'イ短調',
+    scaleAsc:  [{letter:'A',octave:3},{letter:'B',octave:3},{letter:'C',octave:4},{letter:'D',octave:4},{letter:'E',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'G',octave:4,acc:'#'},{letter:'A',octave:4}],
+    scaleDesc: [{letter:'A',octave:4},{letter:'G',octave:4},{letter:'F',octave:4},{letter:'E',octave:4},{letter:'D',octave:4},{letter:'C',octave:4},{letter:'B',octave:3},{letter:'A',octave:3}],
+    arpAsc:  [{letter:'A',octave:3},{letter:'C',octave:4},{letter:'B',octave:3},{letter:'D',octave:4},{letter:'C',octave:4},{letter:'E',octave:4},{letter:'D',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'E',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'F',octave:4,acc:'#'},{letter:'A',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'B',octave:4},{letter:'A',octave:4}],
+    arpDesc: [{letter:'C',octave:5},{letter:'A',octave:4},{letter:'B',octave:4},{letter:'G',octave:4},{letter:'A',octave:4},{letter:'F',octave:4},{letter:'G',octave:4},{letter:'E',octave:4},{letter:'F',octave:4},{letter:'D',octave:4},{letter:'E',octave:4},{letter:'C',octave:4},{letter:'D',octave:4},{letter:'B',octave:3},{letter:'A',octave:3}],
+    p4Asc:  [{letter:'A',octave:3},{letter:'D',octave:4},{letter:'B',octave:3},{letter:'E',octave:4},{letter:'C',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'D',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'E',octave:4},{letter:'A',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'B',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'C',octave:5},{letter:'A',octave:4}],
+    p4Desc: [{letter:'D',octave:5},{letter:'A',octave:4},{letter:'C',octave:5},{letter:'G',octave:4},{letter:'B',octave:4},{letter:'F',octave:4},{letter:'A',octave:4},{letter:'E',octave:4},{letter:'G',octave:4},{letter:'D',octave:4},{letter:'F',octave:4},{letter:'C',octave:4},{letter:'E',octave:4},{letter:'B',octave:3},{letter:'A',octave:3}],
+    p5Asc:  [{letter:'A',octave:3},{letter:'E',octave:4},{letter:'B',octave:3},{letter:'F',octave:4,acc:'#'},{letter:'C',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'D',octave:4},{letter:'A',octave:4},{letter:'E',octave:4},{letter:'B',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'C',octave:5},{letter:'G',octave:4,acc:'#'},{letter:'D',octave:5},{letter:'A',octave:4}],
+    p5Desc: [{letter:'E',octave:5},{letter:'A',octave:4},{letter:'D',octave:5},{letter:'G',octave:4},{letter:'C',octave:5},{letter:'F',octave:4},{letter:'B',octave:4},{letter:'E',octave:4},{letter:'A',octave:4},{letter:'D',octave:4},{letter:'G',octave:4},{letter:'C',octave:4},{letter:'F',octave:4},{letter:'B',octave:3},{letter:'A',octave:3}],
+    p6Asc:  [{letter:'A',octave:3},{letter:'F',octave:4,acc:'#'},{letter:'B',octave:3},{letter:'G',octave:4,acc:'#'},{letter:'C',octave:4},{letter:'A',octave:4},{letter:'D',octave:4},{letter:'B',octave:4},{letter:'E',octave:4},{letter:'C',octave:5},{letter:'F',octave:4,acc:'#'},{letter:'D',octave:5},{letter:'G',octave:4,acc:'#'},{letter:'E',octave:5},{letter:'A',octave:4}],
+    p6Desc: [{letter:'F',octave:5},{letter:'A',octave:4},{letter:'E',octave:5},{letter:'G',octave:4},{letter:'D',octave:5},{letter:'F',octave:4},{letter:'C',octave:5},{letter:'E',octave:4},{letter:'B',octave:4},{letter:'D',octave:4},{letter:'A',octave:4},{letter:'C',octave:4},{letter:'G',octave:4},{letter:'B',octave:3},{letter:'A',octave:3}],
+    chromaAsc:  [{letter:'A',octave:3},{letter:'B',octave:3,acc:'b'},{letter:'B',octave:3,acc:'nat'},{letter:'C',octave:4},{letter:'C',octave:4,acc:'#'},{letter:'D',octave:4},{letter:'D',octave:4,acc:'#'},{letter:'E',octave:4},{letter:'F',octave:4},{letter:'F',octave:4,acc:'#'},{letter:'G',octave:4},{letter:'G',octave:4,acc:'#'}],
+    chromaDesc: [{letter:'A',octave:4},{letter:'G',octave:4,acc:'#'},{letter:'G',octave:4,acc:'nat'},{letter:'F',octave:4,acc:'#'},{letter:'F',octave:4},{letter:'E',octave:4},{letter:'D',octave:4,acc:'#'},{letter:'D',octave:4,acc:'nat'},{letter:'C',octave:4,acc:'#'},{letter:'C',octave:4,acc:'nat'},{letter:'B',octave:3},{letter:'B',octave:3,acc:'b'}],
+    root:{letter:'A',octave:3}
+  }
+};
+function warmupBuildPitch(n){
+  // ト音記号モードでは既存パターン（C3/A3始まり）を1オクターブ上げて表示
+  const octShift = (clefMode==='treble') ? 1 : 0;
+  return buildPitch(n.letter, n.octave + octShift, n.acc||'');
+}
+// 7度パターンはハ長調にのみ定義されている。イ短調では選べないようにする
+// （選択したまま切り替えると pat.p7Asc が undefined になり、視唱準備トレが動作しなくなる）
+function syncWarmupTypeAvailability(){
+  const seg=document.getElementById('seg-warmup-type');
+  if(!seg) return;
+  const btn7=seg.querySelector('button[data-v="p7"]');
+  if(!btn7) return;
+  const allow=!!(WARMUP_PATTERNS[warmupKey] && WARMUP_PATTERNS[warmupKey].p7Asc);
+  btn7.style.display=allow?'':'none';
+  if(!allow && warmupType==='p7'){
+    warmupType='p6';
+    [...seg.children].forEach(x=>x.classList.toggle('on', x.dataset.v==='p6'));
+  }
+}
+function warmupGetSeq(){
+  const pat=WARMUP_PATTERNS[warmupKey];
+  if(warmupType==='scale') return {asc:pat.scaleAsc, desc:pat.scaleDesc, hasHold:true, noteDur:'16th'};
+  if(warmupType==='arp') return {asc:pat.arpAsc, desc:pat.arpDesc, hasHold:false, noteDur:'arp'};
+  if(warmupType==='p4') return {asc:pat.p4Asc, desc:pat.p4Desc, hasHold:false, noteDur:'arp'};
+  if(warmupType==='p5') return {asc:pat.p5Asc, desc:pat.p5Desc, hasHold:false, noteDur:'arp'};
+  if(warmupType==='p6') return {asc:pat.p6Asc, desc:pat.p6Desc, hasHold:false, noteDur:'arp'};
+  if(warmupType==='p7') return {asc:pat.p7Asc, desc:pat.p7Desc, hasHold:false, noteDur:'arp'};
+  return {asc:pat.chromaAsc, desc:pat.chromaDesc, hasHold:true, noteDur:'16th'};
+}
+// 2分休符：五線の中央線の上に乗る、塗りつぶしの四角
+function drawHalfRestGlyph(x,midLineY){
+  return `<rect x="${x-6}" y="${midLineY-4}" width="12" height="4" fill="#16202b"/>`;
+}
+// 付点（3拍の保続音などに使用）
+function drawAugDot(x,y){
+  return `<circle cx="${x+12}" cy="${y}" r="2.2" fill="#16202b"/>`;
+}
+function drawBarline(x,double){
+  if(!double) return `<line x1="${x}" y1="93" x2="${x}" y2="147" stroke="#16202b" stroke-width="1.4"/>`;
+  return `<line x1="${x}" y1="93" x2="${x}" y2="147" stroke="#16202b" stroke-width="1.4"/><line x1="${x+5}" y1="93" x2="${x+5}" y2="147" stroke="#16202b" stroke-width="3.2"/>`;
+}
+const DOREMI_BASE={C:'ド',D:'レ',E:'ミ',F:'ファ',G:'ソ',A:'ラ',B:'シ'};
+// ノート1個分の描画データを準備（符頭・臨時記号・加線・符尾トップ座標・下の音名）
+function warmupPrepNote(p,x,hollow,dotted){
+  const y=120-stepIndex(p)*6;
+  let s=ledgerLines(x,y);
+  if(p.acc){ const sym=p.acc==='#'?'♯':(p.acc==='b'?'♭':'♮'); s+=`<text x="${x-12}" y="${y+5}" font-size="15" font-family="serif" fill="#16202b">${sym}</text>`; }
+  s+=`<ellipse cx="${x}" cy="${y}" rx="6" ry="4.4" fill="${hollow?'none':'#16202b'}" stroke="${hollow?'#16202b':'none'}" stroke-width="${hollow?'1.6':'0'}" transform="rotate(-22 ${x} ${y})"/>`;
+  if(dotted) s+=drawAugDot(x,y);
+  s+=`<text x="${x}" y="${y+30}" font-size="11" font-family="sans-serif" fill="#3d4654" text-anchor="middle">${DOREMI_BASE[p.letter]}</text>`;
+  return {svg:s, x, y, stemTopBase:y-26};
+}
+// 連桁（ビーム）でつながれた16分音符のグループを描画（最大4個/1拍ごと）
+function warmupDrawBeamGroup(notesInfo){
+  if(notesInfo.length===1) return warmupDrawStem(notesInfo[0]);
+  let s='';
+  const beamY = Math.min(...notesInfo.map(n=>n.stemTopBase));
+  notesInfo.forEach(n=>{
+    s+=`<line x1="${n.x+5.5}" y1="${n.y-1}" x2="${n.x+5.5}" y2="${beamY}" stroke="#16202b" stroke-width="1.4"/>`;
+  });
+  const x1=notesInfo[0].x+5.5, x2=notesInfo[notesInfo.length-1].x+5.5;
+  s+=`<line x1="${x1}" y1="${beamY}" x2="${x2}" y2="${beamY}" stroke="#16202b" stroke-width="4"/>`;
+  return s;
+}
+// 単独の8分音符（旗1本）
+function warmupDrawEighthFlag(n){
+  let s=`<line x1="${n.x+5.5}" y1="${n.y-1}" x2="${n.x+5.5}" y2="${n.stemTopBase}" stroke="#16202b" stroke-width="1.4"/>`;
+  s+=`<path d="M${n.x+5.5},${n.stemTopBase} C${n.x+16},${n.stemTopBase+4} ${n.x+14},${n.stemTopBase+16} ${n.x+5.5},${n.stemTopBase+20}" fill="#16202b"/>`;
+  return s;
+}
+// 保続音（白抜き、符尾のみ・旗なし）
+function warmupDrawStem(n){
+  return `<line x1="${n.x+5.5}" y1="${n.y-1}" x2="${n.x+5.5}" y2="${n.stemTopBase}" stroke="#16202b" stroke-width="1.4"/>`;
+}
+// 16分音符の並びを、4個ずつの連桁グループに分割して描画
+// タイ（同音を結ぶ弧線）
+function warmupDrawTie(n1,n2){
+  const midX=(n1.x+n2.x)/2, y=Math.max(n1.y,n2.y)+11;
+  return `<path d="M${n1.x+4},${y} Q${midX},${y+9} ${n2.x-4},${y}" stroke="#16202b" stroke-width="1.3" fill="none"/>`;
+}
+function drawWarmupScore(){
+  const pat=WARMUP_PATTERNS[warmupKey];
+  const {asc,desc,hasHold,noteDur}=warmupGetSeq();
+  const ascP=asc.map(warmupBuildPitch), descP=desc.map(warmupBuildPitch);
+  const H=225;
+  const lines=[96,108,120,132,144];
+  const measureUnits = (warmupType==='chroma') ? 6 : 8; // 半音階は3拍子(6)、その他は4拍子(8)。単位=8分音符1個
+
+  // ---- Step1: 小節ごとに「アイテム」を構築（x座標はまだ決めない） ----
+  const measures=[]; // measures[i] = {items:[...], widthMul:1}
+  let curItems=[];
+  let beamIdCounter=0;
+  function pushNote(pitch,hollow,dotted,beamId,duration){
+    curItems.push({pitch,hollow:!!hollow,dotted:!!dotted,isRest:false,beamId,duration});
+  }
+  function pushRest(){ curItems.push({isRest:true}); }
+  function endMeasure(widthMul){ measures.push({items:curItems, widthMul:widthMul||1}); curItems=[]; }
+
+  if(noteDur==='arp'){
+    [ascP,descP].forEach(seqP=>{
+      const first14=seqP.slice(0,14), lastOne=seqP[14];
+      for(let i=0;i<8;i+=2){ const bId=beamIdCounter++; pushNote(first14[i],false,false,bId,'8th'); pushNote(first14[i+1],false,false,bId,'8th'); }
+      endMeasure();
+      for(let i=8;i<14;i+=2){ const bId=beamIdCounter++; pushNote(first14[i],false,false,bId,'8th'); pushNote(first14[i+1],false,false,bId,'8th'); }
+      pushNote(lastOne,false,false,null,'4th'); // 単独、旗なし
+      endMeasure();
+    });
+  } else {
+    const seq=[...ascP,...descP];
+    let idx=0;
+    while(idx<seq.length){
+      const remain=seq.length-idx;
+      const count=Math.min(measureUnits,remain);
+      for(let i=0;i<count;i+=2){
+        if(i+1<count){
+          const bId=beamIdCounter++;
+          pushNote(seq[idx+i],false,false,bId,'8th');
+          pushNote(seq[idx+i+1],false,false,bId,'8th');
+        } else {
+          pushNote(seq[idx+i],false,false,null,'8th'); // 奇数で余った1音は、単独の8分音符（旗付き）
+        }
+      }
+      idx+=count;
+      endMeasure();
+    }
+  }
+
+  let tieFromLastMeasure=false;
+  if(hasHold){
+    const rootP=warmupBuildPitch(pat.root);
+    if(warmupType==='scale'){
+      pushNote(rootP,true,false,null,'hold');
+      endMeasure();
+      tieFromLastMeasure=true;
+      pushRest();
+      endMeasure();
+    } else if(warmupType==='chroma'){
+      pushNote(rootP,true,true,null,'hold');
+      endMeasure(2); // 6拍分＝2小節分の幅
+    }
+  }
+
+  // ---- Step2: 小節ごとに固定幅を割り当て、その中で均等配置 ----
+  const MEASURE_WIDTH=168, MEASURE_MARGIN=20;
+  let x=70;
+  const barlines=[]; // {x, double}
+  const heads=[], stems=[];
+  const beamGroups={};
+  let tieTargetInfo=null, tieSourceInfo=null;
+
+  measures.forEach((measure,mIdx)=>{
+    const mWidth=MEASURE_WIDTH*measure.widthMul;
+    const n=measure.items.length;
+    const innerWidth=mWidth-2*MEASURE_MARGIN;
+    let lastNoteInfoInThisMeasure=null;
+    measure.items.forEach((item,i)=>{
+      const itemX = (n===1) ? x+mWidth/2 : x+MEASURE_MARGIN+innerWidth*i/(n-1);
+      if(item.isRest){
+        heads.push(drawHalfRestGlyph(itemX,120));
+      } else {
+        const info=warmupPrepNote(item.pitch,itemX,item.hollow,item.dotted);
+        heads.push(info.svg);
+        lastNoteInfoInThisMeasure=info;
+        if(item.beamId!==null && item.beamId!==undefined){
+          (beamGroups[item.beamId]=beamGroups[item.beamId]||[]).push(info);
+        } else if(item.duration==='4th'){
+          stems.push(warmupDrawStem(info));
+        } else if(item.duration==='8th'){
+          stems.push(warmupDrawEighthFlag(info));
+        } else if(item.duration==='hold'){
+          stems.push(warmupDrawStem(info));
+          if(tieFromLastMeasure===false && warmupType==='scale' && mIdx===measures.length-2){
+            tieTargetInfo=info; // 音階：保続音（タイの着地点）
+          }
+          if(warmupType==='chroma'){ /* 半音階はタイなし */ }
+        }
+      }
+    });
+    // 音階：直前の小節の最後の音（タイの出発点）を記録
+    if(warmupType==='scale' && mIdx===measures.length-3 && lastNoteInfoInThisMeasure){
+      tieSourceInfo=lastNoteInfoInThisMeasure;
+    }
+    x+=mWidth;
+    if(mIdx<measures.length-1){
+      barlines.push({x:x+8, double:false});
+      x+=16;
+    }
+  });
+  // 最後は必ず終止線（ダブルバー）
+  barlines.push({x:x+8, double:true});
+  x+=16;
+
+  Object.values(beamGroups).forEach(infos=>{ stems.push(warmupDrawBeamGroup(infos)); });
+  if(tieSourceInfo && tieTargetInfo){ stems.push(warmupDrawTie(tieSourceInfo,tieTargetInfo)); }
+
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${x+20}" height="${H}" viewBox="0 0 ${x+20} ${H}">`;
+  s+=`<rect width="${x+20}" height="${H}" fill="#fbfbf7"/>`;
+  for(const y of lines) s+=`<line x1="10" y1="${y}" x2="${x+10}" y2="${y}" stroke="#16202b" stroke-width="1.3"/>`;
+  s+=drawClef();
+  barlines.forEach(b=>{ s+=drawBarline(b.x,b.double); });
+  s+=stems.join('')+heads.join('');
+  s+='</svg>';
+  document.getElementById('score').innerHTML=s;
+}
+function warmupPlayClickAt(ctx,time,isAccent){
+  const osc=ctx.createOscillator(); osc.type='square'; osc.frequency.value=isAccent?1200:900;
+  const gain=ctx.createGain();
+  gain.gain.setValueAtTime(0.18,time);
+  gain.gain.exponentialRampToValueAtTime(0.0001,time+0.05);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(time); osc.stop(time+0.06);
+}
+function warmupToneAt(ctx,pitch,t,dur,peak){
+  const freq=pythFreqFromPitch(pitch);  // ピタゴラス音律（IPPの楽器練習と音程を揃える）
+  const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
+  const gain=ctx.createGain();
+  gain.gain.setValueAtTime(0.0001,t);
+  gain.gain.exponentialRampToValueAtTime(peak,t+0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001,t+Math.max(dur*0.92,0.04));
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(t); osc.stop(t+dur+0.03);
+}
+function playWarmup(){
+  const ctx=ensureCtx();
+  const pat=WARMUP_PATTERNS[warmupKey];
+  const {asc,desc,hasHold}=warmupGetSeq();
+  const bpm=getBpm();
+  const beat=60/bpm;
+  let t=ctx.currentTime+0.05;
+  // ①主音を3秒
+  warmupToneAt(ctx,warmupBuildPitch(pat.root),t,3.0,0.24);
+  t+=3.0;
+  // ②1小節分のカウントイン（メトロノームのみ、空振り）
+  for(let i=0;i<4;i++){
+    warmupPlayClickAt(ctx,t, i===0);
+    t+=beat;
+  }
+  const bodyStartTime=t;
+  if(!hasHold){
+    // 分散3度・4度・5度・6度：14個は8分音符、最後は4分音符（上昇・下降）
+    [asc,desc].forEach(seq=>{
+      seq.forEach((n,i)=>{
+        const dur = (i===seq.length-1) ? beat : beat/2;
+        warmupToneAt(ctx,warmupBuildPitch(n),t,dur,0.24);
+        t+=dur;
+      });
+    });
+  } else {
+    // 音階・半音階：すべて8分音符 → 保続音（音階:4拍/半音階:6拍）
+    const seq=[...asc,...desc];
+    const isScale=(warmupType!=='chroma'); // 音階は最後の音をタイでつなぐ（保続音側で処理）
+    const lastNoteIdx = isScale ? seq.length-1 : -1;
+    seq.forEach((n,i)=>{
+      if(i===lastNoteIdx) return; // タイでつながる最後の音は、保続音と合わせて1音にする
+      warmupToneAt(ctx,warmupBuildPitch(n),t,beat/2,0.24);
+      t+=beat/2;
+    });
+    const holdBeats = (warmupType==='chroma') ? 6 : 4; // 半音階は6拍、音階は4拍（全音符）
+    const holdDur = isScale ? (beat/2 + beat*holdBeats) : (beat*holdBeats); // 音階は最後の8分音符分も含めて、切れ目なく伸ばす
+    warmupToneAt(ctx,warmupBuildPitch(pat.root),t,holdDur,0.24);
+    t+=holdDur;
+  }
+  // メトロノーム併用がオンの場合、本編の間、拍の頭でクリックを鳴らす
+  if(warmupMetro){
+    const totalBeats=Math.ceil((t-bodyStartTime)/beat);
+    for(let i=0;i<totalBeats;i++){
+      warmupPlayClickAt(ctx,bodyStartTime+i*beat, i%4===0);
+    }
+  }
+  warmupJudged=false;
+  document.getElementById('warmup-judge').style.display='none';
+  const remainSec = t - ctx.currentTime;
+  setTimeout(()=>{
+    document.getElementById('warmup-judge').style.display='flex';
+  }, Math.max(remainSec,0)*1000);
+}
+function playWarmupMetroOnly(){
+  const ctx=ensureCtx();
+  const bpm=getBpm();
+  const beat=60/bpm;
+  let t=ctx.currentTime+0.05;
+  for(let i=0;i<16;i++){ // 4小節分、鳴らし続ける
+    warmupPlayClickAt(ctx,t, i%4===0);
+    t+=beat;
+  }
+}
+function judgeWarmup(ok){
+  warmupTotal++;
+  if(ok){ warmupOk++; warmupOkBpmSum+=getBpm(); }
+  updateWarmupStats();
+}
+function updateWarmupStats(){
+  document.getElementById('warmup-total').textContent=warmupTotal;
+  document.getElementById('warmup-acc').textContent=warmupTotal?Math.round(warmupOk/warmupTotal*100)+'%':'–';
+  document.getElementById('warmup-bpm').textContent=warmupOk?Math.round(warmupOkBpmSum/warmupOk)+' BPM':'–';
+}
+
+/* ---------- 音高あり ---------- */
+function generatePhrase(){
+  const key=pickKey(useAcc);
+  const accMap=keySignatureMap(key.sharps,key.flats);
+  const events=[];
+  for(let m=0;m<measures;m++){
+    for(let b=0;b<4;b++){
+      const r=Math.random();
+      if(r<0.15) events.push({type:'rest',dur:1});
+      else if(r<0.70) events.push({type:'note',dur:1});
+      else { events.push({type:'note',dur:0.5,beam:'start'}); events.push({type:'note',dur:0.5,beam:'end'}); }
+    }
+    if(m<measures-1) events.push({type:'bar'});
+  }
+  events.push({type:'bar'});
+
+  const cand=diatonicCandidates(lowMidi,highMidi);
+  let li=(()=>{ const c=cand[Math.floor(Math.random()*cand.length)]; return LIDX[c.letter]+c.octave*7; })();
+  const steps=[0,1,-1,1,-1,2,-2,1,-1,3,-3];
+  let first=true;
+  events.filter(e=>e.type==='note').forEach(ev=>{
+    if(!first){
+      let chosen=null, tries=0;
+      while(tries<10){
+        const delta=steps[Math.floor(Math.random()*steps.length)];
+        const candLi=li+delta;
+        const letter=LETTERS[((candLi%7)+7)%7]; const octave=Math.floor(candLi/7);
+        const p=buildPitch(letter,octave,accMap[letter]);
+        if(p.midi>=lowMidi&&p.midi<=highMidi){ chosen={li:candLi,p}; break; }
+        tries++;
+      }
+      if(chosen){ li=chosen.li; ev.pitch=chosen.p; }
+      else { const letter=LETTERS[((li%7)+7)%7]; const octave=Math.floor(li/7); ev.pitch=buildPitch(letter,octave,accMap[letter]); }
+    } else {
+      const letter=LETTERS[((li%7)+7)%7]; const octave=Math.floor(li/7);
+      ev.pitch=buildPitch(letter,octave,accMap[letter]);
+      first=false;
+    }
+  });
+  return {events,key};
+}
+
+function generateNaturalPhrase(){
+  const key=pickKey(useAcc);
+  const accMap=keySignatureMap(key.sharps,key.flats);
+  const events=[];
+  for(let m=0;m<measures;m++){
+    for(let b=0;b<4;b++){
+      const r=Math.random();
+      if(r<0.15) events.push({type:'rest',dur:1});
+      else if(r<0.70) events.push({type:'note',dur:1});
+      else { events.push({type:'note',dur:0.5,beam:'start'}); events.push({type:'note',dur:0.5,beam:'end'}); }
+    }
+    if(m<measures-1) events.push({type:'bar'});
+  }
+  events.push({type:'bar'});
+
+  const noteEvents=events.filter(e=>e.type==='note');
+
+  // 主音(トニック)の候補を音域内から探す
+  const tonicCands=[];
+  for(let oct=1;oct<=7;oct++){
+    const midi=(oct+1)*12+SEMI[key.tonic];
+    if(midi>=lowMidi&&midi<=highMidi) tonicCands.push(oct);
+  }
+  const startOct = tonicCands.length ? tonicCands[Math.floor(tonicCands.length/2)] : 4;
+  let li = LIDX[key.tonic] + startOct*7; // 開始音＝主音
+
+  const inRange=(candLi)=>{
+    const letter=LETTERS[((candLi%7)+7)%7]; const octave=Math.floor(candLi/7);
+    const p=buildPitch(letter,octave,accMap[letter]);
+    return (p.midi>=lowMidi&&p.midi<=highMidi) ? p : null;
+  };
+
+  let lastDelta=0; // 直前の跳躍方向を記憶(ギャップフィル用)
+  noteEvents.forEach((ev,idx)=>{
+    if(idx===0){
+      const letter=LETTERS[((li%7)+7)%7]; const octave=Math.floor(li/7);
+      ev.pitch=buildPitch(letter,octave,accMap[letter]);
+      return;
+    }
+    const isLast = idx===noteEvents.length-1;
+    if(isLast){
+      // 最後の音は主音に近い方の主音候補へ解決させる
+      let best=null,bestDist=Infinity;
+      tonicCands.forEach(oct=>{
+        const candLi=LIDX[key.tonic]+oct*7;
+        const p=inRange(candLi);
+        if(p && Math.abs(candLi-li)<bestDist){ bestDist=Math.abs(candLi-li); best={li:candLi,p}; }
+      });
+      if(best){ li=best.li; ev.pitch=best.p; return; }
+    }
+    let delta, chosen=null, tries=0;
+    while(tries<12){
+      if(Math.abs(lastDelta)>=2){
+        // 直前が跳躍だった場合、逆方向に1度だけ動く(ギャップフィル)
+        delta = lastDelta>0 ? -1 : 1;
+      } else {
+        const r=Math.random();
+        if(r<0.68) delta = Math.random()<0.5?1:-1;      // 順次進行(高頻度)
+        else if(r<0.90) delta = Math.random()<0.5?2:-2;  // 3度の跳躍
+        else delta = Math.random()<0.5?3:-3;              // 4度の跳躍
+      }
+      const p=inRange(li+delta);
+      if(p){ chosen={li:li+delta,p}; break; }
+      tries++;
+    }
+    if(chosen){ li=chosen.li; ev.pitch=chosen.p; lastDelta=delta; }
+    else { const letter=LETTERS[((li%7)+7)%7]; const octave=Math.floor(li/7); ev.pitch=buildPitch(letter,octave,accMap[letter]); lastDelta=0; }
+  });
+  return {events,key};
+}
+
+function ledgerLines(x,y){
+  let s='';
+  for(let ly=84; ly>=y; ly-=12) s+=`<line x1="${x-9}" y1="${ly}" x2="${x+9}" y2="${ly}" stroke="#16202b" stroke-width="1.3"/>`;
+  for(let ly=156; ly<=y; ly+=12) s+=`<line x1="${x-9}" y1="${ly}" x2="${x+9}" y2="${ly}" stroke="#16202b" stroke-width="1.3"/>`;
+  return s;
+}
+
+function drawClef(){
+  if(clefMode==='treble'){
+    // ト音記号: SVGパスで描画
+    // 五線 y=96,108,120,132,144（間隔12px）
+    // G線（第2線）= y=132、幹x中心=28
+    // Score Reading(score_reading_v1.html)のdrawClefGlyphをそのまま流用
+    // あちらの五線: y=86,98,110,122,134（中央y=110）
+    // こちらの五線: y=96,108,120,132,144（中央y=120）→ +10pxずらす
+    return '<g transform="translate(0,10)">'
+      + '<path d="M30,82 C24,82 20,88 24,93 C29,99 27,104 20,106 C9,109 6,118 12,124 C18,130 28,128 27,120 C26,114 16,114 18,121 C20,127 28,130 26,140 C24,148 16,151 12,146 C10,143 13,139 16,141" fill="none" stroke="#16202b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '</g>';
+  }
+  // アルト記号（ハ音記号）
+  return '<g fill="#16202b">'+
+     '<rect x="20" y="96" width="4" height="48"/>'+
+     '<rect x="27" y="96" width="2" height="48"/>'+
+     '<path d="M31,97 C55,97 55,115 33,120 C50,114 47,103 31,103 Z"/>'+
+     '<path d="M31,143 C55,143 55,125 33,120 C50,126 47,137 31,137 Z"/>'+
+     '<circle cx="34" cy="120" r="1.6"/></g>';
+}
+
+function drawScore(phrase){
+  const events=phrase.events;
+  const noteRestCount=events.filter(e=>e.type==='note'||e.type==='rest').length;
+  const barCount=events.filter(e=>e.type==='bar').length;
+  const W=70+noteRestCount*36+barCount*16+30;
+  const H=240;
+  const lines=[96,108,120,132,144];
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+  s+=`<rect width="${W}" height="${H}" fill="#fbfbf7"/>`;
+  for(const y of lines) s+=`<line x1="10" y1="${y}" x2="${W-10}" y2="${y}" stroke="#16202b" stroke-width="1.3"/>`;
+  s+=drawClef();
+  let x=70;
+  let pendingBeamStart=null;
+  events.forEach(ev=>{
+    if(ev.type==='bar'){
+      s+=`<line x1="${x+6}" y1="94" x2="${x+6}" y2="146" stroke="#16202b" stroke-width="1.6"/>`;
+      x+=16;
+      return;
+    }
+    if(ev.type==='rest'){
+      const yMid=120;
+      s+=`<path d="M${x-2},${yMid-9} C${x+6},${yMid-7} ${x-6},${yMid-1} ${x+4},${yMid+1} C${x-4},${yMid+3} ${x+6},${yMid+9} ${x-2},${yMid+11}" stroke="#16202b" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+      x+=36;
+      return;
+    }
+    const p=ev.pitch;
+    const y=120-stepIndex(p)*6;
+    s+=ledgerLines(x,y);
+    if(p.acc){
+      const sym=p.acc==='#'?'♯':'♭';
+      s+=`<text x="${x-16}" y="${y+6}" font-size="19" font-family="serif" fill="#16202b">${sym}</text>`;
+    }
+    s+=`<ellipse cx="${x}" cy="${y}" rx="6.5" ry="4.8" fill="#16202b" transform="rotate(-22 ${x} ${y})"/>`;
+    const stemTopY=y-30;
+    s+=`<line x1="${x+6}" y1="${y-1}" x2="${x+6}" y2="${stemTopY}" stroke="#16202b" stroke-width="1.6"/>`;
+    if(ev.dur===0.5){
+      if(ev.beam==='start'){ pendingBeamStart={x:x+6,y:stemTopY}; }
+      else if(ev.beam==='end' && pendingBeamStart){
+        s+=`<line x1="${pendingBeamStart.x}" y1="${pendingBeamStart.y}" x2="${x+6}" y2="${stemTopY}" stroke="#16202b" stroke-width="4"/>`;
+        pendingBeamStart=null;
+      }
+    }
+    x+=36;
+  });
+  s+='</svg>';
+  document.getElementById('score').innerHTML=s;
+}
+
+function drawDictStack(notes){
+  const W=300,H=240,midY=120,noteX=170;
+  const lines=[96,108,120,132,144];
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+  s+=`<rect width="${W}" height="${H}" fill="#fbfbf7"/>`;
+  for(const y of lines) s+=`<line x1="10" y1="${y}" x2="${W-10}" y2="${y}" stroke="#16202b" stroke-width="1.3"/>`;
+  s+=drawClef();
+  notes.forEach(p=>{
+    const y=midY-stepIndex(p)*6;
+    s+=ledgerLines(noteX,y);
+    if(p.acc){ const sym=p.acc==='#'?'♯':'♭'; s+=`<text x="${noteX-16}" y="${y+6}" font-size="19" font-family="serif" fill="#16202b">${sym}</text>`; }
+    s+=`<ellipse cx="${noteX}" cy="${y}" rx="6.5" ry="4.8" fill="#16202b" transform="rotate(-22 ${noteX} ${y})"/>`;
+  });
+  s+='</svg>';
+  document.getElementById('score').innerHTML=s;
+}
+
+function playPhrase(){
+  if(!currentPhrase) return;
+  const ctx=ensureCtx();
+  const beatSec=60/getBpm();
+  const t0=ctx.currentTime+0.05;
+  for(let i=0;i<4;i++){
+    const t=t0+i*beatSec;
+    const accent=(i===0);
+    const osc=ctx.createOscillator(); osc.type='square'; osc.frequency.value=accent?1200:900;
+    const gain=ctx.createGain();
+    gain.gain.setValueAtTime(accent?0.2:0.15,t);
+    gain.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t+0.06);
+  }
+  let t=t0+4*beatSec;
+  currentPhrase.events.forEach(ev=>{
+    if(ev.type==='bar') return;
+    const dur=ev.dur*beatSec;
+    if(ev.type==='note'){
+      const freq=442*Math.pow(2,(ev.pitch.midi-69)/12);
+      const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
+      const gain=ctx.createGain();
+      gain.gain.setValueAtTime(0.0001,t);
+      gain.gain.exponentialRampToValueAtTime(0.25,t+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001,t+Math.max(dur*0.95,0.04));
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(t); osc.stop(t+dur+0.02);
+    }
+    t+=dur;
+  });
+}
+function playClick(){
+  if(!currentPhrase) return;
+  const ctx=ensureCtx();
+  const beatSec=60/getBpm();
+  const totalBeats=currentPhrase.events.filter(e=>e.type!=='bar').reduce((s,e)=>s+e.dur,0);
+  const beatCount=4+Math.ceil(totalBeats);
+  const t0=ctx.currentTime+0.05;
+  for(let i=0;i<beatCount;i++){
+    const osc=ctx.createOscillator(); osc.type='square'; osc.frequency.value=(i%4===0)?1200:900;
+    const gain=ctx.createGain();
+    const t=t0+i*beatSec;
+    gain.gain.setValueAtTime(0.18,t);
+    gain.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t+0.06);
+  }
+}
+
+/* ---------- リズムのみ ---------- */
+function timeSigInfo(label){
+  const map={'2/4':{beats:2},'3/4':{beats:3},'4/4':{beats:4}};
+  return map[label];
+}
+function genSimpleSlot(remainingUnits, excludeRest, usedUnits){
+  const aligned = (usedUnits%6===0);
+  const opts=[];
+  function add(units,weight,build){ if(units<=remainingUnits) opts.push({units,weight,build}); }
+  if(!excludeRest){
+    add(3,8,()=>[{type:'rest',dur:0.5}]);
+    add(6,10,()=>[{type:'rest',dur:1}]);
+    if(aligned) add(12,4,()=>[{type:'rest',dur:2}]);
+  }
+  add(6,24,()=>[{type:'note',dur:1}]);
+  add(6,18,()=>[{type:'note',dur:0.5,beam:'start'},{type:'note',dur:0.5,beam:'end'}]);
+  if(aligned) add(6,10,()=>[{type:'note',dur:1/3,trip:'start',beam:'start'},{type:'note',dur:1/3,trip:'mid',beam:'mid'},{type:'note',dur:1/3,trip:'end',beam:'end'}]);
+  if(aligned) add(9,8,()=>[{type:'note',dur:1.5}]);
+  if(aligned) add(12,8,()=>[{type:'note',dur:2}]);
+  const total=opts.reduce((s,o)=>s+o.weight,0);
+  let r=Math.random()*total;
+  for(const o of opts){ if(r<o.weight) return {units:o.units, events:o.build()}; r-=o.weight; }
+  return {units:3, events:[{type:'rest',dur:0.5}]};
+}
+function mergeRestsInMeasure(measureEvents){
+  const out=[]; let i=0;
+  while(i<measureEvents.length){
+    if(measureEvents[i].type==='rest'){
+      let sum=0, j=i;
+      while(j<measureEvents.length && measureEvents[j].type==='rest'){ sum+=measureEvents[j].dur; j++; }
+      let remaining=Math.round(sum*6);
+      const tokens=[[12,2],[6,1],[3,0.5]];
+      for(const [units,dur] of tokens){ while(remaining>=units){ out.push({type:'rest',dur}); remaining-=units; } }
+      i=j;
+    } else { out.push(measureEvents[i]); i++; }
+  }
+  return out;
+}
+function generateRhythmOnly(){
+  if(rhythmRandom){
+    const sigs=['2/4','3/4','4/4'];
+    timeSigLabel=sigs[Math.floor(Math.random()*sigs.length)];
+    const restOpts=[[0,0],[1,2],[3,6]];
+    const ro=restOpts[Math.floor(Math.random()*restOpts.length)];
+    restMin=ro[0]; restMax=ro[1];
+    rMeasures=3;
+    document.getElementById('timesig').value=timeSigLabel;
+    document.getElementById('restlen').value=restMin+','+restMax;
+    document.getElementById('rmeasures').value=String(rMeasures);
+  }
+  const info=timeSigInfo(timeSigLabel);
+  const restCount = restMin===restMax ? restMin : (restMin+Math.floor(Math.random()*(restMax-restMin+1)));
+  const events=[];
+  if(restCount>0) events.push({type:'restbar',count:restCount});
+  for(let m=0;m<rMeasures;m++){
+    const totalUnits=info.beats*6;
+    let used=0;
+    let measureEvents=[];
+    let lastWasTriplet=false;
+    while(used<totalUnits){
+      const remaining=totalUnits-used;
+      const slot=genSimpleSlot(remaining, lastWasTriplet, used);
+      measureEvents.push(...slot.events);
+      used+=slot.units;
+      lastWasTriplet=slot.events.some(e=>e.trip);
+    }
+    events.push(...mergeRestsInMeasure(measureEvents));
+    if(m<rMeasures-1) events.push({type:'bar'});
+  }
+  events.push({type:'bar'});
+  return {events,info,restCount,measures:rMeasures,timeSigLabel};
+}
+
+function drawRhythmStaff(phrase){
+  const events=phrase.events;
+  const unitPx=48;
+  let contentW=0, barCount=0, restbarW=0;
+  events.forEach(e=>{
+    if(e.type==='bar') barCount++;
+    else if(e.type==='restbar') restbarW=85;
+    else contentW += Math.max(e.dur*unitPx, 18);
+  });
+  const W=52+(restbarW?restbarW+16:0)+contentW+barCount*14;
+  const H=126;
+  const lineY=76;
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+  s+=`<rect width="${W}" height="${H}" fill="#fbfbf7"/>`;
+  s+=`<line x1="8" y1="${lineY}" x2="${W-8}" y2="${lineY}" stroke="#16202b" stroke-width="1.3"/>`;
+  let x=24;
+  let pendingBeam=null, pendingTriplet=null;
+  events.forEach(ev=>{
+    if(ev.type==='bar'){ s+=`<line x1="${x+5}" y1="${lineY-30}" x2="${x+5}" y2="${lineY+8}" stroke="#16202b" stroke-width="1.4"/>`; x+=11; return; }
+    if(ev.type==='restbar'){
+      const w=restbarW; const midY=lineY-6;
+      s+=`<line x1="${x}" y1="${midY}" x2="${x+w}" y2="${midY}" stroke="#16202b" stroke-width="3.5"/>`;
+      s+=`<line x1="${x}" y1="${midY-7}" x2="${x}" y2="${midY+7}" stroke="#16202b" stroke-width="1.8"/>`;
+      s+=`<line x1="${x+w}" y1="${midY-7}" x2="${x+w}" y2="${midY+7}" stroke="#16202b" stroke-width="1.8"/>`;
+      s+=`<text x="${x+w/2}" y="${midY-12}" font-size="15" font-weight="700" text-anchor="middle" fill="#16202b">${ev.count}</text>`;
+      x+=w+12; return;
+    }
+    const evW=Math.max(ev.dur*unitPx,18);
+    if(ev.type==='rest'){
+      const yMid=lineY;
+      if(ev.dur===0.5){
+        s+=`<path d="M${x},${yMid-6} C${x+6},${yMid-4} ${x-2},${yMid+1} ${x+4},${yMid+4}" stroke="#16202b" stroke-width="1.9" fill="none" stroke-linecap="round"/>`;
+      } else if(ev.dur===2){
+        s+=`<rect x="${x-6}" y="${yMid-8}" width="12" height="6" fill="#16202b"/>`;
+      } else {
+        s+=`<path d="M${x-2},${yMid-7} C${x+5},${yMid-6} ${x-5},${yMid-1} ${x+3},${yMid+1} C${x-3},${yMid+3} ${x+5},${yMid+7} ${x-2},${yMid+9}" stroke="#16202b" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+      }
+      x+=evW; return;
+    }
+    const y=lineY;
+    const isOpen = ev.dur>=2;
+    if(isOpen){
+      s+=`<ellipse cx="${x}" cy="${y}" rx="6" ry="4.4" fill="none" stroke="#16202b" stroke-width="1.7" transform="rotate(-22 ${x} ${y})"/>`;
+    } else {
+      s+=`<ellipse cx="${x}" cy="${y}" rx="5.5" ry="4.1" fill="#16202b" transform="rotate(-22 ${x} ${y})"/>`;
+    }
+    const stemTop=y-25;
+    s+=`<line x1="${x+5}" y1="${y-1}" x2="${x+5}" y2="${stemTop}" stroke="#16202b" stroke-width="1.4"/>`;
+    if(ev.dur===1.5){ s+=`<circle cx="${x+10}" cy="${y}" r="1.9" fill="#16202b"/>`; }
+    if(ev.beam==='start'){ pendingBeam={x:x+5,y:stemTop}; }
+    else if(ev.beam==='mid'){ if(pendingBeam){ s+=`<line x1="${pendingBeam.x}" y1="${pendingBeam.y}" x2="${x+5}" y2="${stemTop}" stroke="#16202b" stroke-width="3.2"/>`; pendingBeam={x:x+5,y:stemTop}; } }
+    else if(ev.beam==='end'){ if(pendingBeam){ s+=`<line x1="${pendingBeam.x}" y1="${pendingBeam.y}" x2="${x+5}" y2="${stemTop}" stroke="#16202b" stroke-width="3.2"/>`; pendingBeam=null; } }
+    if(ev.trip==='start'){ pendingTriplet={x:x}; }
+    if(ev.trip==='end' && pendingTriplet){
+      const midx=(pendingTriplet.x+x)/2;
+      s+=`<path d="M${pendingTriplet.x},${stemTop-5} L${midx-4},${stemTop-8} L${midx+4},${stemTop-8} L${x},${stemTop-5}" stroke="#16202b" stroke-width="1.1" fill="none"/>`;
+      s+=`<text x="${midx}" y="${stemTop-10}" font-size="10.5" text-anchor="middle" fill="#16202b">3</text>`;
+      pendingTriplet=null;
+    }
+    x+=evW;
+  });
+  s+='</svg>';
+  document.getElementById('score').innerHTML=s;
+}
+
+let currentAudioNodes=[];
+function stopAudio(){
+  currentAudioNodes.forEach(node=>{
+    try{ node.stop(); } catch(e){}
+  });
+  currentAudioNodes=[];
+}
+function playRhythmClicks(phrase, withTaps){
+  stopAudio();
+  const ctx=ensureCtx();
+  const bpm=getBpm();
+  const beatSec=60/bpm;
+  const info=phrase.info;
+  const totalMeasures=1+phrase.restCount+phrase.measures;
+  const t0=ctx.currentTime+0.05;
+  for(let i=0;i<info.beats*totalMeasures;i++){
+    const t=t0+i*beatSec;
+    const accent=(i%info.beats===0);
+    const osc=ctx.createOscillator(); osc.type='square'; osc.frequency.value=accent?1300:950;
+    const gain=ctx.createGain();
+    gain.gain.setValueAtTime(accent?0.22:0.16,t);
+    gain.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t+0.06);
+    currentAudioNodes.push(osc);
+  }
+  if(withTaps){
+    let tt=t0+info.beats*(1+phrase.restCount)*beatSec;
+    phrase.events.forEach(ev=>{
+      if(ev.type==='bar'||ev.type==='restbar') return;
+      const dur=ev.dur*beatSec;
+      if(ev.type==='note'){
+        const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=600;
+        const gain=ctx.createGain();
+        gain.gain.setValueAtTime(0.0001,tt);
+        gain.gain.exponentialRampToValueAtTime(0.3,tt+0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001,tt+Math.max(dur*0.95,0.06));
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(tt); osc.stop(tt+dur+0.05);
+        currentAudioNodes.push(osc);
+      }
+      tt+=dur;
+    });
+  }
+}
+
+/* ---------- 聴音 ---------- */
+// 広域聴音・臨時記号あり用：CesとFesを除外した有効音リスト
+// 各音を {letter, acc, midiOffset(C4=0基準)} で定義
+function buildDictPool(lowMidi, highMidi){
+  // 1オクターブ分の有効音（Ces=Hと同音なので除外、Fes=Eと同音なので除外）
+  const base = [
+    {letter:'C', acc:''},    // C
+    {letter:'C', acc:'#'},   // Cis
+    {letter:'D', acc:'b'},   // Des
+    {letter:'D', acc:''},    // D
+    {letter:'D', acc:'#'},   // Dis
+    {letter:'E', acc:'b'},   // Es
+    {letter:'E', acc:''},    // E  (Fesと同音なので♭Fは除外)
+    {letter:'F', acc:''},    // F
+    {letter:'F', acc:'#'},   // Fis
+    {letter:'G', acc:'b'},   // Ges
+    {letter:'G', acc:''},    // G
+    {letter:'G', acc:'#'},   // Gis
+    {letter:'A', acc:'b'},   // As
+    {letter:'A', acc:''},    // A
+    {letter:'A', acc:'#'},   // Ais
+    {letter:'B', acc:'b'},   // B
+    {letter:'B', acc:''},    // H  (CesはHと同音なのでCの♭は除外)
+  ];
+  const pool = [];
+  for(let oct = 2; oct <= 6; oct++){
+    for(const {letter, acc} of base){
+      const p = buildPitch(letter, oct, acc);
+      if(p.midi >= lowMidi && p.midi <= highMidi) pool.push(p);
+    }
+  }
+  return pool;
+}
+let lastDictMidi = null;
+let lastDictChordSig=null;
+function dictChordSignature(chord){
+  if(!chord) return null;
+  return (chord._key||'')+'|'+(chord._chordType||'')+'|'+chord.map(p=>p.midi).join(',');
+}
+// 直前の出題と同じ和音（調・種類・実音すべて一致）が連続しないようにする。
+// 生成自体は毎回、調・和音種を均等な確率で選び直しており、この関数はその結果を
+// 「直前と同じでなければ採用」というフィルタとしてかける（単音モードの直前midi回避と同じ考え方）。
+function dictGenerateChordAvoidingRepeat(genFn){
+  let chord=null;
+  for(let i=0;i<20;i++){
+    chord=genFn();
+    if(!chord) continue;
+    const sig=dictChordSignature(chord);
+    if(sig!==lastDictChordSig){ lastDictChordSig=sig; return chord; }
+  }
+  // 音域が極端に狭いなどで20回とも直前と同じだった場合は、やむを得ずそのまま採用
+  if(chord) lastDictChordSig=dictChordSignature(chord);
+  return chord;
+}
+function dictMakeChord(){
+  for(let t=0;t<40;t++){
+    // 調は毎回選び直す（固定すると、音域が狭いときにその調では組めず、
+    // 40回すべて失敗して単音にフォールバックしてしまうため。Score Readingと同じ対策）
+    // 和音は常に14調から選ぶ。調号0に絞ると2調（ハ長調・イ短調）しか残らず、
+    // 直前回避と組み合わさって実質2択の交互出題になってしまうため。
+    const key=pickKey(true);
+    const accMap=keySignatureMap(key.sharps,key.flats);
+    const cand=diatonicCandidates(dictLowMidi,dictHighMidi).filter(x=>x.letter===key.tonic);
+    const root=cand.length?cand[Math.floor(Math.random()*cand.length)]:{letter:key.tonic,octave:4};
+    const notes=[]; let li=LIDX[root.letter]+root.octave*7; let ok=true;
+    for(let n=0;n<3;n++){
+      const letter=LETTERS[li%7]; const octave=Math.floor(li/7);
+      const p=buildPitch(letter,octave,accMap[letter]);
+      if(p.midi<dictLowMidi-2||p.midi>dictHighMidi+2){ok=false;break;}
+      notes.push(p); li+=2;
+    }
+    if(ok&&notes.length===3){ notes._key=key.name; return notes; }
+  }
+  return null;
+}
+// ── 拡張和音（転回形・属七・減七）────────────────────────────────
+// Score Reading の makeChord と同じ定義・同じ組み立て方を移植したもの。
+// 表記（ラベル・調名）も Score Reading に揃える。
+const DICT_CHORD_TYPES=[
+  {id:'root', label:'主和音の基本形',   intervals:[0,4,7]},
+  {id:'inv1', label:'主和音の第一転回', intervals:[0,4,7], forcePos:1},
+  {id:'inv2', label:'主和音の第二転回', intervals:[0,4,7], forcePos:2},
+  {id:'dim7', label:'減七の和音',       intervals:[0,3,6,9]},
+  {id:'dom7', label:'属七の和音',       intervals:[0,4,7,10]}
+];
+
+// 根音(letter,octave)から、半音のリストで和音を積み上げる。
+// 文字は3度ずつダイアトニックに進め、調号との差を臨時記号として付与する。
+// rootOffset：根音を文字の本位音から半音ずらす（減七の導音など、調号で変化する根音に対応）
+function dictBuildStackedChord(rootLetter,rootOctave,intervalSemis,accMap,rootOffset){
+  const li0=LIDX[rootLetter]+rootOctave*7;
+  const rootNatural=(rootOctave+1)*12+SEMI[rootLetter]+(rootOffset||0);
+  const notes=[];
+  for(let n=0;n<intervalSemis.length;n++){
+    const li=li0+2*n;
+    const letter=LETTERS[((li%7)+7)%7]; const octave=Math.floor(li/7);
+    const natural=(octave+1)*12+SEMI[letter];
+    const keyAcc=accMap[letter]||'';
+    const keyDefault=natural+(keyAcc==='#'?1:keyAcc==='b'?-1:0);
+    const targetMidi=rootNatural+intervalSemis[n];
+    const diff=targetMidi-keyDefault;
+    if(diff<-1||diff>1) return null;
+    let finalAcc=keyAcc;
+    if(diff===1)      finalAcc=(keyAcc==='b'?'':keyAcc==='#'?'x':'#');
+    else if(diff===-1) finalAcc=(keyAcc==='#'?'':keyAcc==='b'?'bb':'b');
+    // ダブルシャープ・ダブルフラットは、音名表記もピタゴラス比率表も未対応のため出題しない
+    if(finalAcc==='x'||finalAcc==='bb') return null;
+    notes.push(buildPitch(letter,octave,finalAcc));
+  }
+  return notes;
+}
+
+// 基準音から「文字を何個進めるか」「半音を何個進めるか」で、正確な音高を求める
+function dictPitchFromStep(baseNote, letterSteps, semitoneSteps){
+  const li=LIDX[baseNote.letter]+baseNote.octave*7+letterSteps;
+  const letter=LETTERS[((li%7)+7)%7]; const octave=Math.floor(li/7);
+  const natural=(octave+1)*12+SEMI[letter];
+  const diff=(baseNote.midi+semitoneSteps)-natural;
+  return {letter, octave, acc: diff===1?'#':diff===-1?'b':''};
+}
+
+// 実際に生成された音から長三和音・短三和音を判定する（転回形ではオクターブ差を正規化）
+function dictIsMajorFromNotes(notes, rootLetter){
+  const thirdLetter=LETTERS[(LIDX[rootLetter]+2)%7];
+  let rootNote=null, thirdNote=null;
+  for(const n of notes){
+    if(n.letter===rootLetter && !rootNote) rootNote=n;
+    if(n.letter===thirdLetter && !thirdNote) thirdNote=n;
+  }
+  if(!rootNote||!thirdNote) return true;
+  let semi=(thirdNote.midi-rootNote.midi)%12; if(semi<0) semi+=12;
+  if(semi===4) return true;
+  if(semi===3) return false;
+  return true;
+}
+
+const DICT_JP_ROOT={
+  'C':'ハ','D':'ニ','E':'ホ','F':'ヘ','G':'ト','A':'イ','B':'ロ','H':'ロ',
+  'Cis':'嬰ハ','Dis':'嬰ニ','Eis':'嬰ホ','Fis':'嬰ヘ','Gis':'嬰ト','Ais':'嬰イ','His':'嬰ロ',
+  'Ces':'変ハ','Des':'変ニ','Es':'変ホ','Fes':'変ヘ','Ges':'変ト','As':'変イ','Bes':'変ロ','B':'変ロ'
+};
+function dictJapaneseKeyName(letter, acc, isMajor){
+  return (DICT_JP_ROOT[germanName(letter,acc)]||'ハ') + (isMajor?'長調':'短調');
+}
+
+// 拡張和音の出題。調・和音種は毎回ループの中で選び直す
+// （外で1回だけ選ぶと、音域が狭いときに全試行が失敗して単音が出てしまうため）
+function dictMakeExtendedChord(){
+  // 和音の種類を先に均等な確率で1つ選び、音域内で組めるまで調・根音だけを選び直す。
+  // （種類も一緒に選び直してしまうと、音域内で組みやすい種類ほど結果的に多く選ばれてしまう）
+  const type=DICT_CHORD_TYPES[Math.floor(Math.random()*DICT_CHORD_TYPES.length)];
+  for(let t=0;t<80;t++){
+    // 和音は常に14調から選ぶ（理由は dictMakeChord のコメント参照）
+    const key=pickKey(true);
+    const accMap=keySignatureMap(key.sharps,key.flats);
+    const cand=diatonicCandidates(dictLowMidi,dictHighMidi).filter(x=>x.letter===key.tonic);
+    const tonicPos=cand.length?cand[Math.floor(Math.random()*cand.length)]:{letter:key.tonic,octave:4};
+    const rootLetter=tonicPos.letter;
+    let notes=null;
+
+    if(type.id==='dom7'){
+      // 主音を属音とする調（下属調）の属七＝主音の5度上を根音とする
+      const li=LIDX[tonicPos.letter]+tonicPos.octave*7+4;
+      notes=dictBuildStackedChord(LETTERS[((li%7)+7)%7], Math.floor(li/7), [0,4,7,10], accMap);
+    } else if(type.id==='dim7'){
+      // 減七の根音は「主音の半音下＝導音」。調号を反映した主音から求める
+      const li=LIDX[tonicPos.letter]+tonicPos.octave*7-1;
+      const leadLetter=LETTERS[((li%7)+7)%7], leadOctave=Math.floor(li/7);
+      const tAcc=accMap[tonicPos.letter]||'';
+      const tonicMidi=(tonicPos.octave+1)*12+SEMI[tonicPos.letter]+(tAcc==='#'?1:tAcc==='b'?-1:0);
+      const leadOffset=(tonicMidi-1)-((leadOctave+1)*12+SEMI[leadLetter]);
+      notes=dictBuildStackedChord(leadLetter, leadOctave, [0,3,6,9], accMap, leadOffset);
+    } else {
+      const isMinorKey=key.name.indexOf('短調')!==-1;
+      notes=dictBuildStackedChord(tonicPos.letter, tonicPos.octave, isMinorKey?[0,3,7]:[0,4,7], accMap);
+      if(notes && type.forcePos){
+        for(let i=0;i<type.forcePos;i++){
+          const low=notes.shift();
+          notes.push(buildPitch(low.letter, low.octave+1, low.acc));
+        }
+      }
+    }
+
+    if(!notes) continue;
+    if(notes.some(p=>p.midi<dictLowMidi-2||p.midi>dictHighMidi+2)) continue;
+
+    let namingLetter, namingAcc, isMajor;
+    if(type.id==='dom7'){
+      // 根音（属音）の完全4度上が主音。属七は長短を区別できないため常に長調表記
+      const tp=dictPitchFromStep(notes[0], 3, 5);
+      namingLetter=tp.letter; namingAcc=tp.acc; isMajor=true;
+    } else if(type.id==='dim7'){
+      // 根音（導音）の半音上が主音。減七も長短を区別できないため常に長調表記
+      const tp=dictPitchFromStep(notes[0], 1, 1);
+      namingLetter=tp.letter; namingAcc=tp.acc; isMajor=true;
+    } else {
+      const rootInChord=notes.find(n=>n.letter===rootLetter);
+      namingLetter=rootLetter;
+      namingAcc=rootInChord?rootInChord.acc:(accMap[rootLetter]||'');
+      isMajor=dictIsMajorFromNotes(notes, rootLetter);
+    }
+
+    notes._key=dictJapaneseKeyName(namingLetter, namingAcc, isMajor);
+    notes._chordType=type.label;
+    // 減七は短3度×3の積み重ねという構造上、純正律の値が一意に定まらないため平均律で鳴らす
+    notes._equalTemp=(type.id==='dim7');
+    return notes;
+  }
+  return null;
+}
+
+function playTone(freq,t,dur,sustain){
+  const ctx=ensureCtx();
+  const osc=ctx.createOscillator(); osc.type='triangle'; osc.frequency.value=freq;
+  const gain=ctx.createGain();
+  gain.gain.setValueAtTime(0.0001,t);
+  gain.gain.exponentialRampToValueAtTime(0.26,t+0.02);
+  if(sustain){
+    // 減衰させず、鳴っている間は一定音量を保持する（和音の構成音を均等に聴き取れるようにするため）。
+    // 終了直前だけ短く下げて、プツッというクリックノイズを防ぐ。
+    gain.gain.setValueAtTime(0.26,t+dur-0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  } else {
+    gain.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  }
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(t); osc.stop(t+dur+0.05);
+}
+function playReferenceAndTarget(){
+  if(!currentDictNotes) return;
+  const ctx=ensureCtx();
+  const t0=ctx.currentTime+0.05;
+  if(dictMode==='octave1'){
+    // 中央1オクターブモード: 基準音なし、ピタゴラス音律で2秒再生
+    const freq = pythFreqFromPitch(currentDictNotes[0]);
+    playTone(freq, t0, 3.0);
+  } else if(currentDictNotes.length>1){
+    // 和音モード: 基準音1秒 → 1秒の無音（脳内で保持） → 和音を2秒、減衰なしで再生（純正律）
+    playTone(dictTonicFreq, t0, 1.0);
+    const t1=t0+1.0+1.0;
+    const jiMap=chordFreqs(currentDictNotes, currentDictNotes._equalTemp);
+    currentDictNotes.forEach(p=>{ playTone(jiMap.get(p), t1, 2.0, true); });
+  } else {
+    // 単音モード（通常/低音/混合）: 基準音（442 or 221Hz）を0.7秒→出題音0.9秒（ピタゴラス、基準Aから5度連鎖）
+    playTone(dictTonicFreq, t0, 0.7);
+    const t1=t0+1.0;
+    currentDictNotes.forEach(p=>{ playTone(pythFreqFromPitch(p), t1, 0.9); });
+  }
+}
+function newDictNote(){
+  // 基準音と音域の決定：low/normalは固定、mixedは出題ごとにランダムで221/442を選ぶ
+  if(dictMode==='low'){
+    dictTonicFreq=221;
+    [dictLowMidi,dictHighMidi]=DICT_TONIC_RANGE[221];
+  } else if(dictMode==='mixed'){
+    dictTonicFreq = Math.random()<0.5 ? 221 : 442;
+    [dictLowMidi,dictHighMidi]=DICT_TONIC_RANGE[dictTonicFreq];
+  } else if(dictMode==='normal'){
+    dictTonicFreq=442;
+    if(!DICT_TONIC_RANGE[442].includes(dictLowMidi)) {} // 音域セレクタでの手動選択を優先（下の分岐では上書きしない）
+  }
+  if(dictMode==='octave1'){
+    // 中央1オクターブモード
+    currentDictNotes=[pickOctave1Note()];
+    currentDictKeyName=null;
+    currentDictChordType=null;
+  } else if(dictType==='chord'){
+    let chord = dictGenerateChordAvoidingRepeat(dictChordSet==='extended' ? dictMakeExtendedChord : dictMakeChord);
+    // 拡張和音が音域内で組めなかった場合は、主和音にフォールバックする
+    if(!chord && dictChordSet==='extended') chord=dictGenerateChordAvoidingRepeat(dictMakeChord);
+    if(!chord){ const cand=diatonicCandidates(dictLowMidi,dictHighMidi); const c=cand[Math.floor(Math.random()*cand.length)]; chord=[buildPitch(c.letter,c.octave,'')]; chord._key=null; }
+    currentDictNotes=chord;
+    currentDictKeyName=chord._key||null;
+    currentDictChordType=chord._chordType||null;
+  } else {
+    // 単音モード：臨時記号ありならCes/Fes除外済みの半音階プール、なしならダイアトニック音のみ。
+    // どちらの場合も「基準音そのもの（A）」を除外する。基準音と同じ音を出題すると、
+    // 基準音がそのまま繰り返されただけになり、判別の意味がなくなるため。
+    const anchorMidi = dictTonicFreq===221 ? 57 : 69; // 221Hz=A3(57), 442Hz=A4(69)
+    const pool = (dictUseAcc
+      ? buildDictPool(dictLowMidi, dictHighMidi)
+      : diatonicCandidates(dictLowMidi, dictHighMidi).map(c=>buildPitch(c.letter,c.octave,''))
+    ).filter(p => p.midi !== anchorMidi);
+    const filtered = pool.length > 1 ? pool.filter(p => p.midi !== lastDictMidi) : pool;
+    const p = filtered[Math.floor(Math.random()*filtered.length)];
+    lastDictMidi = p.midi;
+    currentDictNotes=[p];
+    currentDictKeyName=null;
+    currentDictChordType=null;
+  }
+  dictRevealed=false;
+  const placeholder = dictMode==='octave1'
+    ? '🔊 出題音が鳴ります（基準音なし）<br>頭の中でA=442を鳴らし、音名を思い浮かべたら「答えを見る」'
+    : '🔊 基準音(A='+dictTonicFreq+')に続いて'+(dictType==='chord'?'和音':'出題音')+'が鳴ります<br>'+(dictType==='chord'?'和音':'音名')+'を思い浮かべたら「答えを見る」';
+  document.getElementById('score').innerHTML='<div class="placeholder">'+placeholder+'</div>';
+  document.getElementById('dict-judge').style.display='none';
+  document.getElementById('play').style.display='';
+  dictStartTime=performance.now();
+  playReferenceAndTarget();
+}
+function revealDict(){
+  if(!currentDictNotes||dictRevealed) return;
+  dictRevealed=true;
+  dictElapsed=(performance.now()-dictStartTime)/1000;
+  if(dictType==='chord') drawDictStack(currentDictNotes);
+  else drawScore({events:[{type:'note',dur:1,pitch:currentDictNotes[0]},{type:'bar'}]});
+  const namesDiv=document.createElement('div');
+  namesDiv.style.textAlign='center';
+  namesDiv.style.marginTop='8px';
+  namesDiv.style.fontSize=(dictType==='chord'?'17px':'22px');
+  namesDiv.style.fontWeight='800';
+  namesDiv.style.color='#0f1722';
+  const doremi=currentDictNotes.map(p=>p.nameDoremi).join(' ');
+  const ger=currentDictNotes.map(p=>p.nameGerman).join(' ');
+  let txt=doremi+'　/　'+ger;
+  if(currentDictKeyName) txt+='　|　'+currentDictKeyName+(currentDictChordType?'　'+currentDictChordType:'の主和音');
+  namesDiv.textContent=txt;
+  document.getElementById('score').appendChild(namesDiv);
+  document.getElementById('play').style.display='none';
+  document.getElementById('dict-judge').style.display='flex';
+}
+function judgeDict(ok){
+  if(!dictRevealed) return;
+  dictTotal++; if(ok) dictCorrect++;
+  dictTimeSum+=dictElapsed;
+  updateDictStats();
+  newDictNote();
+}
+function updateDictStats(){
+  document.getElementById('dict-total').textContent=dictTotal;
+  document.getElementById('dict-acc').textContent=dictTotal?Math.round(dictCorrect/dictTotal*100)+'%':'–';
+  document.getElementById('dict-time').textContent=dictTotal?(dictTimeSum/dictTotal).toFixed(1):'–';
+}
+
+/* ---------- 共通 ---------- */
+function ensureCtx(){ 
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); 
+  // iOSでは着信やアプリ切替の後に 'interrupted' になることがある。
+  // この状態は resume() では戻らないため、AudioContextを作り直す（作り直しは同期的に完了する）。
+  if(audioCtx.state==='interrupted'){
+    try{ audioCtx.close(); }catch(e){}
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  }
+  if(audioCtx.state==='suspended') audioCtx.resume().catch(e=>console.error('Audio resume failed:',e));
+  return audioCtx; 
+}
+function getBpm(){ return Number(document.getElementById('bpm').value); }
+function updateStats(){ document.getElementById('s-count').textContent=count; }
+function judgePR(ok){
+  prTotal++;
+  if(ok){ prOk++; prOkBpmSum+=getBpm(); }
+  updatePRStats();
+  // 次のフレーズへは「できた」「まだ難しい」ボタン操作後に移動
+  newPhrase();
+}
+function updatePRStats(){
+  document.getElementById('pr-acc').textContent=prTotal?Math.round(prOk/prTotal*100)+'%':'–';
+  document.getElementById('pr-bpm').textContent=prOk?Math.round(prOkBpmSum/prOk)+' BPM':'–';
+}
+
+function newPhrase(){
+  if(appMode==='pitch'){
+    currentPhrase=(contourMode==='natural') ? generateNaturalPhrase() : generatePhrase();
+    drawScore(currentPhrase);
+  } else {
+    currentPhrase=generateRhythmOnly();
+    drawRhythmStaff(currentPhrase);
+  }
+  count++;
+  updateStats();
+}
+
+document.getElementById('next').onclick=()=>{ appMode==='dictation' ? newDictNote() : newPhrase(); };
+document.getElementById('play').onclick=()=>{
+  if(appMode==='pitch') playPhrase();
+  else if(appMode==='rhythm') playRhythmClicks(currentPhrase,true);
+  else revealDict();
+};
+document.getElementById('click').onclick=()=>{
+  if(appMode==='pitch') playClick();
+  else if(appMode==='rhythm') playRhythmClicks(currentPhrase,false);
+  else playReferenceAndTarget();
+};
+document.getElementById('dict-right').onclick=()=>judgeDict(true);
+document.getElementById('dict-wrong').onclick=()=>judgeDict(false);
+document.getElementById('warmup-start').onclick=()=>{ playWarmup(); };
+document.getElementById('warmup-metro-only').onclick=()=>{ playWarmupMetroOnly(); };
+document.getElementById('warmup-metro-check').addEventListener('change',e=>{ warmupMetro=e.target.checked; });
+document.getElementById('warmup-ok').onclick=()=>{ judgeWarmup(true); document.getElementById('warmup-judge').style.display='none'; };
+document.getElementById('warmup-fail').onclick=()=>{ judgeWarmup(false); document.getElementById('warmup-judge').style.display='none'; };
+document.getElementById('pr-ok').onclick=()=>{ judgePR(true); };
+document.getElementById('pr-fail').onclick=()=>{ judgePR(false); };
+document.getElementById('resetstats').onclick=()=>{
+  count=0;dictTotal=0;dictCorrect=0;dictTimeSum=0;
+  warmupTotal=0;warmupOk=0;warmupOkBpmSum=0;
+  prTotal=0;prOk=0;prOkBpmSum=0;
+  updateStats();updateDictStats();updateWarmupStats();updatePRStats();
+};
+
+function applyModeVisibility(){
+  document.getElementById('warmup-settings').style.display = appMode==='warmup' ? '' : 'none';
+  document.getElementById('pitch-settings').style.display = appMode==='pitch' ? '' : 'none';
+  document.getElementById('rhythm-settings').style.display = appMode==='rhythm' ? '' : 'none';
+  document.getElementById('dict-settings').style.display = appMode==='dictation' ? '' : 'none';
+
+  document.getElementById('main-stats').style.display = (appMode==='pitch'||appMode==='rhythm') ? 'flex' : 'none';
+  document.getElementById('dict-stats').style.display = appMode==='dictation' ? 'flex' : 'none';
+  document.getElementById('warmup-stats').style.display = appMode==='warmup' ? 'flex' : 'none';
+
+  document.getElementById('pitch-rhythm-controls').style.display = (appMode==='pitch'||appMode==='rhythm'||appMode==='dictation') ? 'flex' : 'none';
+  document.getElementById('pr-judge').style.display = (appMode==='pitch'||appMode==='rhythm') ? 'flex' : 'none';
+  document.getElementById('warmup-controls').style.display = appMode==='warmup' ? 'flex' : 'none';
+  document.getElementById('warmup-metro-opt').style.display = appMode==='warmup' ? 'flex' : 'none';
+  document.getElementById('warmup-judge').style.display='none';
+  document.getElementById('dict-judge').style.display='none';
+  document.getElementById('next-controls').style.display = (appMode==='warmup') ? 'none' : 'flex';
+}
+
+// 記号モード切り替え
+const RANGE_PRESETS = {
+  treble: {
+    pitch: [
+      {value:'60,84', label:'標準（C4–C6）', selected:true},
+      {value:'60,91', label:'高音含む（C4–G6）'},
+      {value:'55,79', label:'中低音（G3–G5）'},
+      {value:'48,77', label:'低音（C3–F5）'},
+    ],
+    dict: [
+      {value:'60,84', label:'標準（C4–C6）', selected:true},
+      {value:'60,91', label:'高音含む（C4–G6）'},
+      {value:'55,79', label:'中低音（G3–G5）'},
+      {value:'48,77', label:'低音（C3–F5）'},
+    ],
+    defaultPitch:[60,84], defaultDict:[60,84]
+  },
+  alto: {
+    pitch: [
+      {value:'48,81', label:'標準（C3–A5）'},
+      {value:'48,88', label:'高音含む（C3–E6）'},
+      {value:'53,72', label:'アルト記号中心（F3–C5）', selected:true},
+      {value:'48,77', label:'低～中（C3–F5）'},
+    ],
+    dict: [
+      {value:'48,81', label:'標準（C3–A5）'},
+      {value:'48,88', label:'高音含む（C3–E6）'},
+      {value:'53,72', label:'アルト記号中心（F3–C5）', selected:true},
+      {value:'48,77', label:'低～中（C3–F5）'},
+    ],
+    defaultPitch:[53,72], defaultDict:[53,72]
+  }
+};
+function applyRangePresets(mode){
+  const pr=RANGE_PRESETS[mode];
+  const rsel=document.getElementById('range');
+  rsel.innerHTML=pr.pitch.map(o=>`<option value="${o.value}"${o.selected?' selected':''}>${o.label}</option>`).join('');
+  const dsel=document.getElementById('dict-range');
+  dsel.innerHTML=pr.dict.map(o=>`<option value="${o.value}"${o.selected?' selected':''}>${o.label}</option>`).join('');
+  [lowMidi,highMidi]=pr.defaultPitch;
+  [dictLowMidi,dictHighMidi]=pr.defaultDict;
+}
+document.getElementById('seg-clef').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  clefMode=b.dataset.v;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  applyRangePresets(clefMode);
+  if(appMode==='warmup') drawWarmupScore();
+  else if(appMode==='dictation') newDictNote();
+  else newPhrase();
+});
+
+document.getElementById('seg-dict-mode').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  dictMode=b.dataset.v;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  // 中央1オクターブ/低音/混合モードでは音域セレクタを非表示（自動で決まるため）
+  const isOct1 = dictMode==='octave1';
+  const isAutoRange = dictMode==='octave1' || dictMode==='low' || dictMode==='mixed';
+  document.getElementById('dict-range-row').style.display = isAutoRange?'none':'';
+  document.getElementById('seg-dict-type').closest('.opt').style.display = isOct1?'none':'';
+  syncDictChordSetRow();
+  newDictNote();
+});
+document.getElementById('seg-appmode').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  appMode=b.dataset.v;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  applyModeVisibility();
+  if(appMode==='dictation'){
+    document.getElementById('click').textContent='🔊 もう一度聴く';
+    document.getElementById('play').textContent='答えを見る';
+    document.getElementById('next').textContent='次の音';
+    newDictNote();
+  } else if(appMode==='warmup'){
+    drawWarmupScore();
+  } else {
+    document.getElementById('click').textContent='メトロノームを聴く';
+    document.getElementById('play').textContent='🔊 正解を聞く';
+    document.getElementById('next').textContent='次のフレーズ';
+    newPhrase();
+  }
+});
+document.getElementById('seg-warmup-key').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;warmupKey=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));syncWarmupTypeAvailability();document.getElementById('warmup-judge').style.display='none';drawWarmupScore();});
+document.getElementById('seg-warmup-type').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;warmupType=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));document.getElementById('warmup-judge').style.display='none';drawWarmupScore();});
+document.getElementById('seg-contour').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;contourMode=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newPhrase();});
+document.getElementById('seg-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;useAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newPhrase();});
+document.getElementById('seg-dict-type').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictType=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));syncDictChordSetRow();newDictNote();});
+document.getElementById('seg-dict-chordset').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictChordSet=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
+document.getElementById('seg-dict-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictUseAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
+// 「和音の種類」は和音モードのときだけ、「臨時記号」は単音モードのときだけ表示する。
+// 臨時記号の選択は単音専用（和音は常に14調）なので、和音モードでは出さない。
+function syncDictChordSetRow(){
+  const isChord = dictType==='chord' && dictMode!=='octave1';
+  document.getElementById('dict-chordset-row').style.display = isChord ? '' : 'none';
+  document.getElementById('dict-acc-row').style.display = isChord ? 'none' : '';
+}
+document.getElementById('range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);lowMidi=lo;highMidi=hi;newPhrase();};
+document.getElementById('dict-range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);dictLowMidi=lo;dictHighMidi=hi;newDictNote();};
+document.getElementById('measures').onchange=e=>{measures=Number(e.target.value);newPhrase();};
+document.getElementById('seg-rhythm-random').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rhythmRandom=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));document.getElementById('rhythm-manual-settings').style.display=rhythmRandom?'none':'';newPhrase();});
+document.getElementById('timesig').onchange=e=>{timeSigLabel=e.target.value;newPhrase();};
+document.getElementById('restlen').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);restMin=lo;restMax=hi;newPhrase();};
+document.getElementById('rmeasures').onchange=e=>{rMeasures=Number(e.target.value);newPhrase();};
+document.getElementById('bpm').oninput=e=>{document.getElementById('bpmval').textContent=e.target.value+' BPM';};
+
+applyModeVisibility();
+syncWarmupTypeAvailability();
+drawWarmupScore();
+</script>
+</body>
+</html>
