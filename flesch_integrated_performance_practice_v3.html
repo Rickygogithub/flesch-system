@@ -71,8 +71,25 @@
   <!-- ① 主音ロングトーン -->
   <section>
     <h2>① 主音ロングトーン</h2>
-    <div class="hint">主音を伸ばし続けます。「高音を重ねる」モードは4拍子（２オクターブ用）、6拍子（３オクターブ）和音の練習専用。</div>
-    <div class="opt"><span>調</span>
+    <div class="hint">主音を伸ばし続けます。「高音を重ねる」モードは4拍子（２オクターブ用）、6拍子（３オクターブ）和音の練習専用。<br>モードでは、調を手動で選ぶほかに、平行調ペア・同主調ペアを5度圏の右回りに1つずつ進める練習、26調をランダムに出す練習が選べます。</div>
+    <div class="opt"><span>モード</span>
+      <select id="lt-mode">
+        <option value="manual" selected>マニュアル（調を選択）</option>
+        <option value="parallel">平行調ペア（右回り）</option>
+        <option value="samekey">同主調ペア（右回り）</option>
+        <option value="random">ランダム（26調）</option>
+      </select>
+    </div>
+    <div id="lt-auto-box" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid #dde3ec;border-radius:8px;background:#f8f9fb;">
+      <div id="lt-auto-key" style="font-size:18px;font-weight:800;color:#0f1722;text-align:center;margin-bottom:8px;">「次の調」を押してください</div>
+      <div style="text-align:center;"><button id="lt-next" style="font-size:13px;">次の調</button></div>
+      <div id="lt-side-row" style="display:none;text-align:center;margin-top:8px;">
+        <button id="lt-side-major" style="font-size:13px;">長調の主音</button>
+        <button id="lt-side-minor" style="font-size:13px;">短調の主音</button>
+      </div>
+      <div style="font-size:11.5px;color:#666;margin-top:8px;line-height:1.6;">調名を見て主音を思い浮かべ（または歌い）、「スタート」で確認してください。平行調ペアは主音が2つあるので、上のボタンで長調・短調それぞれの主音を鳴らせます。</div>
+    </div>
+    <div class="opt" id="lt-key-row"><span>調</span>
       <select id="lt-key">
         <option value="C" selected>ハ長調・ハ短調</option>
         <option value="G">ト長調・ト短調</option>
@@ -1519,13 +1536,103 @@ let lt={active:false,osc:null,gain:null,hiOsc:null,hiGain:null,timer:null,startT
 // 「高音を重ねる」は6拍子専用：1小節（6拍）を1サイクルとし、4拍目だけ高音
 const LT_OVERLAY_CYCLE_BEATS=6, LT_OVERLAY_PEAK_BEAT=4;
 
+/* ===== ①主音ロングトーン：モード（マニュアル／平行調ペア／同主調ペア／ランダム） ===== */
+// 主音MIDIの補完（既存のif連鎖に無い調のみ。値は主音の実音）
+const LT_TONIC_MIDI_EXTRA = { 'Hm':59, 'Fism':54, 'Bbm':58, 'Ebm':51 };
+
+// 平行調ペア（右回り：♯を1つずつ増やし、♯6→♭6に移って1つずつ減らしヘ長調で終わる）。
+// 主音は長調・短調で異なるため、両方のコードを持つ。[表示名, 長調の主音, 短調の主音]
+const LT_PAIRS_PARALLEL = [
+  ['ハ長調 ／ イ短調','C','Am'],   ['ト長調 ／ ホ短調','G','Em'],   ['ニ長調 ／ ロ短調','D','Hm'],
+  ['イ長調 ／ 嬰ヘ短調','A','Fism'], ['ホ長調 ／ 嬰ハ短調','E','Cism'], ['ロ長調 ／ 嬰ト短調','B','Gism'],
+  ['嬰ヘ長調 ／ 嬰ニ短調','Fis','Dism'],
+  ['変ト長調 ／ 変ホ短調','Ges','Ebm'], ['変ニ長調 ／ 変ロ短調','Des','Bbm'], ['変イ長調 ／ ヘ短調','Ab','Fm'],
+  ['変ホ長調 ／ ハ短調','Eb','Cm'], ['変ロ長調 ／ ト短調','Bb','Gm'], ['ヘ長調 ／ ニ短調','F','Dm']
+];
+// 同主調ペア（右回り。主音は長短で共通）
+const LT_PAIRS_SAMEKEY = [
+  ['ハ長調 ／ ハ短調','C'],   ['ト長調 ／ ト短調','G'],   ['ニ長調 ／ ニ短調','D'],
+  ['イ長調 ／ イ短調','A'],   ['ホ長調 ／ ホ短調','E'],   ['ロ長調 ／ ロ短調','B'],
+  ['嬰ヘ長調 ／ 嬰ヘ短調','Fis'],
+  ['変ト長調 ／ 変ト短調','Ges'], ['変ニ長調 ／ 変ニ短調','Des'], ['変イ長調 ／ 変イ短調','Ab'],
+  ['変ホ長調 ／ 変ホ短調','Eb'], ['変ロ長調 ／ 変ロ短調','Bb'], ['ヘ長調 ／ ヘ短調','F']
+];
+// ランダム用の26調（長調13＋短調13）
+const LT_KEYS_26 = [
+  ['ハ長調','C'],['ト長調','G'],['ニ長調','D'],['イ長調','A'],['ホ長調','E'],['ロ長調','B'],['嬰ヘ長調','Fis'],
+  ['ヘ長調','F'],['変ロ長調','Bb'],['変ホ長調','Eb'],['変イ長調','Ab'],['変ニ長調','Des'],['変ト長調','Ges'],
+  ['イ短調','Am'],['ホ短調','Em'],['ロ短調','Hm'],['嬰ヘ短調','Fism'],['嬰ハ短調','Cism'],['嬰ト短調','Gism'],['嬰ニ短調','Dism'],
+  ['ニ短調','Dm'],['ト短調','Gm'],['ハ短調','Cm'],['ヘ短調','Fm'],['変ロ短調','Bbm'],['変ホ短調','Ebm']
+];
+
+// 現在の自動モードの状態。deckはランダム用の「重複なしで一巡する山札」。
+// 平行調ペアは主音が2つあるため、pairMajor/pairMinorとside（今どちらを鳴らすか）を持つ。
+const ltAuto = { key:null, idx:-1, deck:[], deckPos:0, pairMajor:null, pairMinor:null, side:'major' };
+
+function ltMode(){ return document.getElementById('lt-mode').value; }
+
+// 現在鳴らすべき調。マニュアルはプルダウン、自動モードは「次の調」で決まった調。
+function ltCurrentKey(){
+  if(ltMode()==='manual') return document.getElementById('lt-key').value;
+  if(ltMode()==='parallel'){
+    return (ltAuto.side==='minor' ? ltAuto.pairMinor : ltAuto.pairMajor) || 'C';
+  }
+  return ltAuto.key || 'C';
+}
+
+function ltShuffleDeck(){
+  const d = LT_KEYS_26.slice();
+  for(let i=d.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+  ltAuto.deck=d; ltAuto.deckPos=0;
+}
+
+// 「次の調」：ペアは右回りに1つ進め、ランダムは山札から1枚引く（一巡したら切り直す）。
+function ltNextKey(){
+  const mode=ltMode();
+  let label;
+  if(mode==='random'){
+    if(ltAuto.deckPos>=ltAuto.deck.length) ltShuffleDeck();
+    const [lbl,code]=ltAuto.deck[ltAuto.deckPos++];
+    label=lbl; ltAuto.key=code;
+  }else if(mode==='parallel'){
+    ltAuto.idx=(ltAuto.idx+1)%LT_PAIRS_PARALLEL.length;
+    const [lbl,maj,min]=LT_PAIRS_PARALLEL[ltAuto.idx];
+    label=lbl; ltAuto.pairMajor=maj; ltAuto.pairMinor=min; ltAuto.side='major';
+  }else{
+    ltAuto.idx=(ltAuto.idx+1)%LT_PAIRS_SAMEKEY.length;
+    const [lbl,code]=LT_PAIRS_SAMEKEY[ltAuto.idx];
+    label=lbl; ltAuto.key=code;
+  }
+  document.getElementById('lt-auto-key').textContent=label;
+}
+
+// 平行調ペア専用：鳴らす主音を長調／短調で切り替えて再生する。
+async function ltPlaySide(side){
+  if(!ltAuto.pairMajor){ return; } // まだ「次の調」が押されていない
+  if(lt.active) stopLT();
+  ltAuto.side=side;
+  await startLT();
+}
+
+// モード切替時：自動モードなら調プルダウンを隠し、進行状態を初期化する。
+function ltApplyMode(){
+  const mode=ltMode();
+  const auto = mode!=='manual';
+  document.getElementById('lt-auto-box').style.display = auto ? '' : 'none';
+  document.getElementById('lt-key-row').style.display = auto ? 'none' : '';
+  document.getElementById('lt-side-row').style.display = (mode==='parallel') ? '' : 'none';
+  ltAuto.key=null; ltAuto.idx=-1; ltAuto.deck=[]; ltAuto.deckPos=0;
+  ltAuto.pairMajor=null; ltAuto.pairMinor=null; ltAuto.side='major';
+  document.getElementById('lt-auto-key').textContent='「次の調」を押してください';
+}
+
 async function startLT(){
   if(lt.active)return;
   const ctx=await ensureCtx();
   lt.active=true;
   const metro=document.getElementById('lt-metro').checked;
   const meter=Number(document.getElementById('lt-meter').value);
-  const key=document.getElementById('lt-key').value;
+  const key=ltCurrentKey();
   const overlay=document.getElementById('lt-overlay').checked && meter===6;
   const bpm=Number(document.getElementById('lt-bpm').value);
   const spb=60/bpm;
@@ -1538,7 +1645,9 @@ async function startLT(){
   
   // lt-keyの値に応じて周波数を計算
   let tonicLowMidi, tonicHighMidi;
-  if(key==='Am') { tonicLowMidi=57; tonicHighMidi=57+36; }
+  const _extraMidi = LT_TONIC_MIDI_EXTRA[key];
+  if(_extraMidi!==undefined) { tonicLowMidi=_extraMidi; tonicHighMidi=_extraMidi+36; }
+  else if(key==='Am') { tonicLowMidi=57; tonicHighMidi=57+36; }
   else if(key==='G') { tonicLowMidi=55; tonicHighMidi=55+36; }
   else if(key==='Em') { tonicLowMidi=52; tonicHighMidi=52+36; }
   else if(key==='F') { tonicLowMidi=53; tonicHighMidi=53+36; }
@@ -1683,6 +1792,10 @@ const scCtl=makeController(buildScale,{
   start:document.getElementById('sc-start'),stop:document.getElementById('sc-stop')
 });
 
+document.getElementById('lt-mode').onchange=ltApplyMode;
+document.getElementById('lt-next').onclick=ltNextKey;
+document.getElementById('lt-side-major').onclick=()=>ltPlaySide('major');
+document.getElementById('lt-side-minor').onclick=()=>ltPlaySide('minor');
 document.getElementById('lt-start').onclick=startLT;
 document.getElementById('lt-stop').onclick=stopLT;
 function syncLtOverlayAvailability(){
