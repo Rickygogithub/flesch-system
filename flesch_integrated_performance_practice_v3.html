@@ -27,6 +27,7 @@
   button{font-family:inherit;border:none;border-radius:10px;padding:13px 16px;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent);flex:1}
   button:active{transform:translateY(1px)}
   button.stop{background:var(--bad)}
+  button.good{background:var(--good)}
   button:disabled{background:#c9d0da;cursor:default}
   .footnote{color:var(--muted);font-size:12.5px;font-weight:600;margin-top:8px;line-height:1.8}
   .footnote ul{margin:6px 0 6px 1.2em;padding:0}
@@ -82,10 +83,10 @@
     </div>
     <div id="lt-auto-box" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid #dde3ec;border-radius:8px;background:#f8f9fb;">
       <div id="lt-auto-key" style="font-size:18px;font-weight:800;color:#0f1722;text-align:center;margin-bottom:8px;">「次の調」を押してください</div>
-      <div style="text-align:center;"><button id="lt-next" style="font-size:13px;">次の調</button></div>
+      <div style="text-align:center;"><button id="lt-prev" style="font-size:13px;width:auto;padding:13px 14px;margin-right:6px;">← 前の調</button><button id="lt-next" style="font-size:13px;width:auto;padding:13px 14px;">次の調 →</button></div>
       <div id="lt-side-row" style="display:none;text-align:center;margin-top:8px;">
-        <button id="lt-side-major" style="font-size:13px;">長調の主音</button>
-        <button id="lt-side-minor" style="font-size:13px;">短調の主音</button>
+        <button id="lt-side-major" class="good" style="font-size:13px;width:auto;padding:13px 14px;margin-right:6px;">長調の主音</button>
+        <button id="lt-side-minor" class="good" style="font-size:13px;width:auto;padding:13px 14px;">短調の主音</button>
       </div>
       <div style="font-size:11.5px;color:#666;margin-top:8px;line-height:1.6;">調名を見て主音を思い浮かべ（または歌い）、「スタート」で確認してください。平行調ペアは主音が2つあるので、上のボタンで長調・短調それぞれの主音を鳴らせます。</div>
     </div>
@@ -1606,6 +1607,24 @@ function ltNextKey(){
   document.getElementById('lt-auto-key').textContent=label;
 }
 
+// 「前の調」：平行調ペア・同主調ペアのみ対応（ランダムは山札に順序の意味がないため非対応）。
+function ltPrevKey(){
+  const mode=ltMode();
+  if(mode!=='parallel' && mode!=='samekey') return;
+  const list = (mode==='parallel') ? LT_PAIRS_PARALLEL : LT_PAIRS_SAMEKEY;
+  if(ltAuto.idx<0) ltAuto.idx=0; // まだ何も選ばれていなければ先頭から
+  ltAuto.idx=(ltAuto.idx-1+list.length)%list.length;
+  if(mode==='parallel'){
+    const [lbl,maj,min]=list[ltAuto.idx];
+    ltAuto.pairMajor=maj; ltAuto.pairMinor=min; ltAuto.side='major';
+    document.getElementById('lt-auto-key').textContent=lbl;
+  }else{
+    const [lbl,code]=list[ltAuto.idx];
+    ltAuto.key=code;
+    document.getElementById('lt-auto-key').textContent=lbl;
+  }
+}
+
 // 平行調ペア専用：鳴らす主音を長調／短調で切り替えて再生する。
 async function ltPlaySide(side){
   if(!ltAuto.pairMajor){ return; } // まだ「次の調」が押されていない
@@ -1621,6 +1640,7 @@ function ltApplyMode(){
   document.getElementById('lt-auto-box').style.display = auto ? '' : 'none';
   document.getElementById('lt-key-row').style.display = auto ? 'none' : '';
   document.getElementById('lt-side-row').style.display = (mode==='parallel') ? '' : 'none';
+  document.getElementById('lt-prev').style.display = (mode==='parallel'||mode==='samekey') ? '' : 'none';
   ltAuto.key=null; ltAuto.idx=-1; ltAuto.deck=[]; ltAuto.deckPos=0;
   ltAuto.pairMajor=null; ltAuto.pairMinor=null; ltAuto.side='major';
   document.getElementById('lt-auto-key').textContent='「次の調」を押してください';
@@ -1794,6 +1814,7 @@ const scCtl=makeController(buildScale,{
 
 document.getElementById('lt-mode').onchange=ltApplyMode;
 document.getElementById('lt-next').onclick=ltNextKey;
+document.getElementById('lt-prev').onclick=ltPrevKey;
 document.getElementById('lt-side-major').onclick=()=>ltPlaySide('major');
 document.getElementById('lt-side-minor').onclick=()=>ltPlaySide('minor');
 document.getElementById('lt-start').onclick=startLT;
