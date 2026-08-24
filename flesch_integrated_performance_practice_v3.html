@@ -72,12 +72,14 @@
   <!-- ① 主音ロングトーン -->
   <section>
     <h2>① 主音ロングトーン</h2>
-    <div class="hint">主音を伸ばし続けます。「高音を重ねる」モードは4拍子（２オクターブ用）、6拍子（３オクターブ）和音の練習専用。<br>モードでは、調を手動で選ぶほかに、平行調ペア・同主調ペアを5度圏の右回りに1つずつ進める練習、26調をランダムに出す練習が選べます。</div>
+    <div class="hint">主音を伸ばし続けます。「高音を重ねる」モードは4拍子（２オクターブ用）、6拍子（３オクターブ）和音の練習専用。<br>モードでは、調を手動で選ぶほかに、平行調ペア・同主調ペアを5度圏の右回り／左回りに1つずつ進める練習、26調をランダムに出す練習が選べます。</div>
     <div class="opt"><span>モード</span>
       <select id="lt-mode">
         <option value="manual" selected>マニュアル（調を選択）</option>
         <option value="parallel">平行調ペア（右回り）</option>
+        <option value="parallel_left">平行調ペア（左回り）</option>
         <option value="samekey">同主調ペア（右回り）</option>
+        <option value="samekey_left">同主調ペア（左回り）</option>
         <option value="random">ランダム（26調）</option>
       </select>
     </div>
@@ -1558,6 +1560,22 @@ const LT_PAIRS_SAMEKEY = [
   ['変ト長調 ／ 変ト短調','Ges'], ['変ニ長調 ／ 変ニ短調','Des'], ['変イ長調 ／ 変イ短調','Ab'],
   ['変ホ長調 ／ 変ホ短調','Eb'], ['変ロ長調 ／ 変ロ短調','Bb'], ['ヘ長調 ／ ヘ短調','F']
 ];
+// 平行調ペア（左回り：ハ長調からスタートし♭方向へ進み、♭6→♯6に移ってト長調で終わる）。
+const LT_PAIRS_PARALLEL_LEFT = [
+  ['ハ長調 ／ イ短調','C','Am'],   ['ヘ長調 ／ ニ短調','F','Dm'],   ['変ロ長調 ／ ト短調','Bb','Gm'],
+  ['変ホ長調 ／ ハ短調','Eb','Cm'], ['変イ長調 ／ ヘ短調','Ab','Fm'], ['変ニ長調 ／ 変ロ短調','Des','Bbm'],
+  ['変ト長調 ／ 変ホ短調','Ges','Ebm'],
+  ['嬰ヘ長調 ／ 嬰ニ短調','Fis','Dism'], ['ロ長調 ／ 嬰ト短調','B','Gism'], ['ホ長調 ／ 嬰ハ短調','E','Cism'],
+  ['イ長調 ／ 嬰ヘ短調','A','Fism'], ['ニ長調 ／ ロ短調','D','Hm'], ['ト長調 ／ ホ短調','G','Em']
+];
+// 同主調ペア（左回り：ハ長調からスタートし♭方向へ進む）
+const LT_PAIRS_SAMEKEY_LEFT = [
+  ['ハ長調 ／ ハ短調','C'],   ['ヘ長調 ／ ヘ短調','F'],   ['変ロ長調 ／ 変ロ短調','Bb'],
+  ['変ホ長調 ／ 変ホ短調','Eb'], ['変イ長調 ／ 変イ短調','Ab'], ['変ニ長調 ／ 変ニ短調','Des'],
+  ['変ト長調 ／ 変ト短調','Ges'],
+  ['嬰ヘ長調 ／ 嬰ヘ短調','Fis'], ['ロ長調 ／ ロ短調','B'], ['ホ長調 ／ ホ短調','E'],
+  ['イ長調 ／ イ短調','A'], ['ニ長調 ／ ニ短調','D'], ['ト長調 ／ ト短調','G']
+];
 // ランダム用の26調（長調13＋短調13）
 const LT_KEYS_26 = [
   ['ハ長調','C'],['ト長調','G'],['ニ長調','D'],['イ長調','A'],['ホ長調','E'],['ロ長調','B'],['嬰ヘ長調','Fis'],
@@ -1571,11 +1589,21 @@ const LT_KEYS_26 = [
 const ltAuto = { key:null, idx:-1, deck:[], deckPos:0, pairMajor:null, pairMinor:null, side:'major' };
 
 function ltMode(){ return document.getElementById('lt-mode').value; }
+function ltIsParallelMode(mode){ return mode==='parallel' || mode==='parallel_left'; }
+function ltIsSamekeyMode(mode){ return mode==='samekey' || mode==='samekey_left'; }
+function ltPairList(mode){
+  if(mode==='parallel') return LT_PAIRS_PARALLEL;
+  if(mode==='parallel_left') return LT_PAIRS_PARALLEL_LEFT;
+  if(mode==='samekey') return LT_PAIRS_SAMEKEY;
+  if(mode==='samekey_left') return LT_PAIRS_SAMEKEY_LEFT;
+  return null;
+}
 
 // 現在鳴らすべき調。マニュアルはプルダウン、自動モードは「次の調」で決まった調。
 function ltCurrentKey(){
-  if(ltMode()==='manual') return document.getElementById('lt-key').value;
-  if(ltMode()==='parallel'){
+  const mode=ltMode();
+  if(mode==='manual') return document.getElementById('lt-key').value;
+  if(ltIsParallelMode(mode)){
     return (ltAuto.side==='minor' ? ltAuto.pairMinor : ltAuto.pairMajor) || 'C';
   }
   return ltAuto.key || 'C';
@@ -1587,7 +1615,7 @@ function ltShuffleDeck(){
   ltAuto.deck=d; ltAuto.deckPos=0;
 }
 
-// 「次の調」：ペアは右回りに1つ進め、ランダムは山札から1枚引く（一巡したら切り直す）。
+// 「次の調」：ペアは右回り／左回りに1つ進め、ランダムは山札から1枚引く（一巡したら切り直す）。
 function ltNextKey(){
   const mode=ltMode();
   let label;
@@ -1595,26 +1623,28 @@ function ltNextKey(){
     if(ltAuto.deckPos>=ltAuto.deck.length) ltShuffleDeck();
     const [lbl,code]=ltAuto.deck[ltAuto.deckPos++];
     label=lbl; ltAuto.key=code;
-  }else if(mode==='parallel'){
-    ltAuto.idx=(ltAuto.idx+1)%LT_PAIRS_PARALLEL.length;
-    const [lbl,maj,min]=LT_PAIRS_PARALLEL[ltAuto.idx];
+  }else if(ltIsParallelMode(mode)){
+    const list=ltPairList(mode);
+    ltAuto.idx=(ltAuto.idx+1)%list.length;
+    const [lbl,maj,min]=list[ltAuto.idx];
     label=lbl; ltAuto.pairMajor=maj; ltAuto.pairMinor=min; ltAuto.side='major';
   }else{
-    ltAuto.idx=(ltAuto.idx+1)%LT_PAIRS_SAMEKEY.length;
-    const [lbl,code]=LT_PAIRS_SAMEKEY[ltAuto.idx];
+    const list=ltPairList(mode);
+    ltAuto.idx=(ltAuto.idx+1)%list.length;
+    const [lbl,code]=list[ltAuto.idx];
     label=lbl; ltAuto.key=code;
   }
   document.getElementById('lt-auto-key').textContent=label;
 }
 
-// 「前の調」：平行調ペア・同主調ペアのみ対応（ランダムは山札に順序の意味がないため非対応）。
+// 「前の調」：平行調ペア・同主調ペア（右回り／左回りとも）のみ対応（ランダムは山札に順序の意味がないため非対応）。
 function ltPrevKey(){
   const mode=ltMode();
-  if(mode!=='parallel' && mode!=='samekey') return;
-  const list = (mode==='parallel') ? LT_PAIRS_PARALLEL : LT_PAIRS_SAMEKEY;
+  if(!ltIsParallelMode(mode) && !ltIsSamekeyMode(mode)) return;
+  const list = ltPairList(mode);
   if(ltAuto.idx<0) ltAuto.idx=0; // まだ何も選ばれていなければ先頭から
   ltAuto.idx=(ltAuto.idx-1+list.length)%list.length;
-  if(mode==='parallel'){
+  if(ltIsParallelMode(mode)){
     const [lbl,maj,min]=list[ltAuto.idx];
     ltAuto.pairMajor=maj; ltAuto.pairMinor=min; ltAuto.side='major';
     document.getElementById('lt-auto-key').textContent=lbl;
@@ -1639,8 +1669,8 @@ function ltApplyMode(){
   const auto = mode!=='manual';
   document.getElementById('lt-auto-box').style.display = auto ? '' : 'none';
   document.getElementById('lt-key-row').style.display = auto ? 'none' : '';
-  document.getElementById('lt-side-row').style.display = (mode==='parallel') ? '' : 'none';
-  document.getElementById('lt-prev').style.display = (mode==='parallel'||mode==='samekey') ? '' : 'none';
+  document.getElementById('lt-side-row').style.display = ltIsParallelMode(mode) ? '' : 'none';
+  document.getElementById('lt-prev').style.display = (ltIsParallelMode(mode)||ltIsSamekeyMode(mode)) ? '' : 'none';
   ltAuto.key=null; ltAuto.idx=-1; ltAuto.deck=[]; ltAuto.deckPos=0;
   ltAuto.pairMajor=null; ltAuto.pairMinor=null; ltAuto.side='major';
   document.getElementById('lt-auto-key').textContent='「次の調」を押してください';
