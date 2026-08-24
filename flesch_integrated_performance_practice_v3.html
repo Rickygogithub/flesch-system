@@ -73,6 +73,27 @@
   <section>
     <h2>① 主音ロングトーン</h2>
     <div class="hint">主音を伸ばし続けます。「高音を重ねる」モードは4拍子（２オクターブ用）、6拍子（３オクターブ）和音の練習専用。<br>モードでは、調を手動で選ぶほかに、平行調ペア・同主調ペアを5度圏の右回り／左回りに1つずつ進める練習、26調をランダムに出す練習が選べます。</div>
+    <div id="lt-slot-box" style="margin:8px 0;padding:10px 12px;border:1px solid #dde3ec;border-radius:8px;background:#fbfbf7;">
+      <div style="font-size:12px;font-weight:700;color:#8a5a00;margin-bottom:8px;">🎰 今日の設定をスロットで決める（遊び）</div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <div style="flex:1;max-width:110px;text-align:center;">
+          <div id="lt-slot-reel1" style="font-size:15px;font-weight:800;color:#0f1722;background:#fff;border:1px solid #dde3ec;border-radius:8px;padding:10px 4px;height:20px;display:flex;align-items:center;justify-content:center;">主音</div>
+          <button id="lt-slot-stop1" style="margin-top:6px;font-size:12px;padding:8px 4px;" disabled>ストップ</button>
+        </div>
+        <div style="flex:1;max-width:110px;text-align:center;">
+          <div id="lt-slot-reel2" style="font-size:15px;font-weight:800;color:#0f1722;background:#fff;border:1px solid #dde3ec;border-radius:8px;padding:10px 4px;height:20px;display:flex;align-items:center;justify-content:center;">種別</div>
+          <button id="lt-slot-stop2" style="margin-top:6px;font-size:12px;padding:8px 4px;" disabled>ストップ</button>
+        </div>
+        <div style="flex:1;max-width:110px;text-align:center;">
+          <div id="lt-slot-reel3" style="font-size:15px;font-weight:800;color:#0f1722;background:#fff;border:1px solid #dde3ec;border-radius:8px;padding:10px 4px;height:20px;display:flex;align-items:center;justify-content:center;">方向</div>
+          <button id="lt-slot-stop3" style="margin-top:6px;font-size:12px;padding:8px 4px;" disabled>ストップ</button>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:10px;">
+        <button id="lt-slot-start" style="font-size:13px;width:auto;padding:11px 20px;">🎰 回す</button>
+      </div>
+      <div id="lt-slot-result" style="text-align:center;font-size:12px;color:#666;margin-top:8px;"></div>
+    </div>
     <div class="opt"><span>モード</span>
       <select id="lt-mode">
         <option value="manual" selected>マニュアル（調を選択）</option>
@@ -1584,6 +1605,91 @@ const LT_KEYS_26 = [
   ['ニ短調','Dm'],['ト短調','Gm'],['ハ短調','Cm'],['ヘ短調','Fm'],['変ロ短調','Bbm'],['変ホ短調','Ebm']
 ];
 
+// スロットマシン用：13の主音（長調名で表示）、種別、方向のリール項目
+const LT_SLOT_TONICS = [
+  ['ハ長調','C'],['ト長調','G'],['ニ長調','D'],['イ長調','A'],['ホ長調','E'],['ロ長調','B'],['嬰ヘ長調','Fis'],
+  ['変ト長調','Ges'],['変ニ長調','Des'],['変イ長調','Ab'],['変ホ長調','Eb'],['変ロ長調','Bb'],['ヘ長調','F']
+];
+const LT_SLOT_TYPES = [['平行調','parallel'],['同主調','samekey']];
+const LT_SLOT_DIRS = [['右回り','right'],['左回り','left']];
+
+const ltSlot = { spinning:[false,false,false], stopped:[false,false,false], timers:[null,null,null], result:[null,null,null] };
+
+function ltSlotRandomLabel(reelIdx){
+  if(reelIdx===0) return LT_SLOT_TONICS[Math.floor(Math.random()*LT_SLOT_TONICS.length)][0];
+  if(reelIdx===1) return LT_SLOT_TYPES[Math.floor(Math.random()*LT_SLOT_TYPES.length)][0];
+  return LT_SLOT_DIRS[Math.floor(Math.random()*LT_SLOT_DIRS.length)][0];
+}
+
+function ltSlotStart(){
+  for(let i=0;i<3;i++){
+    ltSlot.stopped[i]=false;
+    ltSlot.spinning[i]=true;
+    ltSlot.result[i]=null;
+    document.getElementById('lt-slot-stop'+(i+1)).disabled=false;
+    if(ltSlot.timers[i]) clearInterval(ltSlot.timers[i]);
+    ltSlot.timers[i]=setInterval(()=>{
+      document.getElementById('lt-slot-reel'+(i+1)).textContent=ltSlotRandomLabel(i);
+    }, 70);
+  }
+  document.getElementById('lt-slot-start').disabled=true;
+  document.getElementById('lt-slot-result').textContent='';
+}
+
+function ltSlotStop(reelIdx){
+  if(!ltSlot.spinning[reelIdx] || ltSlot.stopped[reelIdx]) return;
+  clearInterval(ltSlot.timers[reelIdx]);
+  ltSlot.spinning[reelIdx]=false;
+  ltSlot.stopped[reelIdx]=true;
+  document.getElementById('lt-slot-stop'+(reelIdx+1)).disabled=true;
+  let idx, label;
+  if(reelIdx===0){
+    idx=Math.floor(Math.random()*LT_SLOT_TONICS.length);
+    label=LT_SLOT_TONICS[idx][0];
+  }else if(reelIdx===1){
+    idx=Math.floor(Math.random()*LT_SLOT_TYPES.length);
+    label=LT_SLOT_TYPES[idx][0];
+  }else{
+    idx=Math.floor(Math.random()*LT_SLOT_DIRS.length);
+    label=LT_SLOT_DIRS[idx][0];
+  }
+  ltSlot.result[reelIdx]=idx;
+  document.getElementById('lt-slot-reel'+(reelIdx+1)).textContent=label;
+  if(ltSlot.stopped[0] && ltSlot.stopped[1] && ltSlot.stopped[2]){
+    document.getElementById('lt-slot-start').disabled=false;
+    ltSlotApplyResult();
+  }
+}
+
+// 3リールが揃ったら、モードを自動セットし、選ばれた主音からスタートできる状態にする。
+function ltSlotApplyResult(){
+  const [tonicLabel, tonicCode] = LT_SLOT_TONICS[ltSlot.result[0]];
+  const [typeLabel, typeVal] = LT_SLOT_TYPES[ltSlot.result[1]];
+  const [dirLabel, dirVal] = LT_SLOT_DIRS[ltSlot.result[2]];
+  const mode = typeVal + (dirVal==='left' ? '_left' : '');
+
+  document.getElementById('lt-mode').value = mode;
+  ltApplyMode();
+
+  const list = ltPairList(mode);
+  const isParallel = ltIsParallelMode(mode);
+  const foundIdx = list.findIndex(p => p[1]===tonicCode);
+  if(foundIdx>=0){
+    ltAuto.idx = foundIdx;
+    if(isParallel){
+      const [lbl,maj,min]=list[foundIdx];
+      ltAuto.pairMajor=maj; ltAuto.pairMinor=min; ltAuto.side='major';
+      document.getElementById('lt-auto-key').textContent=lbl;
+    }else{
+      const [lbl,code]=list[foundIdx];
+      ltAuto.key=code;
+      document.getElementById('lt-auto-key').textContent=lbl;
+    }
+  }
+  document.getElementById('lt-slot-result').textContent =
+    `${tonicLabel}から、${typeLabel}ペア・${dirLabel}でスタートです。「スタート」で確認、「次の調」で先へ進めます。`;
+}
+
 // 現在の自動モードの状態。deckはランダム用の「重複なしで一巡する山札」。
 // 平行調ペアは主音が2つあるため、pairMajor/pairMinorとside（今どちらを鳴らすか）を持つ。
 const ltAuto = { key:null, idx:-1, deck:[], deckPos:0, pairMajor:null, pairMinor:null, side:'major' };
@@ -1842,6 +1948,10 @@ const scCtl=makeController(buildScale,{
   start:document.getElementById('sc-start'),stop:document.getElementById('sc-stop')
 });
 
+document.getElementById('lt-slot-start').onclick=ltSlotStart;
+document.getElementById('lt-slot-stop1').onclick=()=>ltSlotStop(0);
+document.getElementById('lt-slot-stop2').onclick=()=>ltSlotStop(1);
+document.getElementById('lt-slot-stop3').onclick=()=>ltSlotStop(2);
 document.getElementById('lt-mode').onchange=ltApplyMode;
 document.getElementById('lt-next').onclick=ltNextKey;
 document.getElementById('lt-prev').onclick=ltPrevKey;
