@@ -77,7 +77,7 @@
   <!-- ① 主音ロングトーン -->
   <section>
     <h2>① 主音ロングトーン</h2>
-    <div class="hint">主音を伸ばし続けます。<br>モードでは、調を手動で選ぶほかに、平行調ペア・同主調ペアを5度圏の右回り／左回りに1つずつ進める練習、26調をランダムに出す練習が選べます。また、開始は上昇、下降それぞれから選択でき、下降を選択した場合はデフォルトの主音の2オクターブ上の音が鳴ります。</div>
+    <div class="hint">主音を伸ばし続けます。<br>モードでは、調を手動で選ぶほかに、平行調ペア・同主調ペアを5度圏の右回り／左回りに1つずつ進める練習、26調をランダムに出す練習が選べます。また、開始は上昇、下降それぞれから選択でき、下降を選択した場合はデフォルトの主音の1オクターブ上の音が鳴ります。</div>
     <div id="lt-slot-box" style="margin:8px 0;padding:10px 12px;border:1px solid #dde3ec;border-radius:8px;background:#fbfbf7;">
       <div style="font-size:12px;font-weight:700;color:#8a5a00;margin-bottom:8px;">🎰 今日の設定をスロットで決める（遊び）</div>
       <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
@@ -105,11 +105,17 @@
     </div>
     <div class="opt"><span>音の高さ</span>
       <select id="lt-direction">
-        <option value="up" selected>上昇（主音から2オクターブ上へ）</option>
-        <option value="down">下降（2オクターブ上の主音から）</option>
+        <option value="up" selected>上昇（主音から1オクターブ上へ）</option>
+        <option value="down">下降（1オクターブ上の主音から）</option>
       </select>
     </div>
-    <div id="lt-direction-note" style="display:none;font-size:12px;color:#8a5a00;font-weight:700;margin:2px 0 8px;text-align:center;">今日は下降から始めてください。2オクターブ上の主音が鳴ります。</div>
+    <div id="lt-direction-note" style="display:none;font-size:12px;color:#8a5a00;font-weight:700;margin:2px 0 8px;text-align:center;">今日は下降から始めてください。1オクターブ上の主音が鳴ります。</div>
+    <div class="opt"><span>音色</span>
+      <select id="lt-timbre">
+        <option value="sine" selected>純音（サイン波）</option>
+        <option value="organ">オルガン風（倍音を含む）</option>
+      </select>
+    </div>
     <div class="opt"><span>モード</span>
       <select id="lt-mode">
         <option value="manual" selected>マニュアル（調を選択）</option>
@@ -1622,7 +1628,7 @@ function makeController(buildFn, els){
 }
 
 /* ---- ①主音ロングトーン（主音保続＋「高音を重ねる」時はサイクル頂点で高音を重ねる、カウントイン対応） ---- */
-let lt={active:false,osc:null,gain:null,timer:null,startTimer:null};
+let lt={active:false,osc:null,gain:null,oscs:null,timer:null,startTimer:null};
 
 /* ===== ①主音ロングトーン：モード（マニュアル／平行調ペア／同主調ペア／ランダム） ===== */
 // 主音MIDIの補完（既存のif連鎖に無い調のみ。値は主音の実音）
@@ -1915,7 +1921,7 @@ function ltApplyMode(){
   document.getElementById('lt-auto-key').textContent='「次の調」を押してください';
 }
 
-// 上昇（通常の主音）／下降（2オクターブ上の主音）の表示を切り替える。マニュアル・ペア・ランダムすべてのモードに共通で適用される。
+// 上昇（通常の主音）／下降（1オクターブ上の主音）の表示を切り替える。マニュアル・ペア・ランダムすべてのモードに共通で適用される。
 function ltApplyDirection(){
   const isDown = document.getElementById('lt-direction').value==='down';
   document.getElementById('lt-direction-note').style.display = isDown ? '' : 'none';
@@ -1966,14 +1972,32 @@ async function startLT(){
   
   const LOW_FREQ = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], tonicLowMidi);
   const isDown = document.getElementById('lt-direction').value==='down';
-  const octaveShift = isDown ? 4 : 1; // 下降：2オクターブ上（×4）から。上昇：通常の主音（×1）から。
+  const octaveShift = isDown ? 2 : 1; // 下降：1オクターブ上（×2）から。上昇：通常の主音（×1）から。
   const baseFreq = LOW_FREQ * octaveShift;
-  const osc=ctx.createOscillator(); osc.type='sine'; osc.frequency.setValueAtTime(baseFreq,startTime);
-  const g=ctx.createGain();
-  g.gain.setValueAtTime(0.0001,startTime);
-  g.gain.exponentialRampToValueAtTime(0.3,startTime+0.012);
-  osc.connect(g); g.connect(ctx.destination); osc.start(startTime);
-  lt.osc=osc; lt.gain=g;
+  const timbre = document.getElementById('lt-timbre').value;
+
+  if(timbre==='organ'){
+    // オルガン風：基音+倍音（2〜6次）を別オシレーターで加算合成。エネルギーが分散し、持続音でも聴き疲れしにくい。
+    const master=ctx.createGain();
+    master.gain.setValueAtTime(0.0001,startTime);
+    master.gain.exponentialRampToValueAtTime(0.3,startTime+0.012);
+    master.connect(ctx.destination);
+    const partials=[{mult:1,amp:1.0},{mult:2,amp:0.5},{mult:3,amp:0.28},{mult:4,amp:0.18},{mult:5,amp:0.10},{mult:6,amp:0.06}];
+    const oscs=partials.map(p=>{
+      const posc=ctx.createOscillator(); posc.type='sine'; posc.frequency.setValueAtTime(baseFreq*p.mult,startTime);
+      const pg=ctx.createGain(); pg.gain.value=p.amp;
+      posc.connect(pg); pg.connect(master); posc.start(startTime);
+      return posc;
+    });
+    lt.osc=null; lt.oscs=oscs; lt.gain=master;
+  } else {
+    const osc=ctx.createOscillator(); osc.type='sine'; osc.frequency.setValueAtTime(baseFreq,startTime);
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(0.0001,startTime);
+    g.gain.exponentialRampToValueAtTime(0.3,startTime+0.012);
+    osc.connect(g); g.connect(ctx.destination); osc.start(startTime);
+    lt.osc=osc; lt.oscs=null; lt.gain=g;
+  }
 
   if(metro){
     const beginMs=(startTime-ctx.currentTime)*1000;
@@ -1999,8 +2023,13 @@ function stopLT(){
       lt.osc.stop(ctx.currentTime); 
     }catch(e){} 
   }
+  if(lt.oscs){
+    lt.oscs.forEach(o=>{
+      try{ o.disconnect(); o.stop(ctx.currentTime); }catch(e){}
+    });
+  }
   
-  lt.osc=null; lt.gain=null;
+  lt.osc=null; lt.oscs=null; lt.gain=null;
   
   // すべてのタイマーをクリア
   if(lt.timer){clearInterval(lt.timer);lt.timer=null;}
