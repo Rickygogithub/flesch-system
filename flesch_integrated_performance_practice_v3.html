@@ -175,7 +175,18 @@
         <option value="3" selected>3オクターブ</option>
       </select>
     </div>
-    <div class="opt"><span>調</span>
+    <div class="opt"><span>調の並び順（平行調ペア）</span>
+      <select id="sc-order-mode">
+        <option value="difficulty" selected>難易度順（♯♭0→6の順）</option>
+        <option value="circle_right">5度圏 右回り</option>
+        <option value="circle_left">5度圏 左回り</option>
+      </select>
+    </div>
+    <div id="sc-order-box" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid #dde3ec;border-radius:8px;background:#f8f9fb;">
+      <div id="sc-order-key" style="font-size:18px;font-weight:800;color:#0f1722;text-align:center;margin-bottom:8px;">「次の調」を押してください</div>
+      <div style="text-align:center;"><button id="sc-order-prev" style="font-size:13px;width:auto;padding:13px 14px;margin-right:6px;">← 前の調</button><button id="sc-order-next" style="font-size:13px;width:auto;padding:13px 14px;">次の調 →</button></div>
+    </div>
+    <div class="opt" id="sc-key-row"><span>調</span>
       <select id="sc-key">
         <option value="C" selected>ハ長調</option>
         <option value="Am">イ短調</option>
@@ -239,7 +250,18 @@
   <section>
     <h2>③ 和音</h2>
     <div class="hint">7つの和音（純正律）が各6拍ずつ順に鳴ります。調は5度圏に沿ってC〜Gesまで（#6・♭6）選べます。</div>
-    <div class="opt"><span>調</span>
+    <div class="opt"><span>調の並び順（同主調ペア）</span>
+      <select id="ch-order-mode">
+        <option value="difficulty" selected>難易度順（♯♭0→6の順）</option>
+        <option value="circle_right">5度圏 右回り</option>
+        <option value="circle_left">5度圏 左回り</option>
+      </select>
+    </div>
+    <div id="ch-order-box" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid #dde3ec;border-radius:8px;background:#f8f9fb;">
+      <div id="ch-order-key" style="font-size:18px;font-weight:800;color:#0f1722;text-align:center;margin-bottom:8px;">「次の調」を押してください</div>
+      <div style="text-align:center;"><button id="ch-order-prev" style="font-size:13px;width:auto;padding:13px 14px;margin-right:6px;">← 前の調</button><button id="ch-order-next" style="font-size:13px;width:auto;padding:13px 14px;">次の調 →</button></div>
+    </div>
+    <div class="opt" id="ch-key-row"><span>調</span>
       <select id="ch-key">
         <option value="C" selected>ハ長調・ハ短調</option>
         <option value="G">ト長調・ト短調</option>
@@ -1637,6 +1659,65 @@ const LT_PAIRS_SAMEKEY_LEFT = [
   ['嬰ヘ長調 ／ 嬰ヘ短調','Fis'], ['ロ長調 ／ ロ短調','B'], ['ホ長調 ／ ホ短調','E'],
   ['イ長調 ／ イ短調','A'], ['ニ長調 ／ ニ短調','D'], ['ト長調 ／ ト短調','G']
 ];
+
+/* ===== ②音階・③和音：調の並び順モード（難易度順／5度圏 右回り／5度圏 左回り） =====
+   ③（13の同主調ペア）はLT_PAIRS_SAMEKEY(_LEFT)のコードをそのまま流用。
+   ②（26の個別調）はLT_PAIRS_PARALLEL(_LEFT)の各ペアを「長調→短調」の順に展開して26調にする。 */
+function buildOrderList26(pairs){
+  const out=[];
+  pairs.forEach(([label,maj,min])=>{
+    out.push([SC_KEY_NAME[maj], maj]);
+    out.push([SC_KEY_NAME[min], min]);
+  });
+  return out;
+}
+const SC_KEY_NAME = {
+  C:'ハ長調',Am:'イ短調',G:'ト長調',Em:'ホ短調',D:'ニ長調',Hm:'ロ短調',A:'イ長調',Fism:'嬰ヘ短調',
+  E:'ホ長調',Cism:'嬰ハ短調',B:'ロ長調',Gism:'嬰ト短調',Fis:'嬰ヘ長調',Dism:'嬰ニ短調',
+  F:'ヘ長調',Dm:'ニ短調',Bb:'変ロ長調',Gm:'ト短調',Eb:'変ホ長調',Cm:'ハ短調',
+  Ab:'変イ長調',Fm:'ヘ短調',Des:'変ニ長調',Bbm:'変ロ短調',Ges:'変ト長調',Ebm:'変ホ短調'
+};
+const SC_ORDER_RIGHT = buildOrderList26(LT_PAIRS_PARALLEL);
+const SC_ORDER_LEFT = buildOrderList26(LT_PAIRS_PARALLEL_LEFT);
+// ③用：LT_PAIRS_SAMEKEY(_LEFT)のラベル区切り「／」を、このセクションの表記「・」に合わせる
+function toChLabel(label){ return label.replace(' ／ ','・'); }
+const CH_ORDER_RIGHT = LT_PAIRS_SAMEKEY.map(([label,code])=>[toChLabel(label),code]);
+const CH_ORDER_LEFT = LT_PAIRS_SAMEKEY_LEFT.map(([label,code])=>[toChLabel(label),code]);
+
+// ②③共通：並び順モードのナビゲーション制御を1つのファクトリで作る（prefix: 'sc'または'ch'）
+function makeOrderNav(prefix, rightList, leftList){
+  const state = { idx:-1 };
+  function mode(){ return document.getElementById(prefix+'-order-mode').value; }
+  function list(){ return mode()==='circle_left' ? leftList : rightList; }
+  function applyMode(){
+    const auto = mode()!=='difficulty';
+    document.getElementById(prefix+'-order-box').style.display = auto ? '' : 'none';
+    document.getElementById(prefix+'-key-row').style.display = auto ? 'none' : '';
+    state.idx=-1;
+    document.getElementById(prefix+'-order-key').textContent='「次の調」を押してください';
+  }
+  function next(){
+    const l=list();
+    state.idx=(state.idx+1)%l.length;
+    const [label,code]=l[state.idx];
+    document.getElementById(prefix+'-order-key').textContent=label;
+    document.getElementById(prefix+'-key').value=code;
+  }
+  function prev(){
+    const l=list();
+    if(state.idx<0) state.idx=0;
+    state.idx=(state.idx-1+l.length)%l.length;
+    const [label,code]=l[state.idx];
+    document.getElementById(prefix+'-order-key').textContent=label;
+    document.getElementById(prefix+'-key').value=code;
+  }
+  document.getElementById(prefix+'-order-mode').onchange=applyMode;
+  document.getElementById(prefix+'-order-next').onclick=next;
+  document.getElementById(prefix+'-order-prev').onclick=prev;
+}
+makeOrderNav('sc', SC_ORDER_RIGHT, SC_ORDER_LEFT);
+makeOrderNav('ch', CH_ORDER_RIGHT, CH_ORDER_LEFT);
+
 // ランダム用の26調（長調13＋短調13）
 const LT_KEYS_26 = [
   ['ハ長調','C'],['ト長調','G'],['ニ長調','D'],['イ長調','A'],['ホ長調','E'],['ロ長調','B'],['嬰ヘ長調','Fis'],
