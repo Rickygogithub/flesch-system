@@ -72,21 +72,25 @@
   <!-- ① 主音ロングトーン -->
   <section>
     <h2>① 主音ロングトーン</h2>
-    <div class="hint">主音を伸ばし続けます。「高音を重ねる」モードは4拍子（２オクターブ用）、6拍子（３オクターブ）和音の練習専用。<br>モードでは、調を手動で選ぶほかに、平行調ペア・同主調ペアを5度圏の右回り／左回りに1つずつ進める練習、26調をランダムに出す練習が選べます。</div>
+    <div class="hint">主音を伸ばし続けます。<br>モードでは、調を手動で選ぶほかに、平行調ペア・同主調ペアを5度圏の右回り／左回りに1つずつ進める練習、26調をランダムに出す練習が選べます。また、開始は上昇、下降それぞれから選択でき、下降を選択した場合はデフォルトの主音の2オクターブ上の音が鳴ります。</div>
     <div id="lt-slot-box" style="margin:8px 0;padding:10px 12px;border:1px solid #dde3ec;border-radius:8px;background:#fbfbf7;">
       <div style="font-size:12px;font-weight:700;color:#8a5a00;margin-bottom:8px;">🎰 今日の設定をスロットで決める（遊び）</div>
-      <div style="display:flex;gap:8px;justify-content:center;">
-        <div style="flex:1;max-width:110px;text-align:center;">
-          <div id="lt-slot-reel1" style="font-size:15px;font-weight:800;color:#0f1722;background:#fff;border:1px solid #dde3ec;border-radius:8px;padding:10px 4px;height:20px;display:flex;align-items:center;justify-content:center;">主音</div>
+      <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+        <div style="flex:1;min-width:70px;max-width:100px;text-align:center;">
+          <div id="lt-slot-reel1" style="font-size:13px;font-weight:800;color:#0f1722;background:#fff;border:1px solid #dde3ec;border-radius:8px;padding:10px 4px;height:20px;display:flex;align-items:center;justify-content:center;">主音</div>
           <button id="lt-slot-stop1" style="margin-top:6px;font-size:12px;padding:8px 4px;" disabled>ストップ</button>
         </div>
-        <div style="flex:1;max-width:110px;text-align:center;">
-          <div id="lt-slot-reel2" style="font-size:15px;font-weight:800;color:#0f1722;background:#fff;border:1px solid #dde3ec;border-radius:8px;padding:10px 4px;height:20px;display:flex;align-items:center;justify-content:center;">種別</div>
+        <div style="flex:1;min-width:70px;max-width:100px;text-align:center;">
+          <div id="lt-slot-reel2" style="font-size:13px;font-weight:800;color:#0f1722;background:#fff;border:1px solid #dde3ec;border-radius:8px;padding:10px 4px;height:20px;display:flex;align-items:center;justify-content:center;">種別</div>
           <button id="lt-slot-stop2" style="margin-top:6px;font-size:12px;padding:8px 4px;" disabled>ストップ</button>
         </div>
-        <div style="flex:1;max-width:110px;text-align:center;">
-          <div id="lt-slot-reel3" style="font-size:15px;font-weight:800;color:#0f1722;background:#fff;border:1px solid #dde3ec;border-radius:8px;padding:10px 4px;height:20px;display:flex;align-items:center;justify-content:center;">方向</div>
+        <div style="flex:1;min-width:70px;max-width:100px;text-align:center;">
+          <div id="lt-slot-reel3" style="font-size:13px;font-weight:800;color:#0f1722;background:#fff;border:1px solid #dde3ec;border-radius:8px;padding:10px 4px;height:20px;display:flex;align-items:center;justify-content:center;">回る方向</div>
           <button id="lt-slot-stop3" style="margin-top:6px;font-size:12px;padding:8px 4px;" disabled>ストップ</button>
+        </div>
+        <div style="flex:1;min-width:70px;max-width:100px;text-align:center;">
+          <div id="lt-slot-reel4" style="font-size:13px;font-weight:800;color:#0f1722;background:#fff;border:1px solid #dde3ec;border-radius:8px;padding:10px 4px;height:20px;display:flex;align-items:center;justify-content:center;">上昇/下降</div>
+          <button id="lt-slot-stop4" style="margin-top:6px;font-size:12px;padding:8px 4px;" disabled>ストップ</button>
         </div>
       </div>
       <div style="text-align:center;margin-top:10px;">
@@ -94,6 +98,13 @@
       </div>
       <div id="lt-slot-result" style="text-align:center;font-size:12px;color:#666;margin-top:8px;"></div>
     </div>
+    <div class="opt"><span>音の高さ</span>
+      <select id="lt-direction">
+        <option value="up" selected>上昇（主音から2オクターブ上へ）</option>
+        <option value="down">下降（2オクターブ上の主音から）</option>
+      </select>
+    </div>
+    <div id="lt-direction-note" style="display:none;font-size:12px;color:#8a5a00;font-weight:700;margin:2px 0 8px;text-align:center;">今日は下降から始めてください。2オクターブ上の主音が鳴ります。</div>
     <div class="opt"><span>モード</span>
       <select id="lt-mode">
         <option value="manual" selected>マニュアル（調を選択）</option>
@@ -111,7 +122,7 @@
         <button id="lt-side-major" class="good" style="font-size:13px;width:auto;padding:13px 14px;margin-right:6px;">長調の主音</button>
         <button id="lt-side-minor" class="good" style="font-size:13px;width:auto;padding:13px 14px;">短調の主音</button>
       </div>
-      <div style="font-size:11.5px;color:#666;margin-top:8px;line-height:1.6;">調名を見て主音を思い浮かべ（または歌い）、「スタート」で確認してください。平行調ペアは主音が2つあるので、上のボタンで長調・短調それぞれの主音を鳴らせます。</div>
+      <div style="font-size:11.5px;color:#666;margin-top:8px;line-height:1.6;">調名を見て主音を思い浮かべ（または歌い）、「スタート」で確認してください。平行調ペアは主音が2つあるので、上のボタンで長調・短調それぞれの主音を鳴らせます。カッコ書きの短調は、他のペアの長調側と主音（周波数）が同じで、③和音（フレッシュ7和音）がそちらで既に鳴らせるため、和音練習では省略できます。</div>
     </div>
     <div class="opt" id="lt-key-row"><span>調</span>
       <select id="lt-key">
@@ -132,9 +143,6 @@
         <option value="Des">変ニ長調・変ニ短調</option>
         <option value="Ges">変ト長調・変ト短調</option>
       </select>
-    </div>
-    <div class="opt"><span>高音を重ねる</span>
-      <input type="checkbox" id="lt-overlay">
     </div>
     <div class="opt"><span>メトロノームを併用</span>
       <input type="checkbox" id="lt-metro">
@@ -1556,9 +1564,7 @@ function makeController(buildFn, els){
 }
 
 /* ---- ①主音ロングトーン（主音保続＋「高音を重ねる」時はサイクル頂点で高音を重ねる、カウントイン対応） ---- */
-let lt={active:false,osc:null,gain:null,hiOsc:null,hiGain:null,timer:null,startTimer:null,overlayTimer:null};
-// 「高音を重ねる」は6拍子専用：1小節（6拍）を1サイクルとし、4拍目だけ高音
-const LT_OVERLAY_CYCLE_BEATS=6, LT_OVERLAY_PEAK_BEAT=4;
+let lt={active:false,osc:null,gain:null,timer:null,startTimer:null};
 
 /* ===== ①主音ロングトーン：モード（マニュアル／平行調ペア／同主調ペア／ランダム） ===== */
 // 主音MIDIの補完（既存のif連鎖に無い調のみ。値は主音の実音）
@@ -1566,12 +1572,14 @@ const LT_TONIC_MIDI_EXTRA = { 'Hm':59, 'Fism':54, 'Bbm':58, 'Ebm':51 };
 
 // 平行調ペア（右回り：♯を1つずつ増やし、♯6→♭6に移って1つずつ減らしヘ長調で終わる）。
 // 主音は長調・短調で異なるため、両方のコードを持つ。[表示名, 長調の主音, 短調の主音]
+// 短調側の主音が、他のペアの長調側と同じ周波数になる場合（10/13ペア）、③和音の練習では
+// フレッシュ7和音がその長調側で既出になるため、表示上カッコでくくって示す。
 const LT_PAIRS_PARALLEL = [
-  ['ハ長調 ／ イ短調','C','Am'],   ['ト長調 ／ ホ短調','G','Em'],   ['ニ長調 ／ ロ短調','D','Hm'],
-  ['イ長調 ／ 嬰ヘ短調','A','Fism'], ['ホ長調 ／ 嬰ハ短調','E','Cism'], ['ロ長調 ／ 嬰ト短調','B','Gism'],
+  ['ハ長調 ／ （イ短調）','C','Am'],   ['ト長調 ／ （ホ短調）','G','Em'],   ['ニ長調 ／ （ロ短調）','D','Hm'],
+  ['イ長調 ／ （嬰ヘ短調）','A','Fism'], ['ホ長調 ／ 嬰ハ短調','E','Cism'], ['ロ長調 ／ 嬰ト短調','B','Gism'],
   ['嬰ヘ長調 ／ 嬰ニ短調','Fis','Dism'],
-  ['変ト長調 ／ 変ホ短調','Ges','Ebm'], ['変ニ長調 ／ 変ロ短調','Des','Bbm'], ['変イ長調 ／ ヘ短調','Ab','Fm'],
-  ['変ホ長調 ／ ハ短調','Eb','Cm'], ['変ロ長調 ／ ト短調','Bb','Gm'], ['ヘ長調 ／ ニ短調','F','Dm']
+  ['変ト長調 ／ （変ホ短調）','Ges','Ebm'], ['変ニ長調 ／ （変ロ短調）','Des','Bbm'], ['変イ長調 ／ （ヘ短調）','Ab','Fm'],
+  ['変ホ長調 ／ （ハ短調）','Eb','Cm'], ['変ロ長調 ／ （ト短調）','Bb','Gm'], ['ヘ長調 ／ （ニ短調）','F','Dm']
 ];
 // 同主調ペア（右回り。主音は長短で共通）
 const LT_PAIRS_SAMEKEY = [
@@ -1582,12 +1590,13 @@ const LT_PAIRS_SAMEKEY = [
   ['変ホ長調 ／ 変ホ短調','Eb'], ['変ロ長調 ／ 変ロ短調','Bb'], ['ヘ長調 ／ ヘ短調','F']
 ];
 // 平行調ペア（左回り：ハ長調からスタートし♭方向へ進み、♭6→♯6に移ってト長調で終わる）。
+// 短調側の主音がカッコ書きになっている理由は、右回りの配列と同じ（③和音の重複回避）。
 const LT_PAIRS_PARALLEL_LEFT = [
-  ['ハ長調 ／ イ短調','C','Am'],   ['ヘ長調 ／ ニ短調','F','Dm'],   ['変ロ長調 ／ ト短調','Bb','Gm'],
-  ['変ホ長調 ／ ハ短調','Eb','Cm'], ['変イ長調 ／ ヘ短調','Ab','Fm'], ['変ニ長調 ／ 変ロ短調','Des','Bbm'],
-  ['変ト長調 ／ 変ホ短調','Ges','Ebm'],
+  ['ハ長調 ／ （イ短調）','C','Am'],   ['ヘ長調 ／ （ニ短調）','F','Dm'],   ['変ロ長調 ／ （ト短調）','Bb','Gm'],
+  ['変ホ長調 ／ （ハ短調）','Eb','Cm'], ['変イ長調 ／ （ヘ短調）','Ab','Fm'], ['変ニ長調 ／ （変ロ短調）','Des','Bbm'],
+  ['変ト長調 ／ （変ホ短調）','Ges','Ebm'],
   ['嬰ヘ長調 ／ 嬰ニ短調','Fis','Dism'], ['ロ長調 ／ 嬰ト短調','B','Gism'], ['ホ長調 ／ 嬰ハ短調','E','Cism'],
-  ['イ長調 ／ 嬰ヘ短調','A','Fism'], ['ニ長調 ／ ロ短調','D','Hm'], ['ト長調 ／ ホ短調','G','Em']
+  ['イ長調 ／ （嬰ヘ短調）','A','Fism'], ['ニ長調 ／ （ロ短調）','D','Hm'], ['ト長調 ／ （ホ短調）','G','Em']
 ];
 // 同主調ペア（左回り：ハ長調からスタートし♭方向へ進む）
 const LT_PAIRS_SAMEKEY_LEFT = [
@@ -1605,24 +1614,37 @@ const LT_KEYS_26 = [
   ['ニ短調','Dm'],['ト短調','Gm'],['ハ短調','Cm'],['ヘ短調','Fm'],['変ロ短調','Bbm'],['変ホ短調','Ebm']
 ];
 
-// スロットマシン用：13の主音（長調名で表示）、種別、方向のリール項目
+// スロットマシン用：13の主音（長調名で表示）、種別、回る方向、上昇/下降のリール項目
 const LT_SLOT_TONICS = [
   ['ハ長調','C'],['ト長調','G'],['ニ長調','D'],['イ長調','A'],['ホ長調','E'],['ロ長調','B'],['嬰ヘ長調','Fis'],
   ['変ト長調','Ges'],['変ニ長調','Des'],['変イ長調','Ab'],['変ホ長調','Eb'],['変ロ長調','Bb'],['ヘ長調','F']
 ];
 const LT_SLOT_TYPES = [['平行調','parallel'],['同主調','samekey']];
 const LT_SLOT_DIRS = [['右回り','right'],['左回り','left']];
+const LT_SLOT_UPDOWN = [['上昇','up'],['下降','down']];
+const LT_SLOT_REEL_COUNT = 4;
 
-const ltSlot = { spinning:[false,false,false], stopped:[false,false,false], timers:[null,null,null], result:[null,null,null] };
+const ltSlot = {
+  spinning:new Array(LT_SLOT_REEL_COUNT).fill(false),
+  stopped:new Array(LT_SLOT_REEL_COUNT).fill(false),
+  timers:new Array(LT_SLOT_REEL_COUNT).fill(null),
+  result:new Array(LT_SLOT_REEL_COUNT).fill(null)
+};
+
+function ltSlotList(reelIdx){
+  if(reelIdx===0) return LT_SLOT_TONICS;
+  if(reelIdx===1) return LT_SLOT_TYPES;
+  if(reelIdx===2) return LT_SLOT_DIRS;
+  return LT_SLOT_UPDOWN;
+}
 
 function ltSlotRandomLabel(reelIdx){
-  if(reelIdx===0) return LT_SLOT_TONICS[Math.floor(Math.random()*LT_SLOT_TONICS.length)][0];
-  if(reelIdx===1) return LT_SLOT_TYPES[Math.floor(Math.random()*LT_SLOT_TYPES.length)][0];
-  return LT_SLOT_DIRS[Math.floor(Math.random()*LT_SLOT_DIRS.length)][0];
+  const list=ltSlotList(reelIdx);
+  return list[Math.floor(Math.random()*list.length)][0];
 }
 
 function ltSlotStart(){
-  for(let i=0;i<3;i++){
+  for(let i=0;i<LT_SLOT_REEL_COUNT;i++){
     ltSlot.stopped[i]=false;
     ltSlot.spinning[i]=true;
     ltSlot.result[i]=null;
@@ -1630,7 +1652,7 @@ function ltSlotStart(){
     if(ltSlot.timers[i]) clearInterval(ltSlot.timers[i]);
     ltSlot.timers[i]=setInterval(()=>{
       document.getElementById('lt-slot-reel'+(i+1)).textContent=ltSlotRandomLabel(i);
-    }, 70);
+    }, 25); // 目視で止めるタイミングを選べないよう、高速で切り替える
   }
   document.getElementById('lt-slot-start').disabled=true;
   document.getElementById('lt-slot-result').textContent='';
@@ -1642,34 +1664,28 @@ function ltSlotStop(reelIdx){
   ltSlot.spinning[reelIdx]=false;
   ltSlot.stopped[reelIdx]=true;
   document.getElementById('lt-slot-stop'+(reelIdx+1)).disabled=true;
-  let idx, label;
-  if(reelIdx===0){
-    idx=Math.floor(Math.random()*LT_SLOT_TONICS.length);
-    label=LT_SLOT_TONICS[idx][0];
-  }else if(reelIdx===1){
-    idx=Math.floor(Math.random()*LT_SLOT_TYPES.length);
-    label=LT_SLOT_TYPES[idx][0];
-  }else{
-    idx=Math.floor(Math.random()*LT_SLOT_DIRS.length);
-    label=LT_SLOT_DIRS[idx][0];
-  }
+  const list=ltSlotList(reelIdx);
+  const idx=Math.floor(Math.random()*list.length);
   ltSlot.result[reelIdx]=idx;
-  document.getElementById('lt-slot-reel'+(reelIdx+1)).textContent=label;
-  if(ltSlot.stopped[0] && ltSlot.stopped[1] && ltSlot.stopped[2]){
+  document.getElementById('lt-slot-reel'+(reelIdx+1)).textContent=list[idx][0];
+  if(ltSlot.stopped.every(Boolean)){
     document.getElementById('lt-slot-start').disabled=false;
     ltSlotApplyResult();
   }
 }
 
-// 3リールが揃ったら、モードを自動セットし、選ばれた主音からスタートできる状態にする。
+// 4リールが揃ったら、モード・上昇下降を自動セットし、選ばれた主音からスタートできる状態にする。
 function ltSlotApplyResult(){
   const [tonicLabel, tonicCode] = LT_SLOT_TONICS[ltSlot.result[0]];
   const [typeLabel, typeVal] = LT_SLOT_TYPES[ltSlot.result[1]];
   const [dirLabel, dirVal] = LT_SLOT_DIRS[ltSlot.result[2]];
+  const [updownLabel, updownVal] = LT_SLOT_UPDOWN[ltSlot.result[3]];
   const mode = typeVal + (dirVal==='left' ? '_left' : '');
 
   document.getElementById('lt-mode').value = mode;
   ltApplyMode();
+  document.getElementById('lt-direction').value = updownVal;
+  ltApplyDirection();
 
   const list = ltPairList(mode);
   const isParallel = ltIsParallelMode(mode);
@@ -1687,7 +1703,7 @@ function ltSlotApplyResult(){
     }
   }
   document.getElementById('lt-slot-result').textContent =
-    `${tonicLabel}から、${typeLabel}ペア・${dirLabel}でスタートです。「スタート」で確認、「次の調」で先へ進めます。`;
+    `${tonicLabel}から、${typeLabel}ペア・${dirLabel}・${updownLabel}でスタートです。「スタート」で確認、「次の調」で先へ進めます。`;
 }
 
 // 現在の自動モードの状態。deckはランダム用の「重複なしで一巡する山札」。
@@ -1782,6 +1798,12 @@ function ltApplyMode(){
   document.getElementById('lt-auto-key').textContent='「次の調」を押してください';
 }
 
+// 上昇（通常の主音）／下降（2オクターブ上の主音）の表示を切り替える。マニュアル・ペア・ランダムすべてのモードに共通で適用される。
+function ltApplyDirection(){
+  const isDown = document.getElementById('lt-direction').value==='down';
+  document.getElementById('lt-direction-note').style.display = isDown ? '' : 'none';
+}
+
 async function startLT(){
   if(lt.active)return;
   const ctx=await ensureCtx();
@@ -1789,7 +1811,6 @@ async function startLT(){
   const metro=document.getElementById('lt-metro').checked;
   const meter=Number(document.getElementById('lt-meter').value);
   const key=ltCurrentKey();
-  const overlay=document.getElementById('lt-overlay').checked && meter===6;
   const bpm=Number(document.getElementById('lt-bpm').value);
   const spb=60/bpm;
   let startDelay=1.0;
@@ -1827,41 +1848,15 @@ async function startLT(){
   else { tonicLowMidi=TONIC_LOW; tonicHighMidi=TONIC_LOW+36; } // C
   
   const LOW_FREQ = tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], tonicLowMidi);
-  const HIGH_FREQ = LOW_FREQ * 8; // 3オクターブ上
-  const baseFreq = LOW_FREQ;
+  const isDown = document.getElementById('lt-direction').value==='down';
+  const octaveShift = isDown ? 4 : 1; // 下降：2オクターブ上（×4）から。上昇：通常の主音（×1）から。
+  const baseFreq = LOW_FREQ * octaveShift;
   const osc=ctx.createOscillator(); osc.type='sine'; osc.frequency.setValueAtTime(baseFreq,startTime);
   const g=ctx.createGain();
   g.gain.setValueAtTime(0.0001,startTime);
   g.gain.exponentialRampToValueAtTime(0.3,startTime+0.012);
   osc.connect(g); g.connect(ctx.destination); osc.start(startTime);
   lt.osc=osc; lt.gain=g;
-
-  if(overlay){
-    // 高音用の常時鳴っているオシレーター（ゲインだけ周期的に持ち上げる）
-    const hiOsc=ctx.createOscillator(); hiOsc.type='sine'; hiOsc.frequency.setValueAtTime(HIGH_FREQ,startTime);
-    const hiGain=ctx.createGain();
-    hiGain.gain.setValueAtTime(0.0001,startTime);
-    hiOsc.connect(hiGain); hiGain.connect(ctx.destination); hiOsc.start(startTime);
-    lt.hiOsc=hiOsc; lt.hiGain=hiGain;
-
-    let cycleStart=startTime;
-    const scheduleCycle=()=>{
-      if(!lt.active)return;
-      const peakStart=cycleStart+(LT_OVERLAY_PEAK_BEAT-1)*spb;
-      const a=Math.min(0.02,spb*0.15); // 素早い立ち上がり
-      const decayEnd=peakStart+spb+spb/3; // 5拍目の最初の3連符の音まで使って0まで減衰
-      try{
-        lt.hiGain.gain.setValueAtTime(0.0001,peakStart);
-        lt.hiGain.gain.exponentialRampToValueAtTime(0.3,peakStart+a); // ピーク（低音と同じ音量）
-        lt.hiGain.gain.exponentialRampToValueAtTime(0.0001,decayEnd); // そこから完全な無音まで自然に減衰
-      }catch(e){}
-      cycleStart+=LT_OVERLAY_CYCLE_BEATS*spb;
-      const delayMs=(cycleStart-getCtx().currentTime)*1000-60;
-      lt.overlayTimer=setTimeout(scheduleCycle, Math.max(0,delayMs));
-    };
-    const firstDelay=(cycleStart-ctx.currentTime)*1000;
-    lt.overlayTimer=setTimeout(scheduleCycle, Math.max(0,firstDelay));
-  }
 
   if(metro){
     const beginMs=(startTime-ctx.currentTime)*1000;
@@ -1887,19 +1882,12 @@ function stopLT(){
       lt.osc.stop(ctx.currentTime); 
     }catch(e){} 
   }
-  if(lt.hiOsc){ 
-    try{ 
-      lt.hiOsc.disconnect();
-      lt.hiOsc.stop(ctx.currentTime); 
-    }catch(e){} 
-  }
   
-  lt.osc=null; lt.gain=null; lt.hiOsc=null; lt.hiGain=null;
+  lt.osc=null; lt.gain=null;
   
   // すべてのタイマーをクリア
   if(lt.timer){clearInterval(lt.timer);lt.timer=null;}
   if(lt.startTimer){clearTimeout(lt.startTimer);lt.startTimer=null;}
-  if(lt.overlayTimer){clearTimeout(lt.overlayTimer);lt.overlayTimer=null;}
   
   document.getElementById('lt-start').disabled=false;
   document.getElementById('lt-stop').disabled=true;
@@ -1952,6 +1940,8 @@ document.getElementById('lt-slot-start').onclick=ltSlotStart;
 document.getElementById('lt-slot-stop1').onclick=()=>ltSlotStop(0);
 document.getElementById('lt-slot-stop2').onclick=()=>ltSlotStop(1);
 document.getElementById('lt-slot-stop3').onclick=()=>ltSlotStop(2);
+document.getElementById('lt-slot-stop4').onclick=()=>ltSlotStop(3);
+document.getElementById('lt-direction').onchange=ltApplyDirection;
 document.getElementById('lt-mode').onchange=ltApplyMode;
 document.getElementById('lt-next').onclick=ltNextKey;
 document.getElementById('lt-prev').onclick=ltPrevKey;
@@ -1959,15 +1949,6 @@ document.getElementById('lt-side-major').onclick=()=>ltPlaySide('major');
 document.getElementById('lt-side-minor').onclick=()=>ltPlaySide('minor');
 document.getElementById('lt-start').onclick=startLT;
 document.getElementById('lt-stop').onclick=stopLT;
-function syncLtOverlayAvailability(){
-  const meterEl=document.getElementById('lt-meter');
-  const overlayEl=document.getElementById('lt-overlay');
-  const enabled = Number(meterEl.value)===6;
-  overlayEl.disabled = !enabled;
-  if(!enabled) overlayEl.checked=false;
-}
-document.getElementById('lt-meter').addEventListener('change', syncLtOverlayAvailability);
-syncLtOverlayAvailability();
 document.getElementById('ch-start').onclick=()=>chCtl.start();
 document.getElementById('ch-stop').onclick=()=>chCtl.stop();
 document.getElementById('th-start').onclick=()=>thCtl.start();
