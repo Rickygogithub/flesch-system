@@ -205,6 +205,12 @@
         <option value="Ebm">変ホ短調</option>
       </select>
     </div>
+    <div class="opt"><span>開始方向</span>
+      <select id="sc-direction">
+        <option value="up" selected>上昇（主音から）</option>
+        <option value="down">下降（設定したオクターブ数分、上の主音から）</option>
+      </select>
+    </div>
     <div class="opt"><span>メトロノームを併用</span>
       <input type="checkbox" id="sc-metro">
     </div>
@@ -1326,17 +1332,42 @@ function buildScale(){
   }
 
   const midis=[];
+  const absDegTrace=[]; const ascendPhaseTrace=[];
   degSeqForRhythm.forEach((deg,idx)=>{
     const letter=LETTER_BY_DEG[deg];
     let midi=stepOne(letter);
+    // 上行域の境界：2オクターブ専用リズムでは、頂点の1回目（伸ばす方）まで。3オクターブは従来通りoctaves*7。
+    const ascendUpTo = (octaves===2) ? (octaves*7 + 1) : (octaves*7);
+    const ascendingPhase = idx < ascendUpTo;
+    absDegTrace.push(absDeg); ascendPhaseTrace.push(ascendingPhase);
     if(isMinor(key)){
-      // 上行域の境界：2オクターブ専用リズムでは、頂点の1回目（伸ばす方）まで。3オクターブは従来通りoctaves*7。
-      const ascendUpTo = (octaves===2) ? (octaves*7 + 1) : (octaves*7);
-      const ascendingPhase = idx < ascendUpTo;
       if(ascendingPhase && (letter==='ファ'||letter==='ソ')) midi+=1;
     }
     midis.push(midi);
   });
+
+  // 下降モード：主音の2オクターブ上から始め、下降してから上昇して戻る（音の並びを、絶対度数のピークを軸に鏡像変換）。
+  // 鏡像の軸は「最大値＋最小値」（短調はラ=5が起点のため、最大値だけを軸にすると正しく反転しない）。
+  const direction=document.getElementById('sc-direction').value;
+  if(direction==='down'){
+    const topAbsDeg = Math.max(...absDegTrace);
+    const bottomAbsDeg = Math.min(...absDegTrace);
+    const mirrorAxis = topAbsDeg + bottomAbsDeg;
+    const initAbsDeg = isMinor(key) ? 5 : 0; // 主音の基準位置（短調はラ=5、長調はド=0）
+    midis.length=0;
+    absDegTrace.forEach((origAbsDeg, idx)=>{
+      const mirroredAbsDeg = mirrorAxis - origAbsDeg;
+      let midi = degToMidiNatural(mirroredAbsDeg);
+      const mirroredAscendingPhase = !ascendPhaseTrace[idx]; // 鏡像なので上行・下行が入れ替わる
+      if(isMinor(key) && mirroredAscendingPhase){
+        // 鏡像後の音が実際に何度目（主音から何音目）かを、鏡像後の絶対度数から直接求め直す。
+        // （元のletterTraceは鏡像前の度数に基づくため、鏡像後の音の度数とは一致しない）
+        const relDeg = ((mirroredAbsDeg - initAbsDeg) % 7 + 7) % 7; // 0=1度, 5=6度, 6=7度
+        if(relDeg===5 || relDeg===6) midi+=1;
+      }
+      midis.push(midi);
+    });
+  }
 
   const noteMap={}; let step=0;
   const add=(s,freq,d,p)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p});};
