@@ -189,6 +189,8 @@
     <div class="opt"><span>調の並び順（平行調ペア）</span>
       <select id="sc-order-mode">
         <option value="difficulty" selected>難易度順（♯♭0→6の順）</option>
+        <option value="sharp_order">♯順（0→6、次の調で1つずつ増加）</option>
+        <option value="flat_order">♭順（0→6、次の調で1つずつ増加）</option>
         <option value="circle_right">5度圏 右回り</option>
         <option value="circle_left">5度圏 左回り</option>
       </select>
@@ -264,6 +266,8 @@
     <div class="opt"><span>調の並び順（同主調ペア）</span>
       <select id="ch-order-mode">
         <option value="difficulty" selected>難易度順（♯♭0→6の順）</option>
+        <option value="sharp_order">♯順（0→6、次の調で1つずつ増加）</option>
+        <option value="flat_order">♭順（0→6、次の調で1つずつ増加）</option>
         <option value="circle_right">5度圏 右回り</option>
         <option value="circle_left">5度圏 左回り</option>
       </select>
@@ -1690,16 +1694,27 @@ const SC_KEY_NAME = {
 };
 const SC_ORDER_RIGHT = buildOrderList26(LT_PAIRS_PARALLEL);
 const SC_ORDER_LEFT = buildOrderList26(LT_PAIRS_PARALLEL_LEFT);
+// ♯順・♭順（0→6のみ、5度圏を折り返さず一方向に増えるだけの単純な進行）
+const SC_ORDER_SHARP = buildOrderList26(LT_PAIRS_PARALLEL.slice(0,7));
+const SC_ORDER_FLAT = buildOrderList26(LT_PAIRS_PARALLEL_LEFT.slice(0,7));
 // ③用：LT_PAIRS_SAMEKEY(_LEFT)のラベル区切り「／」を、このセクションの表記「・」に合わせる
 function toChLabel(label){ return label.replace(' ／ ','・'); }
 const CH_ORDER_RIGHT = LT_PAIRS_SAMEKEY.map(([label,code])=>[toChLabel(label),code]);
 const CH_ORDER_LEFT = LT_PAIRS_SAMEKEY_LEFT.map(([label,code])=>[toChLabel(label),code]);
+const CH_ORDER_SHARP = LT_PAIRS_SAMEKEY.slice(0,7).map(([label,code])=>[toChLabel(label),code]);
+const CH_ORDER_FLAT = LT_PAIRS_SAMEKEY_LEFT.slice(0,7).map(([label,code])=>[toChLabel(label),code]);
 
 // ②③共通：並び順モードのナビゲーション制御を1つのファクトリで作る（prefix: 'sc'または'ch'）
-function makeOrderNav(prefix, rightList, leftList){
+function makeOrderNav(prefix, rightList, leftList, sharpList, flatList){
   const state = { idx:-1 };
   function mode(){ return document.getElementById(prefix+'-order-mode').value; }
-  function list(){ return mode()==='circle_left' ? leftList : rightList; }
+  function list(){
+    const m=mode();
+    if(m==='circle_left') return leftList;
+    if(m==='sharp_order') return sharpList;
+    if(m==='flat_order') return flatList;
+    return rightList;
+  }
   function applyMode(){
     const auto = mode()!=='difficulty';
     document.getElementById(prefix+'-order-box').style.display = auto ? '' : 'none';
@@ -1726,8 +1741,8 @@ function makeOrderNav(prefix, rightList, leftList){
   document.getElementById(prefix+'-order-next').onclick=next;
   document.getElementById(prefix+'-order-prev').onclick=prev;
 }
-makeOrderNav('sc', SC_ORDER_RIGHT, SC_ORDER_LEFT);
-makeOrderNav('ch', CH_ORDER_RIGHT, CH_ORDER_LEFT);
+makeOrderNav('sc', SC_ORDER_RIGHT, SC_ORDER_LEFT, SC_ORDER_SHARP, SC_ORDER_FLAT);
+makeOrderNav('ch', CH_ORDER_RIGHT, CH_ORDER_LEFT, CH_ORDER_SHARP, CH_ORDER_FLAT);
 
 // ランダム用の26調（長調13＋短調13）
 const LT_KEYS_26 = [
