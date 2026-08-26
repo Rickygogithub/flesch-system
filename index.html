@@ -444,6 +444,10 @@
                     <li>バッハ無伴奏チェロ組曲3番のサラバンドで、和音は弓を手前に傾けて接触面積を増やし、摩擦を上げる。ヴィオラで低い2弦を重音で振動させるにはかなりの摩擦が必要で、これを圧力だけで作ろうとすると音が潰れる。単音は重音に比べて摩擦が少なくて良いため、透明感のある伸びの音を出すために弓を指板側にやや傾けて弓の量を使ったが、弓の毛の量は少なくした</li>
                     <li>カンパニョーリ2番で、音程だけでなく左手の指を下ろす速度や強さにも気をつけた。右腕は重みよりも横の動きを重視したら音の伸びが良くなった</li>
                     <li>カンパニョーリ3番の和音は、ボーイングの練習も兼ねて、準備が整ってから音を出すことに注意した</li>
+                    <li>アプリのスロットマシンを使い、主音・平行調（同主調）ペア・5度圏の右回り／左回り・上昇からか下降からかを、すべてランダムに決めて練習する方法は有効。自分では選ばない組み合わせが強制されるため、得意な調・得意な方向に無意識に偏ることを防げる</li>
+                    <li>下降から始めることは、上昇から始めることに比べてまだかなり難しい。運動記憶が長年「上昇開始」に最適化されており、階名と指の組み合わせがパッと出てこない</li>
+                    <li>変イ長調のような、調号がたくさんつく調から5度圏を一周させるのも難しさを増す。下降という不慣れなパターンと、調号の多い調という指の配置自体の複雑さが重なるため</li>
+                    <li>しばらくは下降→上昇を中心に練習し、この回路がある程度自動化されてから、スロットマシンによるランダムな負荷（不慣れな調×不慣れな方向）に再度取り組む、という段階を踏むのがよさそうである</li>
                 </ul>
                 <p><strong>2026年8月25日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
@@ -798,6 +802,28 @@
                 if (idx > 0) group.style.display = 'none';
                 container.appendChild(group);
             });
+
+            // 最新の1日分（days[0]）の中の箇条書きも、最初の1項目だけ表示する
+            const latestUl = days[0].querySelector('ul');
+            if (latestUl) {
+                const items = Array.from(latestUl.children).filter(el => el.tagName === 'LI');
+                if (items.length > 1) {
+                    items.forEach((item, idx) => { if (idx > 0) item.style.display = 'none'; });
+                    const itemToggleWrap = document.createElement('div');
+                    itemToggleWrap.style.margin = '4px 0 8px 20px';
+                    const itemToggleBtn = document.createElement('button');
+                    itemToggleBtn.textContent = `他${items.length - 1}件を表示`;
+                    itemToggleBtn.style.cssText = 'font-size:0.85rem; padding:6px 12px; border:1px solid #c9d0da; border-radius:6px; background:#f5f7fa; color:#555; cursor:pointer;';
+                    let itemsExpanded = false;
+                    itemToggleBtn.addEventListener('click', () => {
+                        itemsExpanded = !itemsExpanded;
+                        items.forEach((item, idx) => { if (idx > 0) item.style.display = itemsExpanded ? '' : 'none'; });
+                        itemToggleBtn.textContent = itemsExpanded ? '隠す' : `他${items.length - 1}件を表示`;
+                    });
+                    itemToggleWrap.appendChild(itemToggleBtn);
+                    latestUl.insertAdjacentElement('afterend', itemToggleWrap);
+                }
+            }
 
             if (days.length > 1) {
                 const toggleWrap = document.createElement('div');
