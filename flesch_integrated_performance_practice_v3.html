@@ -112,10 +112,12 @@
     <div id="lt-direction-note" style="display:none;font-size:12px;color:#8a5a00;font-weight:700;margin:2px 0 8px;text-align:center;">今日は下降から始めてください。1オクターブ上の主音が鳴ります。</div>
     <div class="opt"><span>音色</span>
       <select id="lt-timbre">
-        <option value="sine" selected>純音（サイン波）</option>
-        <option value="organ">オルガン風（倍音を含む）</option>
+        <option value="sine" selected>純音（音程確認向け）</option>
+        <option value="organ">オルガン風（耳に優しい）</option>
+        <option value="strings">弦楽器風（耳にもっと優しい）</option>
       </select>
     </div>
+    <div style="font-size:11.5px;color:#777;margin:-2px 0 8px;line-height:1.6;">3つの音色は目的別：純音は音程としての純度が最も高く厳密な確認向き。オルガン風は倍音を含み聴き疲れしにくいが音程の芯は保たれる。弦楽器風はさらに耳への刺激を抑えたモードで、長時間の使用や体調に配慮したい時向け。</div>
     <div class="opt"><span>モード</span>
       <select id="lt-mode">
         <option value="manual" selected>マニュアル（調を選択）</option>
@@ -241,6 +243,14 @@
     <div class="opt"><span>ロングトーン確認モード（1音を拍子の拍数の音価分伸ばす）</span>
       <input type="checkbox" id="sc-longtone">
     </div>
+    <div class="opt"><span>音色</span>
+      <select id="sc-timbre">
+        <option value="sine" selected>純音（音程確認向け）</option>
+        <option value="organ">オルガン風（耳に優しい）</option>
+        <option value="strings">弦楽器風（耳にもっと優しい）</option>
+      </select>
+    </div>
+    <div style="font-size:11.5px;color:#777;margin:-2px 0 8px;line-height:1.6;">長時間の音階練習向けに、①と同じ3つの音色を用意。純音は音程確認向け、オルガン風・弦楽器風は聴き疲れを抑えたい時向け。</div>
     <div class="opt"><span>テンポ</span>
       <input type="range" id="sc-bpm" min="10" max="180" value="60">
       <span class="bpmval" id="sc-bpmval">60 BPM</span>
@@ -699,22 +709,49 @@ function jiFreqFromTonic(tonicFreq, tonicMidi, rootMidi, noteMidi){
 }
 
 /* ---- 単発音・クリック（絶対時刻でスケジュール） ---- */
-function playToneAt(time, freq, dur, peak){
+// ②などで使う、弱めの倍音構成（オルガン風・弦楽器風で共通）
+const SOFT_PARTIALS=[{mult:1,amp:1.0},{mult:2,amp:0.32},{mult:3,amp:0.14},{mult:4,amp:0.06},{mult:5,amp:0.025}];
+function playToneAt(time, freq, dur, peak, timbre){
+  timbre = timbre || 'sine';
   const ctx=getCtx();
   peak=peak||0.26;
   const a=Math.min(0.012, dur*0.4);
   const r=Math.min(0.05, dur*0.4);
   const xfade=Math.min(0.025, dur*0.35); // 次の音の立ち上がりと少し重ねる（クロスフェード）
   const sus=Math.max(time+a, time+dur-r);
-  const osc=ctx.createOscillator(); osc.type='sine'; osc.frequency.value=freq;
   const g=ctx.createGain();
   g.gain.setValueAtTime(0.0001,time);
   g.gain.exponentialRampToValueAtTime(peak, time+a);
   g.gain.setValueAtTime(peak, sus);
   g.gain.exponentialRampToValueAtTime(0.0001, time+dur+xfade);
-  osc.connect(g); g.connect(ctx.destination);
-  osc.start(time); osc.stop(time+dur+xfade+0.03);
-  activeOscillators.push({osc, g, stopTime:time+dur+xfade+0.03});
+  const stopAt=time+dur+xfade+0.03;
+
+  if(timbre==='organ' || timbre==='strings'){
+    // オルガン風・弦楽器風：弱めの倍音を加算合成し、ローパスで角を丸める
+    const lowpass=ctx.createBiquadFilter();
+    lowpass.type='lowpass'; lowpass.frequency.setValueAtTime(1800,time); lowpass.Q.setValueAtTime(0.7,time);
+    g.connect(lowpass); lowpass.connect(ctx.destination);
+    let lfoGain=null;
+    if(timbre==='strings'){
+      const lfo=ctx.createOscillator(); lfo.type='sine'; lfo.frequency.setValueAtTime(5.2,time);
+      lfoGain=ctx.createGain(); lfoGain.gain.value=3; // ±3セント、音程ではなく周波数にごく微細な揺れ
+      lfo.connect(lfoGain); lfo.start(time); lfo.stop(stopAt);
+      activeOscillators.push({osc:lfo, g});
+    }
+    SOFT_PARTIALS.forEach(p=>{
+      const posc=ctx.createOscillator(); posc.type='sine'; posc.frequency.setValueAtTime(freq*p.mult,time);
+      if(lfoGain) lfoGain.connect(posc.detune);
+      const pg=ctx.createGain(); pg.gain.value=p.amp;
+      posc.connect(pg); pg.connect(g);
+      posc.start(time); posc.stop(stopAt);
+      activeOscillators.push({osc:posc, g});
+    });
+  } else {
+    const osc=ctx.createOscillator(); osc.type='sine'; osc.frequency.value=freq;
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(time); osc.stop(stopAt);
+    activeOscillators.push({osc, g, stopTime:stopAt});
+  }
 }
 function playClickAt(time, accent){
   const ctx=getCtx();
@@ -1576,7 +1613,7 @@ function makeController(buildFn, els){
       } else {
         // メトロノーム未使用時：1秒待つ→主音を2秒鳴らす→1秒待ってから本編開始
         const preStart=ctx.currentTime+1.0;
-        if(this.built.tonicFreq) playToneAt(preStart, this.built.tonicFreq, 2.0, 0.26);
+        if(this.built.tonicFreq) playToneAt(preStart, this.built.tonicFreq, 2.0, 0.26, els.getTimbre ? els.getTimbre() : 'sine');
         this.nextStepTime=preStart+2.0+1.0;
       }
       els.start.disabled=true; els.stop.disabled=false;
@@ -1594,7 +1631,8 @@ function makeController(buildFn, els){
         }
         if(step>=0){
           const ns=b.noteMap[step];
-          if(ns) ns.forEach(n=>playToneAt(this.nextStepTime+(n.delaySteps||0)*sixteenth(),n.freq,n.durSteps*sixteenth(),n.peak));
+          const timbre = els.getTimbre ? els.getTimbre() : 'sine';
+          if(ns) ns.forEach(n=>playToneAt(this.nextStepTime+(n.delaySteps||0)*sixteenth(),n.freq,n.durSteps*sixteenth(),n.peak,timbre));
           if(b.labelMap && b.labelMap[step]!==undefined && els.label){
             const txt=b.labelMap[step], d=(this.nextStepTime-ctx.currentTime)*1000;
             setTimeout(()=>{ if(this.running&&els.label) els.label.textContent=txt; },Math.max(0,d));
@@ -1632,7 +1670,7 @@ function makeController(buildFn, els){
 }
 
 /* ---- ①主音ロングトーン（主音保続＋「高音を重ねる」時はサイクル頂点で高音を重ねる、カウントイン対応） ---- */
-let lt={active:false,osc:null,gain:null,oscs:null,timer:null,startTimer:null};
+let lt={active:false,osc:null,gain:null,oscs:null,filter:null,timer:null,startTimer:null};
 
 /* ===== ①主音ロングトーン：モード（マニュアル／平行調ペア／同主調ペア／ランダム） ===== */
 // 主音MIDIの補完（既存のif連鎖に無い調のみ。値は主音の実音）
@@ -1992,19 +2030,52 @@ async function startLT(){
   const timbre = document.getElementById('lt-timbre').value;
 
   if(timbre==='organ'){
-    // オルガン風：基音+倍音（2〜6次）を別オシレーターで加算合成。エネルギーが分散し、持続音でも聴き疲れしにくい。
+    // オルガン風（耳に優しい）：基音+倍音（弱め、1〜5次）を加算合成し、ローパスフィルターで角を丸める。
+    // 揺らぎは加えず、音程の芯は保ったまま、純音より聴き疲れしにくくする。
     const master=ctx.createGain();
     master.gain.setValueAtTime(0.0001,startTime);
-    master.gain.exponentialRampToValueAtTime(0.3,startTime+0.012);
-    master.connect(ctx.destination);
-    const partials=[{mult:1,amp:1.0},{mult:2,amp:0.5},{mult:3,amp:0.28},{mult:4,amp:0.18},{mult:5,amp:0.10},{mult:6,amp:0.06}];
+    master.gain.exponentialRampToValueAtTime(0.3,startTime+0.04);
+    const lowpass=ctx.createBiquadFilter();
+    lowpass.type='lowpass';
+    lowpass.frequency.setValueAtTime(1800,startTime);
+    lowpass.Q.setValueAtTime(0.7,startTime);
+    master.connect(lowpass);
+    lowpass.connect(ctx.destination);
+    const partials=[{mult:1,amp:1.0},{mult:2,amp:0.32},{mult:3,amp:0.14},{mult:4,amp:0.06},{mult:5,amp:0.025}];
     const oscs=partials.map(p=>{
       const posc=ctx.createOscillator(); posc.type='sine'; posc.frequency.setValueAtTime(baseFreq*p.mult,startTime);
       const pg=ctx.createGain(); pg.gain.value=p.amp;
       posc.connect(pg); pg.connect(master); posc.start(startTime);
       return posc;
     });
-    lt.osc=null; lt.oscs=oscs; lt.gain=master;
+    lt.osc=null; lt.oscs=oscs; lt.gain=master; lt.filter=lowpass;
+  } else if(timbre==='strings'){
+    // 弦楽器風（耳にもっと優しい）：オルガン風と同じ弱めの倍音構成＋ローパスに加えて、
+    // 音量ではなく周波数にごく微細なゆらぎ（±3セント程度）を加える。
+    // 振幅トレモロより機械的に聞こえにくく、耳への刺激をさらに抑える狙い。
+    const master=ctx.createGain();
+    master.gain.setValueAtTime(0.0001,startTime);
+    master.gain.exponentialRampToValueAtTime(0.3,startTime+0.04);
+    const lowpass=ctx.createBiquadFilter();
+    lowpass.type='lowpass';
+    lowpass.frequency.setValueAtTime(1800,startTime);
+    lowpass.Q.setValueAtTime(0.7,startTime);
+    master.connect(lowpass);
+    lowpass.connect(ctx.destination);
+    const partials=[{mult:1,amp:1.0},{mult:2,amp:0.32},{mult:3,amp:0.14},{mult:4,amp:0.06},{mult:5,amp:0.025}];
+    const oscs=partials.map(p=>{
+      const posc=ctx.createOscillator(); posc.type='sine'; posc.frequency.setValueAtTime(baseFreq*p.mult,startTime);
+      const pg=ctx.createGain(); pg.gain.value=p.amp;
+      posc.connect(pg); pg.connect(master); posc.start(startTime);
+      return posc;
+    });
+    const lfo=ctx.createOscillator(); lfo.type='sine'; lfo.frequency.setValueAtTime(5.2,startTime);
+    const lfoGain=ctx.createGain(); lfoGain.gain.value=3; // ±3セント
+    lfo.connect(lfoGain);
+    oscs.forEach(o=>lfoGain.connect(o.detune));
+    lfo.start(startTime);
+    oscs.push(lfo);
+    lt.osc=null; lt.oscs=oscs; lt.gain=master; lt.filter=lowpass;
   } else {
     const osc=ctx.createOscillator(); osc.type='sine'; osc.frequency.setValueAtTime(baseFreq,startTime);
     const g=ctx.createGain();
@@ -2044,7 +2115,7 @@ function stopLT(){
     });
   }
   
-  lt.osc=null; lt.oscs=null; lt.gain=null;
+  lt.osc=null; lt.oscs=null; lt.gain=null; lt.filter=null;
   
   // すべてのタイマーをクリア
   if(lt.timer){clearInterval(lt.timer);lt.timer=null;}
@@ -2094,7 +2165,8 @@ const ocCtl=makeController(buildOctaves,{
 const scCtl=makeController(buildScale,{
   bpm:document.getElementById('sc-bpm'),meter:document.getElementById('sc-meter'),
   metro:document.getElementById('sc-metro'),
-  start:document.getElementById('sc-start'),stop:document.getElementById('sc-stop')
+  start:document.getElementById('sc-start'),stop:document.getElementById('sc-stop'),
+  getTimbre:()=>document.getElementById('sc-timbre').value
 });
 
 document.getElementById('lt-slot-start').onclick=ltSlotStart;
