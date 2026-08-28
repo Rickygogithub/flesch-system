@@ -306,6 +306,14 @@
     <div class="opt"><span>メトロノームを併用</span>
       <input type="checkbox" id="ch-metro">
     </div>
+    <div class="opt"><span>音色</span>
+      <select id="ch-timbre">
+        <option value="sine" selected>純音（音程確認向け）</option>
+        <option value="organ">オルガン風（耳に優しい）</option>
+        <option value="strings">弦楽器風（耳にもっと優しい）</option>
+      </select>
+    </div>
+    <div style="font-size:11.5px;color:#777;margin:-2px 0 8px;line-height:1.6;">下降の集中練習など、長時間聴く場合は、①②と同じ音色を選べます。</div>
     <div class="opt"><span>テンポ</span>
       <input type="range" id="ch-bpm" min="10" max="200" value="60">
       <span class="bpmval" id="ch-bpmval">60 BPM</span>
@@ -2130,7 +2138,8 @@ const chCtl=makeController(buildChords,{
   bpm:document.getElementById('ch-bpm'),meter:document.getElementById('ch-meter'),
   metro:document.getElementById('ch-metro'),
   start:document.getElementById('ch-start'),stop:document.getElementById('ch-stop'),
-  label:document.getElementById('ch-current')
+  label:document.getElementById('ch-current'),
+  getTimbre:()=>document.getElementById('ch-timbre').value
 });
 const thCtl=makeController(buildThirds,{
   bpm:document.getElementById('th-bpm'),meter:document.getElementById('th-meter'),
