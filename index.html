@@ -635,6 +635,10 @@
         <div style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <p style="font-weight: 700; font-size: 1.1rem; color: #0f1722; margin: 0 0 16px;">📋 アップデート履歴</p>
             <div style="font-size: 0.95rem; line-height: 2; color: #555;" id="changelog-container">
+                <p><strong>2026年8月31日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>ポータル（index.html）：訪問回数カウンターを、ブラウザごとに独立してカウントされるlocalStorage方式から、サーバー側で集計するGoatCounter（軽量・プライバシー配慮型のアクセス解析サービス）に変更。ファイルの更新やブラウザ・端末の違いに影響されず、サイト全体の訪問回数を正確に集計できるようにした</li>
+                </ul>
                 <p><strong>2026年8月28日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>Integrated Performance Practice：③和音にも、①②と同じ3モードの音色選択（純音・オルガン風・弦楽器風）を追加。下降の集中練習などで、和音モードを長時間聴く際に、耳への刺激を抑えられる</li>
@@ -859,19 +863,24 @@
         <p style="margin-top: 12px; font-size: 0.85rem; color: #999;">
             訪問回数: <span id="visit-count" style="font-weight: 700;">計測中...</span>
         </p>
+        <!-- アクセスカウンター（GoatCounter使用、サーバー側で集計するためファイル更新やブラウザ違いの影響を受けない） -->
+        <script data-goatcounter="https://flesch-system.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
         <script>
-            // アクセスカウンター（localStorage使用）
-            function updateVisitCount() {
-                let count = localStorage.getItem('fleschSystemVisits');
-                if (!count) {
-                    count = 1;
-                } else {
-                    count = parseInt(count) + 1;
-                }
-                localStorage.setItem('fleschSystemVisits', count);
-                document.getElementById('visit-count').textContent = count;
-            }
-            updateVisitCount();
+            (function() {
+                var r = new XMLHttpRequest();
+                r.addEventListener('load', function() {
+                    try {
+                        document.getElementById('visit-count').textContent = JSON.parse(this.responseText).count;
+                    } catch (e) {
+                        document.getElementById('visit-count').textContent = '—';
+                    }
+                });
+                r.addEventListener('error', function() {
+                    document.getElementById('visit-count').textContent = '—';
+                });
+                r.open('GET', 'https://flesch-system.goatcounter.com/counter/TOTAL.json');
+                r.send();
+            })();
         </script>
     </footer>
 
