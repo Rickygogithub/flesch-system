@@ -635,6 +635,10 @@
         <div style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <p style="font-weight: 700; font-size: 1.1rem; color: #0f1722; margin: 0 0 16px;">📋 アップデート履歴</p>
             <div style="font-size: 0.95rem; line-height: 2; color: #555;" id="changelog-container">
+                <p><strong>2026年9月1日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>Integrated Performance Practice：①ロングトーン・③和音の「同主調ペア」で、変イ長調・変ニ長調・変ト長調の短調側（変イ短調・変ニ短調・変ト短調）に＊を追加。これらは理論上は成立する調だが、標準的な記譜法の範囲（最大♭7つ）を超える、または超えるダブルフラットを要するため、実務では通常、異名同音（嬰ハ短調・嬰ヘ短調など）で記譜される。本システムは異名同音を周波数の異なる別の音として扱う設計のため、異名同音への置き換えは行わず、理論通りの綴りのまま＊注記のみを加える形にした。ヒントテキストにも＊の意味を追記</li>
+                </ul>
                 <p><strong>2026年8月31日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>ポータル（index.html）：訪問回数カウンターを、ブラウザごとに独立してカウントされるlocalStorage方式から、サーバー側で集計するGoatCounter（軽量・プライバシー配慮型のアクセス解析サービス）に変更。ファイルの更新やブラウザ・端末の違いに影響されず、サイト全体の訪問回数を正確に集計できるようにした</li>
