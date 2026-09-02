@@ -142,6 +142,13 @@
         <option value="short">旋律確認モード（短め）</option>
       </select>
     </div>
+    <div class="control-row" id="octave3-row">
+      <span>3オクターブモード（PC推奨）</span>
+      <select id="octave3-mode">
+        <option value="2">オフ（2オクターブ）</option>
+        <option value="3">オン（3オクターブ）</option>
+      </select>
+    </div>
     <div class="octave-row">
       <button id="oct-down">−</button>
       <span class="octave-label" id="octave-label">オクターブ 3〜5</span>
@@ -192,16 +199,21 @@ function clampToSingleAccidental(p) {
   return p;
 }
 
-// 主音+旋法から、五度圏位置一覧（クロマチック12音、-5〜+6）を返す（ピタゴラス鍵盤用）
-function buildKeyMap(tonicP) {
-  const offsets = [-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+// IPPと共通の、半音位置ごとの5度圏オフセット表（長調用・短調用）。
+// 短調は第2音・第3音・第6音相当の位置で♭側の綴りを使う（そうしないと短3度・短6度が
+// ピタゴラスコンマ分高い、増音程として計算されてしまうため）。
+const PYTH_FIFTHS = {0:0, 1:7, 2:2, 3:9, 4:4, 5:-1, 6:6, 7:1, 8:8, 9:3, 10:-2, 11:5};
+const PYTH_FIFTHS_MINOR = {0:0, 1:-5, 2:2, 3:-3, 4:4, 5:-1, 6:6, 7:1, 8:-4, 9:3, 10:-2, 11:5};
+
+// 主音+旋法から、五度圏位置一覧（クロマチック12音）を返す（ピタゴラス鍵盤用）
+function buildKeyMap(tonicP, isMinorMode) {
+  const table = isMinorMode ? PYTH_FIFTHS_MINOR : PYTH_FIFTHS;
   const map = {};
-  offsets.forEach(o => {
-    let p = tonicP + o;
+  for (let pc = 0; pc < 12; pc++) {
+    let p = tonicP + table[pc];
     p = clampToSingleAccidental(p);
-    const semi = fifthsToSemitone(p);
-    map[semi] = { name: fifthsToName(p), p };
-  });
+    map[pc] = { name: fifthsToName(p), p };
+  }
   return map;
 }
 
@@ -319,12 +331,11 @@ function stopAllSustained() {
 
 // ===== モード管理 =====
 let currentMode = 'pyth'; // 'pyth' | 'et' | 'just'
-let currentOctave = 4; // 表示する最も低いオクターブ（2オクターブ表示）
-const OCTAVE_SPAN = 2;
+let currentOctave = 4; // 表示する最も低いオクターブ（基本表示）
+let octaveSpanSetting = 2; // 2 or 3（3オクターブモードのトグルで変更）
 
 const WHITE_SEMITONES = [0,2,4,5,7,9,11];
 const BLACK_SEMITONES = [1,3,6,8,10];
-const BLACK_POSITION = { 1: 0, 3: 1, 6: 3, 8: 4, 10: 5 };
 
 function setMode(mode) {
   stopAllSustained();
@@ -333,9 +344,10 @@ function setMode(mode) {
   document.getElementById('keyboard').style.display = (mode === 'just') ? 'none' : 'block';
   document.getElementById('pad-section').style.display = (mode === 'just') ? 'block' : 'none';
   document.getElementById('decay-row').style.display = (mode === 'just') ? 'none' : 'flex';
+  document.getElementById('octave3-row').style.display = (mode === 'just') ? 'none' : 'flex';
   document.getElementById('section-title').textContent = (mode === 'just') ? '純正律パッド' : '鍵盤';
   const hints = {
-    pyth: '白鍵・黒鍵の物理配置は通常のピアノと同じですが、同じ鍵盤の位置を押しても、選んでいる調によって、割り当てられる音名の綴りが変わり、鳴る周波数も変わります（例：CとDの間の黒鍵は、ハ長調ではDes、ト長調ではCisとして鳴り、この2つはわずかに異なる周波数です）。平均律のピアノのように「この位置は常にこの音」という固定対応ではない点が、このアプリの核です。ダブルシャープ・ダブルフラットが必要な場合は、ピタゴラスコンマだけ異なる異名同音に自動的に置き換えます。',
+    pyth: '白鍵・黒鍵の物理配置は通常のピアノと同じですが、同じ鍵盤の位置を押しても、選んでいる調によって、割り当てられる音名の綴りが変わり、鳴る周波数も変わります（例：CとDの間の黒鍵は、ハ長調ではDes、ト長調ではCisとして鳴り、この2つはわずかに異なる周波数です）。平均律のピアノのように「この位置は常にこの音」という固定対応ではない点が、このアプリの核です。長調・短調で綴りのテーブルを使い分けており（IPPと共通）、ダブルシャープ・ダブルフラットが必要な場合は、ピタゴラスコンマだけ異なる異名同音に自動的に置き換えます。',
     et: '平均律（12平均律）モードです。音名の綴りは選んだ調に応じて変わりますが、実際に鳴る周波数は綴りに関わらず、半音数だけで機械的に決まります（調を変えても音自体は変わりません）。複雑な旋律のおおまかな見当をつける用途に。',
     just: '選んだ調の主音を根音（1/1）とし、そこからの純正律比率で各度数を鳴らします。パッドを押すたびに音が積み重なって鳴り続け（もう一度押すとその音だけ止まります）、和音を1音ずつ組み立てながら響きを確認できます。「全て止める」でまとめて止められます。根音自体はピタゴラス基準の周波数です。'
   };
@@ -349,44 +361,58 @@ document.getElementById('tab-just').addEventListener('click', () => setMode('jus
 function render() {
   stopAllSustained();
   if (currentMode === 'just') renderPad(); else renderKeyboard();
-  document.getElementById('octave-label').textContent = 'オクターブ ' + currentOctave + '〜' + (currentOctave + OCTAVE_SPAN - 1);
+  const span = octaveSpanSetting;
+  document.getElementById('octave-label').textContent = 'オクターブ ' + currentOctave + '〜' + (currentOctave + span - 1) + '（＋端の拡張あり）';
+}
+
+// 鍵盤の物理的なキー配列を、下端(ロ/B)〜上端(ホ/E)まで、半音刻みで生成する。
+// 例：currentOctave=4, span=2 の場合、B3（下端の追加分）→ C4〜B5（本体2オクターブ）→ C6・D6・E6（上端の追加分）
+function buildKeyLayout() {
+  const lowValue = (currentOctave - 1) * 12 + 11; // 直前オクターブのB
+  const highValue = (currentOctave + octaveSpanSetting) * 12 + 4; // 次オクターブのE
+  const keys = [];
+  for (let v = lowValue; v <= highValue; v++) {
+    const semi = ((v % 12) + 12) % 12;
+    const octave = Math.floor(v / 12);
+    keys.push({ semi, octave, isWhite: WHITE_SEMITONES.includes(semi) });
+  }
+  return keys;
 }
 
 function renderKeyboard() {
   const tonicP = getSelectedTonicP();
-  const keyMap = buildKeyMap(tonicP);
+  const isMinorMode = document.getElementById('key-mode').value === 'minor';
+  const keyMap = buildKeyMap(tonicP, isMinorMode);
   const kb = document.getElementById('keyboard');
   kb.innerHTML = '';
-  const totalWhite = 7 * OCTAVE_SPAN;
+
+  const keys = buildKeyLayout();
+  const totalWhite = keys.filter(k => k.isWhite).length;
   const whiteWidthPct = 100 / totalWhite;
 
-  for (let octOffset = 0; octOffset < OCTAVE_SPAN; octOffset++) {
-    const octave = currentOctave + octOffset;
-    const baseIdx = octOffset * 7;
-
-    WHITE_SEMITONES.forEach((semi, idx) => {
+  let whiteIdx = -1;
+  keys.forEach((k) => {
+    const info = keyMap[k.semi];
+    if (k.isWhite) {
+      whiteIdx++;
       const div = document.createElement('div');
       div.className = 'white-key';
-      div.style.left = ((baseIdx + idx) * whiteWidthPct) + '%';
+      div.style.left = (whiteIdx * whiteWidthPct) + '%';
       div.style.width = whiteWidthPct + '%';
-      const info = keyMap[semi];
-      div.textContent = info.name + octave;
-      div.addEventListener('pointerdown', () => triggerKeyboardKey(info, semi, octave, div));
+      div.textContent = info.name + k.octave;
+      div.addEventListener('pointerdown', () => triggerKeyboardKey(info, k.semi, k.octave, div));
       kb.appendChild(div);
-    });
-
-    BLACK_SEMITONES.forEach((semi) => {
+    } else {
       const div = document.createElement('div');
       div.className = 'black-key';
-      const whiteIdx = BLACK_POSITION[semi];
       div.style.width = (whiteWidthPct * 0.62) + '%';
-      div.style.left = ((baseIdx + whiteIdx + 1) * whiteWidthPct - (whiteWidthPct * 0.31)) + '%';
-      const info = keyMap[semi];
-      div.textContent = info.name + octave;
-      div.addEventListener('pointerdown', (e) => { e.stopPropagation(); triggerKeyboardKey(info, semi, octave, div); });
+      // 黒鍵は、直前に置いた白鍵（whiteIdx、まだ加算前＝左隣の白鍵）の右端寄りに配置
+      div.style.left = ((whiteIdx + 1) * whiteWidthPct - (whiteWidthPct * 0.31)) + '%';
+      div.textContent = info.name + k.octave;
+      div.addEventListener('pointerdown', (e) => { e.stopPropagation(); triggerKeyboardKey(info, k.semi, k.octave, div); });
       kb.appendChild(div);
-    });
-  }
+    }
+  });
 }
 
 function triggerKeyboardKey(info, semi, octave, el) {
@@ -407,7 +433,7 @@ function renderPad() {
   grid.innerHTML = '';
   padButtons = {};
   const tonicP = getSelectedTonicP();
-  for (let octOffset = 0; octOffset < OCTAVE_SPAN; octOffset++) {
+  for (let octOffset = 0; octOffset < octaveSpanSetting; octOffset++) {
     const octave = currentOctave + octOffset;
     for (let semi = 0; semi < 12; semi++) {
       const btn = document.createElement('div');
@@ -446,6 +472,10 @@ document.getElementById('key-tonic').addEventListener('change', render);
 document.getElementById('key-mode').addEventListener('change', () => { populateTonics(); render(); });
 document.getElementById('base-freq').addEventListener('input', (e) => {
   document.getElementById('base-freq-val').textContent = parseFloat(e.target.value).toFixed(1) + ' Hz';
+});
+document.getElementById('octave3-mode').addEventListener('change', (e) => {
+  octaveSpanSetting = parseInt(e.target.value, 10);
+  render();
 });
 document.getElementById('oct-up').addEventListener('click', () => { currentOctave = Math.min(5, currentOctave + 1); render(); });
 document.getElementById('oct-down').addEventListener('click', () => { currentOctave = Math.max(2, currentOctave - 1); render(); });
