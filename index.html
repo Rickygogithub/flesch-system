@@ -686,7 +686,7 @@
             <div style="font-size: 0.95rem; line-height: 2; color: #555;" id="changelog-container">
                 <p><strong>2026年9月2日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
-                    <li>Pythagorean / ET / Just Intonation Keyboard：ピタゴラス鍵盤の音名計算を、IPPと共通の「長調用・短調用、2つの5度圏オフセット表（PYTH_FIFTHS／PYTH_FIFTHS_MINOR）」を使う方式に変更。従来は旋法（長調・短調）の区別なく、主音の位置だけから一律に12音を計算していたため、例えばB-durとh-mollで、Cのように両旋法の音階に共通しない位置の音の綴りが、本来異なるべきところが同じになってしまっていた。IPPが既に採用していた、短調の第2・3・6音相当を♭側の綴りで解釈する方式をそのまま移植し、アプリ間の整合性を取った</li>
+                    <li>Pythagorean / ET / Just Intonation Keyboard：ピタゴラス鍵盤の音名計算を、IPPと共通の「長調用・短調用、2つの5度圏オフセット表（PYTH_FIFTHS／PYTH_FIFTHS_MINOR）」を使う方式に変更。従来は旋法（長調・短調）の区別なく、主音の位置だけから一律に12音を計算していたため、例えばB-durとb-mollで、Cのように両旋法の音階に共通しない位置の音の綴りが、本来異なるべきところが同じになってしまっていた。IPPが既に採用していた、短調の第2・3・6音相当を♭側の綴りで解釈する方式をそのまま移植し、アプリ間の整合性を取った</li>
                     <li>Pythagorean / ET / Just Intonation Keyboard：鍵盤の音域を、下はロ（シ）、上はホ（ミ）まで拡張（本体のオクターブ範囲の両端に追加）。あわせて、PC向けに3オクターブモード（オン・オフ切替）を追加。鍵盤の物理配置生成ロジックを、固定の「オクターブ単位のループ」から、半音単位で下端〜上端まで並べる汎用的な方式に書き換え、両端の半端な音域にも柔軟に対応できるようにした</li>
                 </ul>
                 <p><strong>2026年9月1日</strong></p>
