@@ -143,10 +143,11 @@
       </select>
     </div>
     <div class="control-row" id="octave3-row">
-      <span>3オクターブモード（PC推奨）</span>
+      <span>表示オクターブ数</span>
       <select id="octave3-mode">
-        <option value="2">オフ（2オクターブ）</option>
-        <option value="3">オン（3オクターブ）</option>
+        <option value="2">2オクターブ（標準）</option>
+        <option value="3">3オクターブ（PC推奨）</option>
+        <option value="4">4オクターブ（複数パート確認用）</option>
       </select>
     </div>
     <div class="octave-row">
@@ -344,7 +345,7 @@ function setMode(mode) {
   document.getElementById('keyboard').style.display = (mode === 'just') ? 'none' : 'block';
   document.getElementById('pad-section').style.display = (mode === 'just') ? 'block' : 'none';
   document.getElementById('decay-row').style.display = (mode === 'just') ? 'none' : 'flex';
-  document.getElementById('octave3-row').style.display = (mode === 'just') ? 'none' : 'flex';
+  document.getElementById('octave3-row').style.display = 'flex';
   document.getElementById('section-title').textContent = (mode === 'just') ? '純正律パッド' : '鍵盤';
   const hints = {
     pyth: '白鍵・黒鍵の物理配置は通常のピアノと同じですが、同じ鍵盤の位置を押しても、選んでいる調によって、割り当てられる音名の綴りが変わり、鳴る周波数も変わります（例：CとDの間の黒鍵は、ハ長調ではDes、ト長調ではCisとして鳴り、この2つはわずかに異なる周波数です）。平均律のピアノのように「この位置は常にこの音」という固定対応ではない点が、このアプリの核です。長調・短調で綴りのテーブルを使い分けており（IPPと共通）、ダブルシャープ・ダブルフラットが必要な場合は、ピタゴラスコンマだけ異なる異名同音に自動的に置き換えます。',
@@ -475,9 +476,15 @@ document.getElementById('base-freq').addEventListener('input', (e) => {
 });
 document.getElementById('octave3-mode').addEventListener('change', (e) => {
   octaveSpanSetting = parseInt(e.target.value, 10);
+  const maxStart = getMaxStartOctave();
+  if (currentOctave > maxStart) currentOctave = maxStart;
   render();
 });
-document.getElementById('oct-up').addEventListener('click', () => { currentOctave = Math.min(5, currentOctave + 1); render(); });
+function getMaxStartOctave() {
+  // 表示オクターブ数が増えるほど、開始オクターブの上限を下げ、極端に高い音域まで広がりすぎないようにする
+  return 7 - octaveSpanSetting;
+}
+document.getElementById('oct-up').addEventListener('click', () => { currentOctave = Math.min(getMaxStartOctave(), currentOctave + 1); render(); });
 document.getElementById('oct-down').addEventListener('click', () => { currentOctave = Math.max(2, currentOctave - 1); render(); });
 
 setMode('pyth');
