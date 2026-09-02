@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pythagorean / Equal Temperament / Just Intonation Keyboard - Flesch System</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #f1f3f6;
+    --ink: #14181f;
+    --muted: #3d4654;
+    --accent: #2c5d92;
+    --line: #c9d0da;
+    --card: #fbfbf7;
+    --badge-bg: #fff3d6;
+    --badge-text: #8a5a00;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Yu Gothic', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { padding: 24px 16px 40px; display: flex; justify-content: center; }
+  .wrap { max-width: 620px; width: 100%; }
+
+  header { margin-bottom: 24px; border-bottom: 1px solid var(--line); padding-bottom: 16px; text-align: left; }
+  .title-container { display: flex; align-items: center; justify-content: flex-start; gap: 10px; flex-wrap: wrap; }
+  h1 { font-size: 17px; font-weight: 800; color: #0f1722; margin: 0; }
+  .badge { display: inline-block; background: var(--badge-bg); color: var(--badge-text); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+  .description { font-size: 12.5px; color: var(--muted); line-height: 1.6; margin-top: 10px; font-weight: 600; text-align: left; }
+
+  section { background-color: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 20px; }
+  h2 { font-size: 14px; font-weight: 800; color: #0f1722; margin-bottom: 12px; }
+
+  .control-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--ink); gap: 10px; margin-bottom: 10px; }
+  select, input[type="range"] { flex: 1; }
+  select { padding: 8px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; background: white; }
+  .val { font-weight: 800; min-width: 64px; text-align: right; font-size: 12.5px; }
+
+  .mode-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  .mode-tabs button {
+    flex: 1; padding: 10px 6px; border-radius: 10px; border: 1px solid var(--line);
+    background: white; font-size: 12.5px; font-weight: 700; color: var(--muted); cursor: pointer;
+  }
+  .mode-tabs button.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .octave-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px; }
+  .octave-row button {
+    width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line);
+    background: white; font-size: 18px; font-weight: 800; color: var(--accent); cursor: pointer;
+  }
+  .octave-row .octave-label { font-size: 13px; font-weight: 700; color: var(--muted); min-width: 90px; text-align: center; }
+
+  .keyboard {
+    position: relative;
+    height: 190px;
+    margin: 0 auto 12px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .white-key {
+    position: absolute; top: 0; height: 190px;
+    background: white; border: 1px solid #9aa4b2; border-radius: 0 0 6px 6px;
+    display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px;
+    font-size: 9.5px; font-weight: 700; color: var(--muted); cursor: pointer;
+  }
+  .white-key.active { background: #dce8f7; }
+  .black-key {
+    position: absolute; top: 0; height: 114px;
+    background: #1c222b; border-radius: 0 0 4px 4px; z-index: 2;
+    display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px;
+    font-size: 8.5px; font-weight: 700; color: #f1f3f6; cursor: pointer;
+  }
+  .black-key.active { background: var(--accent); }
+
+  .pad-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;
+  }
+  .pad-btn {
+    padding: 14px 4px; border-radius: 10px; border: 1px solid var(--line);
+    background: white; text-align: center; cursor: pointer; user-select: none; -webkit-user-select: none;
+  }
+  .pad-btn.active { background: var(--accent); }
+  .pad-btn.active .pad-name, .pad-btn.active .pad-ratio { color: white; }
+  .pad-name { font-size: 13px; font-weight: 800; color: #0f1722; }
+  .pad-ratio { font-size: 10px; font-weight: 700; color: var(--muted); margin-top: 2px; }
+
+  .info-box {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px; text-align: center; margin-bottom: 14px;
+  }
+  .info-note { font-size: 22px; font-weight: 800; color: #0f1722; }
+  .info-freq { font-size: 14px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+  .info-placeholder { font-size: 13px; color: var(--muted); font-weight: 600; }
+
+  .hint { font-size: 11.5px; color: #666; margin-top: 8px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="index.html" style="display:inline-block;margin-bottom:10px;font-size:13px;font-weight:600;color:#2c5d92;text-decoration:none;">← トップページに戻る</a>
+  <h1 style="font-size:18px;font-weight:800;color:#0f1722;margin:0;">Pythagorean / ET / Just Intonation Keyboard<span class="badge" style="margin-left:8px;">試験運用中</span></h1>
+  <p style="font-size:1.1rem;font-weight:700;color:#222;margin:6px 0 10px;">音律を選んで、自分の手で音を確かめる鍵盤・パッド</p>
+  <p class="description">選んだ調を基準に、ピタゴラス鍵盤・平均律鍵盤・純正律パッドの3モードを切り替えられます。ピタゴラス鍵盤では、同じ鍵盤の位置を押しても、選んでいる調によって割り当てられる綴り・鳴る周波数が変わります（弦楽器の異名同音を区別する耳に合わせた設計です）。ピタゴラス鍵盤はシンプルな旋律・視唱の音程確認に、平均律鍵盤は複雑な旋律のおおまかな見当をつけるのに、純正律パッドは和音を自分の手で組み立てて響きを身体で確かめる訓練に、それぞれ向いています。澤野ソルフェージュなど外部教材の答え合わせも、これまでのように外部の平均律ブラウザピアノに頼らず、このアプリ内で、目的に応じた音律を選んで確認できます。</p>
+
+  <section>
+    <h2>モード</h2>
+    <div class="mode-tabs">
+      <button id="tab-pyth" class="active">ピタゴラス鍵盤</button>
+      <button id="tab-et">平均律鍵盤</button>
+      <button id="tab-just">純正律パッド</button>
+    </div>
+    <div class="control-row">
+      <span>調</span>
+      <select id="key-tonic"></select>
+    </div>
+    <div class="control-row">
+      <span>旋法</span>
+      <select id="key-mode">
+        <option value="major">長調</option>
+        <option value="minor">短調</option>
+      </select>
+    </div>
+    <div class="control-row">
+      <span>基準A</span>
+      <input type="range" id="base-freq" min="435" max="446" step="0.5" value="442">
+      <span class="val" id="base-freq-val">442.0 Hz</span>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="section-title">鍵盤</h2>
+    <div class="control-row" id="decay-row">
+      <span>音の長さ</span>
+      <select id="decay-mode">
+        <option value="long">音高確認モード（長め・余韻あり）</option>
+        <option value="short">旋律確認モード（短め）</option>
+      </select>
+    </div>
+    <div class="octave-row">
+      <button id="oct-down">−</button>
+      <span class="octave-label" id="octave-label">オクターブ 3〜5</span>
+      <button id="oct-up">＋</button>
+    </div>
+    <div class="keyboard" id="keyboard"></div>
+    <div id="pad-section" style="display:none;">
+      <div class="octave-row" style="margin-bottom:10px;">
+        <button id="stop-all" style="width:auto; padding:0 18px; font-size:13px;">■ 全て止める</button>
+      </div>
+      <div class="pad-grid" id="pad-grid"></div>
+    </div>
+    <div class="info-box" id="info-box">
+      <div class="info-placeholder">押すと、音名と周波数がここに表示されます</div>
+    </div>
+    <div class="hint" id="hint-text"></div>
+  </section>
+</div>
+
+<script>
+// ===== 音名（ドイツ音名：C D E F G A H、5度圏順）=====
+const LETTER_CYCLE = ['F','C','G','D','A','E','H'];
+
+function fifthsToName(p) {
+  const k = p + 1;
+  const letterIndex = ((k % 7) + 7) % 7;
+  const accidentalCount = Math.floor(k / 7);
+  const letter = LETTER_CYCLE[letterIndex];
+  if (accidentalCount === 0) return letter;
+  if (accidentalCount > 0) return letter + 'is'.repeat(accidentalCount);
+  if (accidentalCount === -1) {
+    if (letter === 'A') return 'As';
+    if (letter === 'E') return 'Es';
+    if (letter === 'H') return 'B';
+    return letter + 'es';
+  }
+  return letter + 'es'.repeat(-accidentalCount);
+}
+
+function fifthsToSemitone(p) {
+  return ((p * 7) % 12 + 12) % 12;
+}
+
+function clampToSingleAccidental(p) {
+  let k = p + 1;
+  while (Math.floor(k / 7) > 1) { p -= 12; k = p + 1; }
+  while (Math.floor(k / 7) < -1) { p += 12; k = p + 1; }
+  return p;
+}
+
+// 主音+旋法から、五度圏位置一覧（クロマチック12音、-5〜+6）を返す（ピタゴラス鍵盤用）
+function buildKeyMap(tonicP) {
+  const offsets = [-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+  const map = {};
+  offsets.forEach(o => {
+    let p = tonicP + o;
+    p = clampToSingleAccidental(p);
+    const semi = fifthsToSemitone(p);
+    map[semi] = { name: fifthsToName(p), p };
+  });
+  return map;
+}
+
+// 主音候補（13主音、5度圏順）
+const TONICS = [
+  ['Ges', -6], ['Des', -5], ['As', -4], ['Es', -3],
+  ['B', -2], ['F', -1], ['C', 0], ['G', 1],
+  ['D', 2], ['A', 3], ['E', 4], ['H', 5], ['Fis', 6]
+];
+
+function populateTonics() {
+  const sel = document.getElementById('key-tonic');
+  const mode = document.getElementById('key-mode').value;
+  const prevValue = sel.value;
+  sel.innerHTML = '';
+  TONICS.forEach(([label, p]) => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = mode === 'major' ? (label + '-Dur') : (label.toLowerCase() + '-moll');
+    sel.appendChild(opt);
+  });
+  if (prevValue !== '' && TONICS.some(([, p]) => String(p) === prevValue)) {
+    sel.value = prevValue;
+  } else {
+    sel.value = '0';
+  }
+}
+populateTonics();
+
+function getSelectedTonicP() {
+  return parseInt(document.getElementById('key-tonic').value, 10);
+}
+
+// ===== オーディオ =====
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function getAFreq() {
+  return parseFloat(document.getElementById('base-freq').value);
+}
+
+// ピタゴラス：5度圏位置pの周波数（オクターブ4基準）
+function pythFreqForP(p, octave) {
+  const A4 = getAFreq();
+  const fifth = 3 / 2;
+  const n = p - 3;
+  let freq = A4 * Math.pow(fifth, n);
+  const c4Pyth = A4 * Math.pow(2/3, 3) * 2;
+  const EPS = 1e-9;
+  while (freq < c4Pyth - EPS) freq *= 2;
+  while (freq >= c4Pyth * 2 - EPS) freq /= 2;
+  return freq * Math.pow(2, octave - 4);
+}
+// 平均律：半音位置（Cからの半音数、0-11）とオクターブから周波数を返す
+function etFreqForSemitone(semi, octave) {
+  const A4 = getAFreq();
+  // C4を基準に、Cからの半音数nで2^(n/12)
+  const c4 = A4 * Math.pow(2, -9/12); // Aから半音9つ下がC
+  return c4 * Math.pow(2, semi/12) * Math.pow(2, octave - 4);
+}
+
+// 純正律比率表（IPPと共通、根音=1とした半音距離ごとの純正比）
+const JI = {0:1, 1:16/15, 2:9/8, 3:6/5, 4:5/4, 5:4/3, 6:7/5, 7:3/2, 8:8/5, 9:5/3, 10:16/9, 11:15/8};
+// 主音（tonicP）を、指定オクターブでピタゴラス基準の根音周波数とし、そこに純正比JI[semi]を重ねる
+function justFreqForDegree(tonicP, semi, octave) {
+  return pythFreqForP(tonicP, octave) * JI[semi];
+}
+
+let audioMuteTimer = null;
+function getDecaySeconds() {
+  const el = document.getElementById('decay-mode');
+  return (el && el.value === 'short') ? 0.35 : 1.2;
+}
+function playTone(freq, sustained, padKey) {
+  ensureAudio();
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.22, now + 0.02);
+  if (sustained) {
+    activeVoices[padKey] = { osc, gain };
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now);
+  } else {
+    const decay = getDecaySeconds();
+    gain.gain.linearRampToValueAtTime(0, now + decay);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + decay + 0.05);
+  }
+}
+let activeVoices = {};
+function stopSustained(padKey) {
+  const v = activeVoices[padKey];
+  if (!v) return;
+  const now = audioCtx.currentTime;
+  v.gain.gain.cancelScheduledValues(now);
+  v.gain.gain.setValueAtTime(Math.max(v.gain.gain.value, 0.0001), now);
+  v.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+  v.osc.stop(now + 0.1);
+  delete activeVoices[padKey];
+}
+
+function stopAllSustained() {
+  Object.keys(activeVoices).forEach(padKey => {
+    stopSustained(padKey);
+    if (padButtons[padKey]) padButtons[padKey].classList.remove('active');
+  });
+}
+
+// ===== モード管理 =====
+let currentMode = 'pyth'; // 'pyth' | 'et' | 'just'
+let currentOctave = 4; // 表示する最も低いオクターブ（2オクターブ表示）
+const OCTAVE_SPAN = 2;
+
+const WHITE_SEMITONES = [0,2,4,5,7,9,11];
+const BLACK_SEMITONES = [1,3,6,8,10];
+const BLACK_POSITION = { 1: 0, 3: 1, 6: 3, 8: 4, 10: 5 };
+
+function setMode(mode) {
+  stopAllSustained();
+  currentMode = mode;
+  ['pyth','et','just'].forEach(m => document.getElementById('tab-' + m).classList.toggle('active', m === mode));
+  document.getElementById('keyboard').style.display = (mode === 'just') ? 'none' : 'block';
+  document.getElementById('pad-section').style.display = (mode === 'just') ? 'block' : 'none';
+  document.getElementById('decay-row').style.display = (mode === 'just') ? 'none' : 'flex';
+  document.getElementById('section-title').textContent = (mode === 'just') ? '純正律パッド' : '鍵盤';
+  const hints = {
+    pyth: '白鍵・黒鍵の物理配置は通常のピアノと同じですが、同じ鍵盤の位置を押しても、選んでいる調によって、割り当てられる音名の綴りが変わり、鳴る周波数も変わります（例：CとDの間の黒鍵は、ハ長調ではDes、ト長調ではCisとして鳴り、この2つはわずかに異なる周波数です）。平均律のピアノのように「この位置は常にこの音」という固定対応ではない点が、このアプリの核です。ダブルシャープ・ダブルフラットが必要な場合は、ピタゴラスコンマだけ異なる異名同音に自動的に置き換えます。',
+    et: '平均律（12平均律）モードです。音名の綴りは選んだ調に応じて変わりますが、実際に鳴る周波数は綴りに関わらず、半音数だけで機械的に決まります（調を変えても音自体は変わりません）。複雑な旋律のおおまかな見当をつける用途に。',
+    just: '選んだ調の主音を根音（1/1）とし、そこからの純正律比率で各度数を鳴らします。パッドを押すたびに音が積み重なって鳴り続け（もう一度押すとその音だけ止まります）、和音を1音ずつ組み立てながら響きを確認できます。「全て止める」でまとめて止められます。根音自体はピタゴラス基準の周波数です。'
+  };
+  document.getElementById('hint-text').textContent = hints[mode];
+  render();
+}
+document.getElementById('tab-pyth').addEventListener('click', () => setMode('pyth'));
+document.getElementById('tab-et').addEventListener('click', () => setMode('et'));
+document.getElementById('tab-just').addEventListener('click', () => setMode('just'));
+
+function render() {
+  stopAllSustained();
+  if (currentMode === 'just') renderPad(); else renderKeyboard();
+  document.getElementById('octave-label').textContent = 'オクターブ ' + currentOctave + '〜' + (currentOctave + OCTAVE_SPAN - 1);
+}
+
+function renderKeyboard() {
+  const tonicP = getSelectedTonicP();
+  const keyMap = buildKeyMap(tonicP);
+  const kb = document.getElementById('keyboard');
+  kb.innerHTML = '';
+  const totalWhite = 7 * OCTAVE_SPAN;
+  const whiteWidthPct = 100 / totalWhite;
+
+  for (let octOffset = 0; octOffset < OCTAVE_SPAN; octOffset++) {
+    const octave = currentOctave + octOffset;
+    const baseIdx = octOffset * 7;
+
+    WHITE_SEMITONES.forEach((semi, idx) => {
+      const div = document.createElement('div');
+      div.className = 'white-key';
+      div.style.left = ((baseIdx + idx) * whiteWidthPct) + '%';
+      div.style.width = whiteWidthPct + '%';
+      const info = keyMap[semi];
+      div.textContent = info.name + octave;
+      div.addEventListener('pointerdown', () => triggerKeyboardKey(info, semi, octave, div));
+      kb.appendChild(div);
+    });
+
+    BLACK_SEMITONES.forEach((semi) => {
+      const div = document.createElement('div');
+      div.className = 'black-key';
+      const whiteIdx = BLACK_POSITION[semi];
+      div.style.width = (whiteWidthPct * 0.62) + '%';
+      div.style.left = ((baseIdx + whiteIdx + 1) * whiteWidthPct - (whiteWidthPct * 0.31)) + '%';
+      const info = keyMap[semi];
+      div.textContent = info.name + octave;
+      div.addEventListener('pointerdown', (e) => { e.stopPropagation(); triggerKeyboardKey(info, semi, octave, div); });
+      kb.appendChild(div);
+    });
+  }
+}
+
+function triggerKeyboardKey(info, semi, octave, el) {
+  const freq = (currentMode === 'et') ? etFreqForSemitone(semi, octave) : pythFreqForP(info.p, octave);
+  playTone(freq, false);
+  el.classList.add('active');
+  setTimeout(() => el.classList.remove('active'), 180);
+  document.getElementById('info-box').innerHTML =
+    '<div class="info-note">' + info.name + octave + '</div>' +
+    '<div class="info-freq">' + freq.toFixed(2) + ' Hz</div>';
+}
+
+// 純正律パッド：主音からの半音距離0-11を、2オクターブぶん並べる
+const DEGREE_LABELS = {0:'1',1:'♭2',2:'2',3:'♭3',4:'3',5:'4',6:'♭5',7:'5',8:'♭6',9:'6',10:'♭7',11:'7'};
+let padButtons = {}; // padKey -> DOM要素（全停止ボタンで見た目もリセットするため）
+function renderPad() {
+  const grid = document.getElementById('pad-grid');
+  grid.innerHTML = '';
+  padButtons = {};
+  const tonicP = getSelectedTonicP();
+  for (let octOffset = 0; octOffset < OCTAVE_SPAN; octOffset++) {
+    const octave = currentOctave + octOffset;
+    for (let semi = 0; semi < 12; semi++) {
+      const btn = document.createElement('div');
+      btn.className = 'pad-btn';
+      const ratioLabel = JI[semi].toFixed(3).replace(/0+$/,'').replace(/\.$/,'');
+      btn.innerHTML = '<div class="pad-name">' + DEGREE_LABELS[semi] + '</div><div class="pad-ratio">Oct' + octave + ' ・ ' + ratioLabel + '</div>';
+      const padKey = octave + '-' + semi;
+      padButtons[padKey] = btn;
+      btn.addEventListener('pointerdown', () => {
+        if (activeVoices[padKey]) {
+          // 既に鳴っている場合は、そのパッドだけ個別に止める（トグルオフ）
+          stopSustained(padKey);
+          btn.classList.remove('active');
+          return;
+        }
+        const freq = justFreqForDegree(tonicP, semi, octave);
+        playTone(freq, true, padKey);
+        btn.classList.add('active');
+        document.getElementById('info-box').innerHTML =
+          '<div class="info-note">度数 ' + DEGREE_LABELS[semi] + '（Oct' + octave + '）</div>' +
+          '<div class="info-freq">' + freq.toFixed(2) + ' Hz ・ 比 ' + ratioLabel + '</div>';
+      });
+      grid.appendChild(btn);
+    }
+  }
+}
+
+document.getElementById('stop-all').addEventListener('click', () => {
+  Object.keys(activeVoices).forEach(padKey => {
+    stopSustained(padKey);
+    if (padButtons[padKey]) padButtons[padKey].classList.remove('active');
+  });
+});
+
+document.getElementById('key-tonic').addEventListener('change', render);
+document.getElementById('key-mode').addEventListener('change', () => { populateTonics(); render(); });
+document.getElementById('base-freq').addEventListener('input', (e) => {
+  document.getElementById('base-freq-val').textContent = parseFloat(e.target.value).toFixed(1) + ' Hz';
+});
+document.getElementById('oct-up').addEventListener('click', () => { currentOctave = Math.min(5, currentOctave + 1); render(); });
+document.getElementById('oct-down').addEventListener('click', () => { currentOctave = Math.max(2, currentOctave - 1); render(); });
+
+setMode('pyth');
+</script>
+</body>
+</html>
