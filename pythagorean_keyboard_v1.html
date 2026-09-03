@@ -121,7 +121,7 @@
       <span>調</span>
       <select id="key-tonic"></select>
     </div>
-    <div class="control-row">
+    <div class="control-row" id="key-mode-row">
       <span>旋法</span>
       <select id="key-mode">
         <option value="major">長調</option>
@@ -226,6 +226,11 @@ function buildKeyMap(tonicP, isMinorMode) {
   return map;
 }
 
+// ===== モード管理（変数は先に宣言。populateTonicsから参照するため）=====
+let currentMode = 'pyth'; // 'pyth' | 'et' | 'just'
+let currentOctave = 4; // 表示する最も低いオクターブ（基本表示）
+let octaveSpanSetting = 2; // 2〜4（表示オクターブ数のトグルで変更）
+
 // 主音候補（13主音、5度圏順）
 const TONICS = [
   ['Ges', -6], ['Des', -5], ['As', -4], ['Es', -3],
@@ -241,7 +246,12 @@ function populateTonics() {
   TONICS.forEach(([label, p]) => {
     const opt = document.createElement('option');
     opt.value = p;
-    opt.textContent = mode === 'major' ? (label + '-Dur') : (label.toLowerCase() + '-moll');
+    if (currentMode === 'just') {
+      // 純正律パッドは旋法に依存しないため、長調/短調を含まない中立的な表記にする
+      opt.textContent = label;
+    } else {
+      opt.textContent = mode === 'major' ? (label + '-Dur') : (label.toLowerCase() + '-moll');
+    }
     sel.appendChild(opt);
   });
   if (prevValue !== '' && TONICS.some(([, p]) => String(p) === prevValue)) {
@@ -339,26 +349,24 @@ function stopAllSustained() {
 }
 
 // ===== モード管理 =====
-let currentMode = 'pyth'; // 'pyth' | 'et' | 'just'
-let currentOctave = 4; // 表示する最も低いオクターブ（基本表示）
-let octaveSpanSetting = 2; // 2 or 3（3オクターブモードのトグルで変更）
-
 const WHITE_SEMITONES = [0,2,4,5,7,9,11];
 const BLACK_SEMITONES = [1,3,6,8,10];
 
 function setMode(mode) {
   stopAllSustained();
   currentMode = mode;
+  populateTonics();
   ['pyth','et','just'].forEach(m => document.getElementById('tab-' + m).classList.toggle('active', m === mode));
   document.getElementById('keyboard').style.display = (mode === 'just') ? 'none' : 'block';
   document.getElementById('pad-section').style.display = (mode === 'just') ? 'block' : 'none';
   document.getElementById('decay-row').style.display = (mode === 'just') ? 'none' : 'flex';
   document.getElementById('octave3-row').style.display = 'flex';
+  document.getElementById('key-mode-row').style.display = (mode === 'just') ? 'none' : 'flex';
   document.getElementById('section-title').textContent = (mode === 'just') ? '純正律パッド' : '鍵盤';
   const hints = {
     pyth: '白鍵・黒鍵の物理配置は通常のピアノと同じですが、同じ鍵盤の位置を押しても、選んでいる調によって、割り当てられる音名の綴りが変わり、鳴る周波数も変わります（例：CとDの間の黒鍵は、ハ長調ではDes、ト長調ではCisとして鳴り、この2つはわずかに異なる周波数です）。平均律のピアノのように「この位置は常にこの音」という固定対応ではない点が、このアプリの核です。長調・短調で綴りのテーブルを使い分けており（IPPと共通）、ダブルシャープ・ダブルフラットが必要な場合は、ピタゴラスコンマだけ異なる異名同音に自動的に置き換えます。',
     et: '平均律（12平均律）モードです。音名の綴りは選んだ調に応じて変わりますが、実際に鳴る周波数は綴りに関わらず、半音数だけで機械的に決まります（調を変えても音自体は変わりません）。複雑な旋律のおおまかな見当をつける用途に。',
-    just: '選んだ調の主音を根音（1/1）とし、そこからの純正律比率で各度数を鳴らします。パッドを押すたびに音が積み重なって鳴り続け（もう一度押すとその音だけ止まります）、和音を1音ずつ組み立てながら響きを確認できます。「全て止める」でまとめて止められます。根音自体はピタゴラス基準の周波数です。'
+    just: '選んだ主音を根音（1/1）とし、そこからの純正律比率で各度数を鳴らします。度数は主音からの相対的な関係なので、長調・短調の区別はありません（旋法の選択欄は非表示にしています）。パッドを押すたびに音が積み重なって鳴り続け（もう一度押すとその音だけ止まります）、和音を1音ずつ組み立てながら響きを確認できます。「全て止める」でまとめて止められます。根音自体はピタゴラス基準の周波数です。'
   };
   document.getElementById('hint-text').textContent = hints[mode];
   render();
