@@ -425,13 +425,22 @@ function renderKeyboard() {
 }
 
 function triggerKeyboardKey(info, semi, octave, el) {
-  const freq = (currentMode === 'et') ? etFreqForSemitone(semi, octave) : pythFreqForP(info.p, octave);
-  playTone(freq, false);
   el.classList.add('active');
   setTimeout(() => el.classList.remove('active'), 180);
   document.getElementById('info-box').innerHTML =
     '<div class="info-note">' + info.name + octave + '</div>' +
-    '<div class="info-freq">' + freq.toFixed(2) + ' Hz</div>';
+    '<div class="info-freq">計算中...</div>';
+  try {
+    const freq = (currentMode === 'et') ? etFreqForSemitone(semi, octave) : pythFreqForP(info.p, octave);
+    playTone(freq, false);
+    document.getElementById('info-box').innerHTML =
+      '<div class="info-note">' + info.name + octave + '</div>' +
+      '<div class="info-freq">' + freq.toFixed(2) + ' Hz</div>';
+  } catch (err) {
+    document.getElementById('info-box').innerHTML =
+      '<div class="info-note">' + info.name + octave + '</div>' +
+      '<div class="info-freq" style="color:#b23b3b;">音声再生でエラーが発生しました（' + err.message + '）</div>';
+  }
 }
 
 // 純正律パッド：主音からの半音距離0-11を、2オクターブぶん並べる
@@ -454,16 +463,22 @@ function renderPad() {
       btn.addEventListener('pointerdown', () => {
         if (activeVoices[padKey]) {
           // 既に鳴っている場合は、そのパッドだけ個別に止める（トグルオフ）
-          stopSustained(padKey);
+          try { stopSustained(padKey); } catch (err) { /* 何もしない */ }
           btn.classList.remove('active');
           return;
         }
-        const freq = justFreqForDegree(tonicP, semi, octave);
-        playTone(freq, true, padKey);
         btn.classList.add('active');
-        document.getElementById('info-box').innerHTML =
-          '<div class="info-note">度数 ' + DEGREE_LABELS[semi] + '（Oct' + octave + '）</div>' +
-          '<div class="info-freq">' + freq.toFixed(2) + ' Hz ・ 比 ' + ratioLabel + '</div>';
+        try {
+          const freq = justFreqForDegree(tonicP, semi, octave);
+          playTone(freq, true, padKey);
+          document.getElementById('info-box').innerHTML =
+            '<div class="info-note">度数 ' + DEGREE_LABELS[semi] + '（Oct' + octave + '）</div>' +
+            '<div class="info-freq">' + freq.toFixed(2) + ' Hz ・ 比 ' + ratioLabel + '</div>';
+        } catch (err) {
+          document.getElementById('info-box').innerHTML =
+            '<div class="info-note">度数 ' + DEGREE_LABELS[semi] + '（Oct' + octave + '）</div>' +
+            '<div class="info-freq" style="color:#b23b3b;">音声再生でエラーが発生しました（' + err.message + '）</div>';
+        }
       });
       grid.appendChild(btn);
     }
