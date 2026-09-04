@@ -309,6 +309,8 @@ function etFreqForSemitone(semi, octave) {
 
 // 純正律比率表（IPPと共通、根音=1とした半音距離ごとの純正比）
 const JI = {0:1, 1:16/15, 2:9/8, 3:6/5, 4:5/4, 5:4/3, 6:7/5, 7:3/2, 8:8/5, 9:5/3, 10:16/9, 11:15/8};
+// JIの各値に対応する、整数比としての表記（主音に対する比率）
+const JI_INT_RATIO = {0:'1:1', 1:'16:15', 2:'9:8', 3:'6:5', 4:'5:4', 5:'4:3', 6:'7:5', 7:'3:2', 8:'8:5', 9:'5:3', 10:'16:9', 11:'15:8'};
 // 主音（tonicP）を、指定オクターブでピタゴラス基準の根音周波数とし、そこに純正比JI[semi]を重ねる
 function justFreqForDegree(tonicP, semi, octave) {
   return pythFreqForP(tonicP, octave) * JI[semi];
@@ -377,7 +379,7 @@ function setMode(mode) {
   const hints = {
     pyth: '鍵盤には、固定ドの階名（ド=C系統、レ=D系統、ミ=E系統、ファ=F系統、ソ=G系統、ラ=A系統、シ=H系統という、変化記号によらない文字ベースの対応）を、選んだ調の基本の音階7音にあたる鍵盤にだけ表示します（視唱の答え合わせを意識した表示です）。短調では、フレッシュの旋律的短音階に合わせ、第6音・第7音を半音上げた鍵盤にも、同じ階名に＊をつけて表示します（例：ラ系統の第6音「ファ」の隣の黒鍵に「ファ＊」）。上行はこの＊付きの鍵盤を、下行は＊なしの自然の鍵盤を押してください。変化記号は階名には反映されません（例：B-durではシが変ロ、ミが変ホの黒鍵に来ます）。主音の鍵盤は色を変えているので、主音から順にたどれば、その調の音階をなぞれます。音階に含まれない鍵盤は無地ですが、押せば音は鳴り、下の欄に正確な音名・周波数が表示されます（臨時記号が出てきたときは、階名のない鍵盤を押してください）。同じ鍵盤の位置を押しても、選んでいる調によって、鳴る周波数（内部的な綴り）は変わります（例：CとDの間の黒鍵は、ハ長調ではDes、ト長調ではCisとして鳴り、この2つはわずかに異なる周波数です）。平均律のピアノのように「この位置は常にこの音」という固定対応ではない点が、このアプリの核です。長調・短調で綴りのテーブルを使い分けており（IPPと共通）、ダブルシャープ・ダブルフラットが必要な場合は、ピタゴラスコンマだけ異なる異名同音に自動的に置き換えます。短調のges-moll・des-mollには＊がついていますが、これは自然の音階の時点でダブルフラットが必要になる、実務ではほぼ使われない調（fis-moll・cis-mollとして書かれる）であることを示しています。',
     et: '平均律（12平均律）モードです。ピタゴラス鍵盤と同様、固定ドの階名を、選んだ調の基本の音階7音にあたる鍵盤にだけ表示し、主音の鍵盤は色を変えています。ただし実際に鳴る周波数は、調に関わらず、半音数だけで機械的に決まります（調を変えても音自体は変わりません）。複雑な旋律のおおまかな見当をつける用途に。',
-    just: '選んだ主音を根音（1/1）とし、そこからの純正律比率で各度数を鳴らします。度数は主音からの相対的な関係なので、長調・短調の区別はありません（旋法の選択欄は非表示にしています）。パッドを押すたびに音が積み重なって鳴り続け（もう一度押すとその音だけ止まります）、和音を1音ずつ組み立てながら響きを確認できます。「全て止める」でまとめて止められます。根音自体はピタゴラス基準の周波数です。'
+    just: '選んだ主音を根音（1/1）とし、そこからの純正律比率で各度数を鳴らします。度数は主音からの相対的な関係なので、長調・短調の区別はありません（旋法の選択欄は非表示にしています）。各パッドには、主音に対する周波数比を整数比（例：3:2）で表示しています。タップした後は、下の欄に整数比と小数の両方が表示されます。パッドを押すたびに音が積み重なって鳴り続け（もう一度押すとその音だけ止まります）、和音を1音ずつ組み立てながら響きを確認できます。「全て止める」でまとめて止められます。根音自体はピタゴラス基準の周波数です。'
   };
   document.getElementById('hint-text').textContent = hints[mode];
   render();
@@ -516,7 +518,8 @@ function renderPad() {
       const btn = document.createElement('div');
       btn.className = 'pad-btn';
       const ratioLabel = JI[semi].toFixed(3).replace(/0+$/,'').replace(/\.$/,'');
-      btn.innerHTML = '<div class="pad-name">' + DEGREE_LABELS[semi] + '</div><div class="pad-ratio">Oct' + octave + ' ・ ' + ratioLabel + '</div>';
+      const intRatio = JI_INT_RATIO[semi];
+      btn.innerHTML = '<div class="pad-name">' + DEGREE_LABELS[semi] + '</div><div class="pad-ratio">Oct' + octave + ' ・ ' + intRatio + '</div>';
       const padKey = octave + '-' + semi;
       padButtons[padKey] = btn;
       btn.addEventListener('click', () => {
@@ -532,7 +535,7 @@ function renderPad() {
           playTone(freq, true, padKey);
           document.getElementById('info-box').innerHTML =
             '<div class="info-note">度数 ' + DEGREE_LABELS[semi] + '（Oct' + octave + '）</div>' +
-            '<div class="info-freq">' + freq.toFixed(2) + ' Hz ・ 比 ' + ratioLabel + '</div>';
+            '<div class="info-freq">' + freq.toFixed(2) + ' Hz ・ 比 ' + intRatio + ' (' + ratioLabel + ')</div>';
         } catch (err) {
           document.getElementById('info-box').innerHTML =
             '<div class="info-note">度数 ' + DEGREE_LABELS[semi] + '（Oct' + octave + '）</div>' +

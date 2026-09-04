@@ -462,6 +462,10 @@
             <p style="font-weight: 700; font-size: 1.1rem; color: #0f1722; margin: 0 0 8px;">📝 日々の練習で気づいたこと（随時アプリの改良に反映）</p>
             <p style="font-size: 0.85rem; color: #777; margin: 0 0 16px; line-height: 1.7;">ここに書かれているのは、必ずしも全くの新しい発見ではありません。演奏における暗黙知や、なんとなく知っていたこと、外部の指導表現の再検証などを、あえて言語化することで腹落ちさせるための記録です。</p>
             <div style="font-size: 0.95rem; line-height: 2; color: #555;" id="findings-container">
+                <p><strong>2026年9月5日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>純正律パッドの各ボタンに、小数（例：1.5）だけでなく、整数比（例：3:2）も表示するようにした。整数比の方が、周波数の比率という抽象的な数値を、より具体的で構造的に理解しやすい形にしてくれる。不協和な音程（短2度16:15、増4度7:5など）でも、この整数比の仕組みは変わらず、数字の大きさが協和・不協和の度合いと対応している点も分かりやすい。押している音同士の相互の比率まではPEJでは扱わず、その点はPure Intonation Tunerに委ねる、という役割分担にした</li>
+                </ul>
                 <p><strong>2026年9月4日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>ピタゴラス鍵盤・平均律鍵盤の階名表示を改良した。固定ドの階名を、選んだ調の基本の音階7音にあたる鍵盤にだけ表示し、音階に含まれない鍵盤は無地にした。主音の鍵盤の色も変え、主音から順に階名のある鍵盤をたどれば、その調の音階をそのまま辿れるようにした。これは、SRでの調性・調号の双方向訓練、調号を意識しながらの歌唱に加えて、また別の角度から、調号と調性の関係を視覚的に捉える手段になったと思う。主音の位置、音階の視覚的なパターン（例えばB-durでは主音自体が黒鍵にあり、ミも黒鍵という独特な形になる）が、鍵盤上にそのまま浮かび上がる</li>
@@ -735,6 +739,10 @@
         <div style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <p style="font-weight: 700; font-size: 1.1rem; color: #0f1722; margin: 0 0 16px;">📋 アップデート履歴</p>
             <div style="font-size: 0.95rem; line-height: 2; color: #555;" id="changelog-container">
+                <p><strong>2026年9月5日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>Pythagorean / ET / Just Intonation Keyboard：純正律パッドの各ボタンに、主音に対する周波数比を、整数比（例：3:2）でも表示するようにした。既存のJI比率表（小数）を、そのまま整数比に対応させただけなので、実装は簡潔。ボタン上は整数比のみ、タップ後の情報表示欄では整数比・小数の両方を表示する。押している音同士の相互の比率までは扱わず、その用途はPure Intonation Tunerに委ねる</li>
+                </ul>
                 <p><strong>2026年9月4日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>index.html：冒頭のタグラインを「アマチュアのヴィオラ／ヴァイオリン奏者による、自分用の練習ツール置き場」から「アマチュアヴァイオリン/ヴィオラ奏者による、音楽理論と演奏を結びつける、個人研究ラボ」に更新し、3行程度の説明文を追加。単なるツール置き場という表現が、日々の仮説構築・実装・実践・検証というラボ的な実態に合わなくなっていたため。「このシステムを作ったきっかけ」の本文も、7つ目のツール（Pythagorean / ET / Just Intonation Keyboard）が加わった経緯を含め、現状に合わせて全面的に書き直した</li>
