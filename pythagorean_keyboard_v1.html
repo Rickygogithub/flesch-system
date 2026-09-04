@@ -242,6 +242,10 @@ const TONICS = [
   ['D', 2], ['A', 3], ['E', 4], ['H', 5], ['Fis', 6]
 ];
 
+// 短調にした場合、自然の音階の時点でダブルフラットが必要になり、実務ではほぼ異名同音（fis-moll・cis-moll）
+// で書かれる調（IPPで既に同様の扱いをしている、変ニ短調・変ト短調と同じ構造）
+const MINOR_IMPRACTICAL_LABELS = ['Ges', 'Des'];
+
 function populateTonics() {
   const sel = document.getElementById('key-tonic');
   const mode = document.getElementById('key-mode').value;
@@ -253,8 +257,11 @@ function populateTonics() {
     if (currentMode === 'just') {
       // 純正律パッドは旋法に依存しないため、長調/短調を含まない中立的な表記にする
       opt.textContent = label;
+    } else if (mode === 'major') {
+      opt.textContent = label + '-Dur';
     } else {
-      opt.textContent = mode === 'major' ? (label + '-Dur') : (label.toLowerCase() + '-moll');
+      const star = MINOR_IMPRACTICAL_LABELS.includes(label) ? '＊' : '';
+      opt.textContent = label.toLowerCase() + '-moll' + star;
     }
     sel.appendChild(opt);
   });
@@ -368,7 +375,7 @@ function setMode(mode) {
   document.getElementById('key-mode-row').style.display = (mode === 'just') ? 'none' : 'flex';
   document.getElementById('section-title').textContent = (mode === 'just') ? '純正律パッド' : '鍵盤';
   const hints = {
-    pyth: '鍵盤には、固定ドの階名（ド=C系統、レ=D系統、ミ=E系統、ファ=F系統、ソ=G系統、ラ=A系統、シ=H系統という、変化記号によらない文字ベースの対応）を、選んだ調の基本の音階7音にあたる鍵盤にだけ表示します（視唱の答え合わせを意識した表示です）。変化記号は階名には反映されません（例：B-durではシが変ロ、ミが変ホの黒鍵に来ます）。主音の鍵盤は色を変えているので、主音から順にたどれば、その調の音階をなぞれます。音階に含まれない鍵盤は無地ですが、押せば音は鳴り、下の欄に正確な音名・周波数が表示されます（臨時記号が出てきたときは、階名のない鍵盤を押してください）。同じ鍵盤の位置を押しても、選んでいる調によって、鳴る周波数（内部的な綴り）は変わります（例：CとDの間の黒鍵は、ハ長調ではDes、ト長調ではCisとして鳴り、この2つはわずかに異なる周波数です）。平均律のピアノのように「この位置は常にこの音」という固定対応ではない点が、このアプリの核です。長調・短調で綴りのテーブルを使い分けており（IPPと共通）、ダブルシャープ・ダブルフラットが必要な場合は、ピタゴラスコンマだけ異なる異名同音に自動的に置き換えます。',
+    pyth: '鍵盤には、固定ドの階名（ド=C系統、レ=D系統、ミ=E系統、ファ=F系統、ソ=G系統、ラ=A系統、シ=H系統という、変化記号によらない文字ベースの対応）を、選んだ調の基本の音階7音にあたる鍵盤にだけ表示します（視唱の答え合わせを意識した表示です）。短調では、フレッシュの旋律的短音階に合わせ、第6音・第7音を半音上げた鍵盤にも、同じ階名に＊をつけて表示します（例：ラ系統の第6音「ファ」の隣の黒鍵に「ファ＊」）。上行はこの＊付きの鍵盤を、下行は＊なしの自然の鍵盤を押してください。変化記号は階名には反映されません（例：B-durではシが変ロ、ミが変ホの黒鍵に来ます）。主音の鍵盤は色を変えているので、主音から順にたどれば、その調の音階をなぞれます。音階に含まれない鍵盤は無地ですが、押せば音は鳴り、下の欄に正確な音名・周波数が表示されます（臨時記号が出てきたときは、階名のない鍵盤を押してください）。同じ鍵盤の位置を押しても、選んでいる調によって、鳴る周波数（内部的な綴り）は変わります（例：CとDの間の黒鍵は、ハ長調ではDes、ト長調ではCisとして鳴り、この2つはわずかに異なる周波数です）。平均律のピアノのように「この位置は常にこの音」という固定対応ではない点が、このアプリの核です。長調・短調で綴りのテーブルを使い分けており（IPPと共通）、ダブルシャープ・ダブルフラットが必要な場合は、ピタゴラスコンマだけ異なる異名同音に自動的に置き換えます。短調のges-moll・des-mollには＊がついていますが、これは自然の音階の時点でダブルフラットが必要になる、実務ではほぼ使われない調（fis-moll・cis-mollとして書かれる）であることを示しています。',
     et: '平均律（12平均律）モードです。ピタゴラス鍵盤と同様、固定ドの階名を、選んだ調の基本の音階7音にあたる鍵盤にだけ表示し、主音の鍵盤は色を変えています。ただし実際に鳴る周波数は、調に関わらず、半音数だけで機械的に決まります（調を変えても音自体は変わりません）。複雑な旋律のおおまかな見当をつける用途に。',
     just: '選んだ主音を根音（1/1）とし、そこからの純正律比率で各度数を鳴らします。度数は主音からの相対的な関係なので、長調・短調の区別はありません（旋法の選択欄は非表示にしています）。パッドを押すたびに音が積み重なって鳴り続け（もう一度押すとその音だけ止まります）、和音を1音ずつ組み立てながら響きを確認できます。「全て止める」でまとめて止められます。根音自体はピタゴラス基準の周波数です。'
   };
@@ -424,6 +431,16 @@ function isScaleMember(semi, tonicP, isMinorMode) {
   return offsets.includes(d);
 }
 
+// 短調のみ：フレッシュに合わせ、旋律的短音階の上行形（第6音・第7音を半音上げる）の位置かどうか。
+// 半音上げても文字（音名の頭の綴り）自体は自然の第6・7音と同じなので、階名の後ろに＊をつけて区別する。
+// 上行はこの＊付きの鍵盤を、下行は＊なしの自然の鍵盤を押す、という運用を想定。
+const MELODIC_MINOR_RAISED_OFFSETS = [9, 11]; // 自然の第6音(8)・第7音(10)の、それぞれ半音上
+function isMelodicMinorRaised(semi, tonicP) {
+  const tonicSemi = fifthsToSemitone(tonicP);
+  const d = ((semi - tonicSemi) % 12 + 12) % 12;
+  return MELODIC_MINOR_RAISED_OFFSETS.includes(d);
+}
+
 function renderKeyboard() {
   const tonicP = getSelectedTonicP();
   const isMinorMode = document.getElementById('key-mode').value === 'minor';
@@ -440,7 +457,8 @@ function renderKeyboard() {
   keys.forEach((k) => {
     const info = keyMap[k.semi];
     const inScale = isScaleMember(k.semi, tonicP, isMinorMode);
-    const label = inScale ? solfegeForP(info.p) : '';
+    const isRaised = isMinorMode && !inScale && isMelodicMinorRaised(k.semi, tonicP);
+    const label = inScale ? solfegeForP(info.p) : (isRaised ? (solfegeForP(info.p) + '＊') : '');
     const isTonic = (k.semi === tonicSemi);
     if (k.isWhite) {
       whiteIdx++;
