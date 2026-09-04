@@ -459,6 +459,23 @@
         <div style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <p style="font-weight: 700; font-size: 1.1rem; color: #0f1722; margin: 0 0 8px;">📝 日々の練習で気づいたこと（随時アプリの改良に反映）</p>
             <p style="font-size: 0.85rem; color: #777; margin: 0 0 16px; line-height: 1.7;">ここに書かれているのは、必ずしも全くの新しい発見ではありません。演奏における暗黙知や、なんとなく知っていたこと、外部の指導表現の再検証などを、あえて言語化することで腹落ちさせるための記録です。</p>
+            <div style="display:flex; gap:8px; margin-bottom:14px;">
+                <button class="tab-btn-findings" data-tab="weekly" style="flex:1; padding:8px 10px; border:1px solid #c9d0da; border-radius:8px; background:#2c5d92; color:white; font-weight:700; font-size:0.85rem; cursor:pointer;">週次まとめ</button>
+                <button class="tab-btn-findings" data-tab="daily" style="flex:1; padding:8px 10px; border:1px solid #c9d0da; border-radius:8px; background:white; color:#2c5d92; font-weight:700; font-size:0.85rem; cursor:pointer;">日々の記録</button>
+            </div>
+            <div id="findings-weekly-panel">
+                <div style="background:#f8f9fb; border:1px solid #dde3ec; border-radius:8px; padding:12px 14px; margin-bottom:12px;">
+                    <p style="font-weight:700; color:#0f1722; margin-bottom:6px;">📅 2026年8月23日〜8月29日</p>
+                    <ul style="margin: 8px 0 0 20px; padding: 0; font-size: 0.95rem; line-height: 2; color: #555;">
+                        <li>弓の重み・圧力に関する理解が大きく進んだ：「腕の重みを乗せる」のではなく「重みをコントロールする」（元弓は減らす、先端は足す、傾きで接触量を調整する）という理解に到達。てこの原理、数値的な裏付け（弓の重さ・必要圧力・腕の重さの比較）で検証した。腕の重みをほとんど使わない意識にすると、弓のスピード・駒からの距離・傾きなど、他の要素のコントロールが格段にしやすくなった</li>
+                        <li>「下降音型」（ポジション移動を含む、含まないに限らず）の困難さを、身体運動の観点から徹底的に分析（楽器の不安定さ、右手が遠ざかる、指の順序が逆、左手の捻り、運動の性質が逆）。下降を独立して鍛える必要性を確認し、練習比率を下降側に厚くする方針に</li>
+                        <li>下降開始・弓順を逆にする練習により、和音の聴音・運指の定着・楽器での滑らかさが大きく向上。効果を実感し、譜読みの自動化（音階・分散和音を「モジュール」として扱う）という捉え方に発展</li>
+                        <li>移弦のタイミング・役割分担（準備・受け止め・本弾き）を明確化。低音域の音程・注意力に関する先生からの指摘を受け、対策を検討</li>
+                        <li>レッスンでフォームを評価される一方、分散3度・速いパッセージなど、新たな課題も見えてきた</li>
+                    </ul>
+                </div>
+            </div>
+            <div id="findings-daily-panel" style="display:none;">
             <div style="font-size: 0.95rem; line-height: 2; color: #555;" id="findings-container">
                 <p><strong>2026年9月5日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
@@ -730,12 +747,28 @@
                 </ul>
             </div>
             <div style="margin-top: 4px;" id="findings-toggle-wrap"></div>
+            </div>
         </div>
     </div>
     
     <div class="container" style="margin-top: 30px;">
         <div style="background: white; border: 1px solid #c9d0da; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <p style="font-weight: 700; font-size: 1.1rem; color: #0f1722; margin: 0 0 16px;">📋 アップデート履歴</p>
+            <div style="display:flex; gap:8px; margin-bottom:14px;">
+                <button class="tab-btn-changelog" data-tab="weekly" style="flex:1; padding:8px 10px; border:1px solid #c9d0da; border-radius:8px; background:#2c5d92; color:white; font-weight:700; font-size:0.85rem; cursor:pointer;">週次まとめ</button>
+                <button class="tab-btn-changelog" data-tab="daily" style="flex:1; padding:8px 10px; border:1px solid #c9d0da; border-radius:8px; background:white; color:#2c5d92; font-weight:700; font-size:0.85rem; cursor:pointer;">日々の記録</button>
+            </div>
+            <div id="changelog-weekly-panel">
+                <div style="background:#f8f9fb; border:1px solid #dde3ec; border-radius:8px; padding:12px 14px; margin-bottom:12px;">
+                    <p style="font-weight:700; color:#0f1722; margin-bottom:6px;">📅 2026年8月23日〜8月29日</p>
+                    <ul style="margin: 8px 0 0 20px; padding: 0; font-size: 0.95rem; line-height: 2; color: #555;">
+                        <li>IPPに音色モード（純音・オルガン風・弦楽器風）を追加し、聴覚疲労を軽減</li>
+                        <li>IPPに「上昇／下降」の選択、下降開始時の音域調整、スロットマシンの4リール化・高速化を実装</li>
+                        <li>IPPに「調の並び順」（5度圏右回り・左回り、♯順・♭順）を追加。平行調・同主調ペアの重複表示や、和音の階名表示の誤りも修正</li>
+                    </ul>
+                </div>
+            </div>
+            <div id="changelog-daily-panel" style="display:none;">
             <div style="font-size: 0.95rem; line-height: 2; color: #555;" id="changelog-container">
                 <p><strong>2026年9月5日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
@@ -993,6 +1026,7 @@
                     <li>Integrated Performance Practice：ヘ長調・ニ短調・イ長調・イ短調を追加</li>
                 </ul>
             </div>
+            </div>
         </div>
     </div>
 
@@ -1118,6 +1152,27 @@
         }
         collapseToLatestDay('changelog-container', '履歴');
         collapseToLatestDay('findings-container', '気づき');
+
+        // タブ切り替え（週次まとめ／日々の記録）：気づき・アップデート履歴、共通のロジック
+        function setupTabs(btnClass, weeklyPanelId, dailyPanelId) {
+            const buttons = document.querySelectorAll('.' + btnClass);
+            const weeklyPanel = document.getElementById(weeklyPanelId);
+            const dailyPanel = document.getElementById(dailyPanelId);
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const isWeekly = btn.dataset.tab === 'weekly';
+                    weeklyPanel.style.display = isWeekly ? '' : 'none';
+                    dailyPanel.style.display = isWeekly ? 'none' : '';
+                    buttons.forEach(b => {
+                        const active = b === btn;
+                        b.style.background = active ? '#2c5d92' : 'white';
+                        b.style.color = active ? 'white' : '#2c5d92';
+                    });
+                });
+            });
+        }
+        setupTabs('tab-btn-findings', 'findings-weekly-panel', 'findings-daily-panel');
+        setupTabs('tab-btn-changelog', 'changelog-weekly-panel', 'changelog-daily-panel');
     </script>
 </body>
 </html>
