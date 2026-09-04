@@ -1652,9 +1652,18 @@ function makeController(buildFn, els){
         this.nextStepTime+=sixteenth();
         if(this.stepIndex>=b.totalSteps){
           this.stepIndex=0;
+          const prevKey = els.getKey ? els.getKey() : null;
           if(els.onLoopComplete) els.onLoopComplete();
           this.bpm=Number(els.bpm.value); this.meter=Number(els.meter.value);
           this.built=buildFn();
+          const keyChanged = els.getKey ? (els.getKey() !== prevKey) : false;
+          if(keyChanged && !this.metroOn && this.built.tonicFreq){
+            // 手動でスタートした時と同じ流れ：1秒待つ→主音を2秒鳴らす→1秒待ってから本編再開
+            // （自動送りだけでなく、再生中に手動で「次の調」「前の調」を押して調が変わった場合も同様）
+            this.nextStepTime+=1.0;
+            playToneAt(this.nextStepTime, this.built.tonicFreq, 2.0, 0.26, els.getTimbre ? els.getTimbre() : 'sine');
+            this.nextStepTime+=2.0+1.0;
+          }
         }
       }
       this.timer=setTimeout(()=>this.tick(),25);
@@ -1789,7 +1798,10 @@ function makeOrderNav(prefix, rightList, leftList, sharpList, flatList){
   document.getElementById(prefix+'-order-mode').onchange=applyMode;
   document.getElementById(prefix+'-order-next').onclick=next;
   document.getElementById(prefix+'-order-prev').onclick=prev;
-  return { next, prev, isAutoMode: () => mode() !== 'difficulty' };
+  // スタート時に、まだ「次の調」が一度も押されていなければ、最初の1回分だけ先に進めておく
+  // （手動で先に「次の調」を押していれば、ここでは何もしない）
+  function ensureStarted(){ if(state.idx < 0) next(); }
+  return { next, prev, isAutoMode: () => mode() !== 'difficulty', ensureStarted };
 }
 const scOrderNav = makeOrderNav('sc', SC_ORDER_RIGHT, SC_ORDER_LEFT, SC_ORDER_SHARP, SC_ORDER_FLAT);
 const chOrderNav = makeOrderNav('ch', CH_ORDER_RIGHT, CH_ORDER_LEFT, CH_ORDER_SHARP, CH_ORDER_FLAT);
@@ -2144,7 +2156,8 @@ const chCtl=makeController(buildChords,{
   start:document.getElementById('ch-start'),stop:document.getElementById('ch-stop'),
   label:document.getElementById('ch-current'),
   getTimbre:()=>document.getElementById('ch-timbre').value,
-  onLoopComplete:()=>{ if(chOrderNav.isAutoMode() && document.getElementById('ch-autoplay').checked) chOrderNav.next(); }
+  onLoopComplete:()=>{ if(chOrderNav.isAutoMode() && document.getElementById('ch-autoplay').checked) chOrderNav.next(); },
+  getKey:()=>document.getElementById('ch-key').value
 });
 const thCtl=makeController(buildThirds,{
   bpm:document.getElementById('th-bpm'),meter:document.getElementById('th-meter'),
@@ -2181,7 +2194,8 @@ const scCtl=makeController(buildScale,{
   metro:document.getElementById('sc-metro'),
   start:document.getElementById('sc-start'),stop:document.getElementById('sc-stop'),
   getTimbre:()=>document.getElementById('sc-timbre').value,
-  onLoopComplete:()=>{ if(scOrderNav.isAutoMode() && document.getElementById('sc-autoplay').checked) scOrderNav.next(); }
+  onLoopComplete:()=>{ if(scOrderNav.isAutoMode() && document.getElementById('sc-autoplay').checked) scOrderNav.next(); },
+  getKey:()=>document.getElementById('sc-key').value
 });
 
 document.getElementById('lt-slot-start').onclick=ltSlotStart;
@@ -2197,7 +2211,7 @@ document.getElementById('lt-side-major').onclick=()=>ltPlaySide('major');
 document.getElementById('lt-side-minor').onclick=()=>ltPlaySide('minor');
 document.getElementById('lt-start').onclick=startLT;
 document.getElementById('lt-stop').onclick=stopLT;
-document.getElementById('ch-start').onclick=()=>chCtl.start();
+document.getElementById('ch-start').onclick=()=>{ if(chOrderNav.isAutoMode()) chOrderNav.ensureStarted(); chCtl.start(); };
 document.getElementById('ch-stop').onclick=()=>chCtl.stop();
 document.getElementById('th-start').onclick=()=>thCtl.start();
 document.getElementById('th-stop').onclick=()=>thCtl.stop();
@@ -2211,7 +2225,7 @@ document.getElementById('fo-start').onclick=()=>foCtl.start();
 document.getElementById('fo-stop').onclick=()=>foCtl.stop();
 document.getElementById('oc-start').onclick=()=>ocCtl.start();
 document.getElementById('oc-stop').onclick=()=>ocCtl.stop();
-document.getElementById('sc-start').onclick=()=>scCtl.start();
+document.getElementById('sc-start').onclick=()=>{ if(scOrderNav.isAutoMode()) scOrderNav.ensureStarted(); scCtl.start(); };
 document.getElementById('sc-stop').onclick=()=>scCtl.stop();
 
 document.getElementById('lt-bpm').oninput=e=>document.getElementById('lt-bpmval').textContent=e.target.value+' BPM';
