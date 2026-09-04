@@ -135,7 +135,7 @@
         <button id="lt-side-major" class="good" style="font-size:13px;width:auto;padding:13px 14px;margin-right:6px;">長調の主音</button>
         <button id="lt-side-minor" class="good" style="font-size:13px;width:auto;padding:13px 14px;">短調の主音</button>
       </div>
-      <div style="font-size:11.5px;color:#666;margin-top:8px;line-height:1.6;">調名を見て主音を思い浮かべ（または歌い）、「スタート」で確認してください。平行調ペアは主音が2つあるので、上のボタンで長調・短調それぞれの主音を鳴らせます。カッコ書きの短調は、他のペアの長調側と主音（周波数）が同じで、③和音（フレッシュ7和音）がそちらで既に鳴らせるため、和音練習では省略できます。同主調ペアの＊付きの短調（変イ・変ニ・変ト短調）は、理論上は成立する調ですが、標準的な記譜法の範囲（最大♭7つ）を超える、または超えるダブルフラットを要するため、実務では通常、異名同音（嬰ハ短調・嬰ヘ短調など）で記譜されます。このシステムは異名同音を周波数の異なる別の音として扱うため、あえて異名同音に置き換えず、理論通りの綴りのまま扱っています。</div>
+      <div style="font-size:11.5px;color:#666;margin-top:8px;line-height:1.6;">調名を見て主音を思い浮かべ（または歌い）、「スタート」で確認してください。平行調ペアは主音が2つあるので、上のボタンで長調・短調それぞれの主音を鳴らせます。カッコ書きの短調は、他のペアの長調側と主音（周波数）が同じで、③和音（フレッシュ7和音）がそちらで既に鳴らせるため、和音練習では省略できます。</div>
     </div>
     <div class="opt" id="lt-key-row"><span>調</span>
       <select id="lt-key">
@@ -200,6 +200,7 @@
     <div id="sc-order-box" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid #dde3ec;border-radius:8px;background:#f8f9fb;">
       <div id="sc-order-key" style="font-size:18px;font-weight:800;color:#0f1722;text-align:center;margin-bottom:8px;">「次の調」を押してください</div>
       <div style="text-align:center;"><button id="sc-order-prev" style="font-size:13px;width:auto;padding:13px 14px;margin-right:6px;">← 前の調</button><button id="sc-order-next" style="font-size:13px;width:auto;padding:13px 14px;">次の調 →</button></div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;justify-content:center;"><input type="checkbox" id="sc-autoplay">自動で次の調へ進む（ストップを押すまで、1調終わるごとに自動的に進みます）</label>
     </div>
     <div class="opt" id="sc-key-row"><span>調</span>
       <select id="sc-key">
@@ -285,6 +286,7 @@
     <div id="ch-order-box" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid #dde3ec;border-radius:8px;background:#f8f9fb;">
       <div id="ch-order-key" style="font-size:18px;font-weight:800;color:#0f1722;text-align:center;margin-bottom:8px;">「次の調」を押してください</div>
       <div style="text-align:center;"><button id="ch-order-prev" style="font-size:13px;width:auto;padding:13px 14px;margin-right:6px;">← 前の調</button><button id="ch-order-next" style="font-size:13px;width:auto;padding:13px 14px;">次の調 →</button></div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;justify-content:center;"><input type="checkbox" id="ch-autoplay">自動で次の調へ進む（ストップを押すまで、1調終わるごとに自動的に進みます）</label>
     </div>
     <div class="opt" id="ch-key-row"><span>調</span>
       <select id="ch-key">
@@ -1650,6 +1652,7 @@ function makeController(buildFn, els){
         this.nextStepTime+=sixteenth();
         if(this.stepIndex>=b.totalSteps){
           this.stepIndex=0;
+          if(els.onLoopComplete) els.onLoopComplete();
           this.bpm=Number(els.bpm.value); this.meter=Number(els.meter.value);
           this.built=buildFn();
         }
@@ -1700,7 +1703,7 @@ const LT_PAIRS_SAMEKEY = [
   ['ハ長調 ／ ハ短調','C'],   ['ト長調 ／ ト短調','G'],   ['ニ長調 ／ ニ短調','D'],
   ['イ長調 ／ イ短調','A'],   ['ホ長調 ／ ホ短調','E'],   ['ロ長調 ／ ロ短調','B'],
   ['嬰ヘ長調 ／ 嬰ヘ短調','Fis'],
-  ['変ト長調 ／ 変ト短調＊','Ges'], ['変ニ長調 ／ 変ニ短調＊','Des'], ['変イ長調 ／ 変イ短調＊','Ab'],
+  ['変ト長調 ／ 変ト短調','Ges'], ['変ニ長調 ／ 変ニ短調','Des'], ['変イ長調 ／ 変イ短調','Ab'],
   ['変ホ長調 ／ 変ホ短調','Eb'], ['変ロ長調 ／ 変ロ短調','Bb'], ['ヘ長調 ／ ヘ短調','F']
 ];
 // 平行調ペア（左回り：ハ長調からスタートし♭方向へ進み、♭6→♯6に移ってト長調で終わる）。
@@ -1715,8 +1718,8 @@ const LT_PAIRS_PARALLEL_LEFT = [
 // 同主調ペア（左回り：ハ長調からスタートし♭方向へ進む）
 const LT_PAIRS_SAMEKEY_LEFT = [
   ['ハ長調 ／ ハ短調','C'],   ['ヘ長調 ／ ヘ短調','F'],   ['変ロ長調 ／ 変ロ短調','Bb'],
-  ['変ホ長調 ／ 変ホ短調','Eb'], ['変イ長調 ／ 変イ短調＊','Ab'], ['変ニ長調 ／ 変ニ短調＊','Des'],
-  ['変ト長調 ／ 変ト短調＊','Ges'],
+  ['変ホ長調 ／ 変ホ短調','Eb'], ['変イ長調 ／ 変イ短調','Ab'], ['変ニ長調 ／ 変ニ短調','Des'],
+  ['変ト長調 ／ 変ト短調','Ges'],
   ['嬰ヘ長調 ／ 嬰ヘ短調','Fis'], ['ロ長調 ／ ロ短調','B'], ['ホ長調 ／ ホ短調','E'],
   ['イ長調 ／ イ短調','A'], ['ニ長調 ／ ニ短調','D'], ['ト長調 ／ ト短調','G']
 ];
@@ -1786,9 +1789,10 @@ function makeOrderNav(prefix, rightList, leftList, sharpList, flatList){
   document.getElementById(prefix+'-order-mode').onchange=applyMode;
   document.getElementById(prefix+'-order-next').onclick=next;
   document.getElementById(prefix+'-order-prev').onclick=prev;
+  return { next, prev, isAutoMode: () => mode() !== 'difficulty' };
 }
-makeOrderNav('sc', SC_ORDER_RIGHT, SC_ORDER_LEFT, SC_ORDER_SHARP, SC_ORDER_FLAT);
-makeOrderNav('ch', CH_ORDER_RIGHT, CH_ORDER_LEFT, CH_ORDER_SHARP, CH_ORDER_FLAT);
+const scOrderNav = makeOrderNav('sc', SC_ORDER_RIGHT, SC_ORDER_LEFT, SC_ORDER_SHARP, SC_ORDER_FLAT);
+const chOrderNav = makeOrderNav('ch', CH_ORDER_RIGHT, CH_ORDER_LEFT, CH_ORDER_SHARP, CH_ORDER_FLAT);
 
 // ランダム用の26調（長調13＋短調13）
 const LT_KEYS_26 = [
@@ -2139,7 +2143,8 @@ const chCtl=makeController(buildChords,{
   metro:document.getElementById('ch-metro'),
   start:document.getElementById('ch-start'),stop:document.getElementById('ch-stop'),
   label:document.getElementById('ch-current'),
-  getTimbre:()=>document.getElementById('ch-timbre').value
+  getTimbre:()=>document.getElementById('ch-timbre').value,
+  onLoopComplete:()=>{ if(chOrderNav.isAutoMode() && document.getElementById('ch-autoplay').checked) chOrderNav.next(); }
 });
 const thCtl=makeController(buildThirds,{
   bpm:document.getElementById('th-bpm'),meter:document.getElementById('th-meter'),
@@ -2175,7 +2180,8 @@ const scCtl=makeController(buildScale,{
   bpm:document.getElementById('sc-bpm'),meter:document.getElementById('sc-meter'),
   metro:document.getElementById('sc-metro'),
   start:document.getElementById('sc-start'),stop:document.getElementById('sc-stop'),
-  getTimbre:()=>document.getElementById('sc-timbre').value
+  getTimbre:()=>document.getElementById('sc-timbre').value,
+  onLoopComplete:()=>{ if(scOrderNav.isAutoMode() && document.getElementById('sc-autoplay').checked) scOrderNav.next(); }
 });
 
 document.getElementById('lt-slot-start').onclick=ltSlotStart;
