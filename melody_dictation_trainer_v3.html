@@ -254,6 +254,12 @@
           <button data-v="extended">転回・属七・減七を含む</button>
         </span>
       </div>
+      <div class="opt" id="dict-tonicacc-row" style="display:none"><span>主和音の主音（♯・♭）</span>
+        <span class="seg" id="seg-dict-tonicacc">
+          <button data-v="on" class="on">混ぜる</button>
+          <button data-v="off">なし</button>
+        </span>
+      </div>
       <div class="opt" id="dict-range-row"><span>音域</span>
         <select id="dict-range">
           <option value="60,84" selected>標準（C4–C6）</option>
@@ -356,6 +362,20 @@ function pickKey(useAcc){
   if(!useAcc){ const plain=KEYS.filter(k=>k.sharps===0&&k.flats===0); return plain[Math.floor(Math.random()*plain.length)]; }
   return KEYS[Math.floor(Math.random()*KEYS.length)];
 }
+// 主和音の「主音そのもの」に臨時記号がつくかどうかを判定する（調号の♯♭数とは別。
+// 例：嬰ヘ短調・変ロ長調・変ホ長調の3調は、調号に♯♭があるだけでなく主音自体も臨時記号つきになる）
+function keyTonicHasAccidental(key){
+  const accMap=keySignatureMap(key.sharps,key.flats);
+  return !!accMap[key.tonic];
+}
+// 主和音のみモード専用：主音の臨時記号の有無で調の候補を絞り込む
+function pickKeyForTonicChord(tonicAccMode){
+  if(tonicAccMode==='off'){
+    const plain=KEYS.filter(k=>!keyTonicHasAccidental(k));
+    return plain[Math.floor(Math.random()*plain.length)];
+  }
+  return pickKey(true); // 混ぜる：既存通り常に14調から選ぶ
+}
 function buildPitch(letter,octave,acc){
   const off=acc==='#'?1:acc==='b'?-1:0;
   const midi=(octave+1)*12+SEMI[letter]+off;
@@ -393,6 +413,7 @@ let useAcc=true, lowMidi=60, highMidi=84, measures=1, contourMode='random';
 let timeSigLabel='4/4', restMin=0, restMax=0, rMeasures=1, rhythmRandom=false;
 let dictType='single', dictUseAcc=true, dictLowMidi=60, dictHighMidi=84; // dictUseAccは単音モード専用。和音は常に14調（下記 pickKey(true) 参照）
 let dictChordSet='tonic'; // 'tonic'（主和音のみ）| 'extended'（転回・属七・減七を含む）
+let dictTonicAcc='on'; // 'tonic'モード専用：主和音の主音自体に臨時記号を含めるか（'on'=混ぜる／'off'=なし）
 let dictMode='normal'; // 'normal' | 'low' | 'mixed' | 'octave1'
 let dictTonicFreq=442; // 現在の出題で使う基準音（Hz）。mixedモードでは出題ごとに221/442を切り替える
 // 基準音ごとの既定音域（MIDI）。A3=57(221Hz), A4=69(442Hz), C3=48, C5=72, A5=81
@@ -1317,7 +1338,8 @@ function dictMakeChord(){
     // 40回すべて失敗して単音にフォールバックしてしまうため。Score Readingと同じ対策）
     // 和音は常に14調から選ぶ。調号0に絞ると2調（ハ長調・イ短調）しか残らず、
     // 直前回避と組み合わさって実質2択の交互出題になってしまうため。
-    const key=pickKey(true);
+    // （「主音の臨時記号：なし」を選んだ場合のみ、主音自体に臨時記号がつく調を除外する）
+    const key=pickKeyForTonicChord(dictTonicAcc);
     const accMap=keySignatureMap(key.sharps,key.flats);
     const cand=diatonicCandidates(dictLowMidi,dictHighMidi).filter(x=>x.letter===key.tonic);
     const root=cand.length?cand[Math.floor(Math.random()*cand.length)]:{letter:key.tonic,octave:4};
@@ -1763,7 +1785,8 @@ document.getElementById('seg-warmup-type').addEventListener('click',e=>{const b=
 document.getElementById('seg-contour').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;contourMode=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newPhrase();});
 document.getElementById('seg-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;useAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newPhrase();});
 document.getElementById('seg-dict-type').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictType=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));syncDictChordSetRow();newDictNote();});
-document.getElementById('seg-dict-chordset').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictChordSet=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
+document.getElementById('seg-dict-chordset').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictChordSet=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));syncDictChordSetRow();newDictNote();});
+document.getElementById('seg-dict-tonicacc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictTonicAcc=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
 document.getElementById('seg-dict-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictUseAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
 // 「和音の種類」は和音モードのときだけ、「臨時記号」は単音モードのときだけ表示する。
 // 臨時記号の選択は単音専用（和音は常に14調）なので、和音モードでは出さない。
@@ -1771,6 +1794,7 @@ function syncDictChordSetRow(){
   const isChord = dictType==='chord' && dictMode!=='octave1';
   document.getElementById('dict-chordset-row').style.display = isChord ? '' : 'none';
   document.getElementById('dict-acc-row').style.display = isChord ? 'none' : '';
+  document.getElementById('dict-tonicacc-row').style.display = (isChord && dictChordSet==='tonic') ? '' : 'none';
 }
 document.getElementById('range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);lowMidi=lo;highMidi=hi;newPhrase();};
 document.getElementById('dict-range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);dictLowMidi=lo;dictHighMidi=hi;newDictNote();};
