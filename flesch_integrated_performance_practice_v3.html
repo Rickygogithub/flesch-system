@@ -273,7 +273,22 @@
   <!-- ③ 和音 -->
   <section>
     <h2>③ 和音</h2>
-    <div class="hint">7つの和音（純正律）が各6拍ずつ順に鳴ります。調は5度圏に沿ってC〜Gesまで（#6・♭6）選べます。</div>
+    <div class="hint">7つの和音（純正律）が順に鳴ります。「同時」は各6拍ずつ、「分散（アルペジオ）」は1音1拍で鳴ります。調は5度圏に沿ってC〜Gesまで（#6・♭6）選べます。</div>
+    <div class="opt"><span>再生方法</span>
+      <select id="ch-playmode">
+        <option value="block" selected>同時に鳴らす（コード）</option>
+        <option value="updown">分散：上昇→下降（アルペジオ）</option>
+        <option value="downup">分散：下降→上昇（アルペジオ）</option>
+      </select>
+    </div>
+    <div class="opt" id="ch-arp-oct-row" style="display:none;"><span>分散のオクターブ数</span>
+      <select id="ch-arp-octaves">
+        <option value="1" selected>1オクターブ</option>
+        <option value="2">2オクターブ</option>
+        <option value="3">3オクターブ</option>
+      </select>
+    </div>
+    <div style="font-size:11.5px;color:#777;margin:-2px 0 8px;line-height:1.6;" id="ch-arp-note">「上昇→下降」は、根音→3度→5度→（7度）→オクターブ上の根音、と昇ってから、同じ音（両端の根音・オクターブ上の根音は繰り返さず）を逆順にたどって降ります（例：ド・ミ・ソ・ド・ソ・ミ）。「下降→上昇」はその逆順（例：ド・ソ・ミ・ド・ミ・ソ）。2オクターブの場合はこのパターンをもう1段重ねます。</div>
     <div class="opt"><span>調の並び順（同主調ペア）</span>
       <select id="ch-order-mode">
         <option value="difficulty" selected>難易度順（♯♭0→6の順）</option>
@@ -1085,22 +1100,47 @@ function buildChords(){
   const tonicMidi=cfg.tonicMidi;
   const tonicFreqCh=tonicFreqFromFifths(TONIC_FIFTHS_FROM_A[key], tonicMidi);
   const meterCh=Number(document.getElementById('ch-meter').value);
+  const playMode=document.getElementById('ch-playmode').value; // 'block' | 'updown' | 'downup'
+  const arpOctaves=Number(document.getElementById('ch-arp-octaves').value); // 1 or 2
+  const SPB=12; // このセクションは1拍を12分割（3連符=4刻み、16分音符=3刻み、両方を整数ステップで表すため）
 
   const noteMap={}, labelMap={}; let step=0;
   const add=(s,freq,d,p)=>{(noteMap[s]=noteMap[s]||[]).push({freq,durSteps:d,peak:p});};
+  const freqOfNote=(c,m)=> c.et
+    ? etFreqFromRoot(tonicFreqCh,tonicMidi,c.root,m)   // 減七：平均律
+    : jiFreqFromTonic(tonicFreqCh,tonicMidi,c.root,m); // それ以外：純正律
   cfg.chords.forEach((c,i)=>{
     labelMap[step]=(i+1)+'. '+c.label;
-    c.notes.forEach(m=>add(step, c.et
-      ? etFreqFromRoot(tonicFreqCh,tonicMidi,c.root,m)   // 減七：平均律
-      : jiFreqFromTonic(tonicFreqCh,tonicMidi,c.root,m), // それ以外：純正律
-      meterCh*4, 0.18)); // 拍子の拍数ぶん
-    step+=meterCh*4;
+    if(playMode==='block'){
+      c.notes.forEach(m=>add(step, freqOfNote(c,m), meterCh*SPB, 0.18));
+      step+=meterCh*SPB;
+    } else {
+      // 分散和音（アルペジオ）：根音→3度→5度→（7度）→オクターブ上の根音、の上行列(up)を基準に、
+      // 「上昇→下降」はup全体の後、両端（根音・オクターブ上の根音）を除いて逆順にたどる。
+      // 「下降→上昇」は、upを逆順にした下行列(down)全体の後、同様に両端を除いて逆順（＝upと同じ向き）にたどる。
+      // （例・1オクターブ三和音：上昇→下降＝ド・ミ・ソ・ド・ソ・ミ／下降→上昇＝ド・ソ・ミ・ド・ミ・ソ）
+      // 教本の表記に合わせ、三和音は1拍に3音（3連符）、七の和音（減七・属七）は1拍に4音（16分音符）で鳴らす。
+      // どちらの場合も、1オクターブ分の往復にかかる拍数は常に2拍（2オクターブなら4拍）で揃う。
+      let up=[...c.notes];
+      for(let o=1;o<arpOctaves;o++){ c.notes.forEach(n=>up.push(n+12*o)); }
+      up.push(c.notes[0]+12*arpOctaves);
+      let seq;
+      if(playMode==='updown'){
+        seq = up.concat(up.slice(1,-1).slice().reverse());
+      } else { // 'downup'
+        const down = up.slice().reverse();
+        seq = down.concat(down.slice(1,-1).slice().reverse());
+      }
+      const noteStep = SPB / c.notes.length; // 三和音=4（3連符）／七の和音=3（16分音符）
+      seq.forEach((m,idx)=>{ add(step+idx*noteStep, freqOfNote(c,m), noteStep, 0.22); });
+      step+=seq.length*noteStep;
+    }
   });
   const finalLabel = cfg.finalLabel;
   labelMap[step]=finalLabel;
-  add(step, pythFreqFromTonic(tonicFreqCh,tonicMidi,cfg.finalNote), 3*4, 0.30); // 末尾：単音3拍（固定）
-  step+=3*4;
-  step+=3*4; // 次のループまで3拍の空振り（固定）
+  add(step, pythFreqFromTonic(tonicFreqCh,tonicMidi,cfg.finalNote), 3*SPB, 0.30); // 末尾：単音3拍（固定）
+  step+=3*SPB;
+  step+=3*SPB; // 次のループまで3拍の空振り（固定）
   return {noteMap,labelMap,totalSteps:step,tonicFreq:tonicFreqCh};
 }
 
@@ -1610,6 +1650,7 @@ function buildSixths(){
 function makeController(buildFn, els){
   return {
     running:false,timer:null,stepIndex:0,nextStepTime:0,bpm:60,meter:4,metroOn:false,built:null,
+    spb: els.stepsPerBeat || 4, // 1拍あたりのステップ数（既定4＝16分音符刻み。和音の分散モードのみ12を使用）
     async start(){
       if(this.running)return;
       const ctx=await ensureCtx();
@@ -1617,7 +1658,7 @@ function makeController(buildFn, els){
       this.bpm=Number(els.bpm.value); this.meter=Number(els.meter.value);
       this.metroOn=els.metro.checked;
       this.built=buildFn();
-      this.stepIndex=this.metroOn ? -(this.meter*4) : 0; // メトロノーム時のみ1小節カウントイン
+      this.stepIndex=this.metroOn ? -(this.meter*this.spb) : 0; // メトロノーム時のみ1小節カウントイン
       if(this.metroOn){
         this.nextStepTime=ctx.currentTime+0.12;
       } else {
@@ -1632,24 +1673,24 @@ function makeController(buildFn, els){
     tick(){
       if(!this.running)return;
       const ctx=getCtx();
-      const sixteenth=()=>(60/this.bpm)/4;
+      const unitStep=()=>(60/this.bpm)/this.spb;
       while(this.nextStepTime < ctx.currentTime+0.13){
         const step=this.stepIndex, b=this.built;
-        if(this.metroOn && (((step%4)+4)%4)===0){
-          const beat=step/4;
+        if(this.metroOn && (((step%this.spb)+this.spb)%this.spb)===0){
+          const beat=step/this.spb;
           playClickAt(this.nextStepTime, (((beat%this.meter)+this.meter)%this.meter)===0);
         }
         if(step>=0){
           const ns=b.noteMap[step];
           const timbre = els.getTimbre ? els.getTimbre() : 'sine';
-          if(ns) ns.forEach(n=>playToneAt(this.nextStepTime+(n.delaySteps||0)*sixteenth(),n.freq,n.durSteps*sixteenth(),n.peak,timbre));
+          if(ns) ns.forEach(n=>playToneAt(this.nextStepTime+(n.delaySteps||0)*unitStep(),n.freq,n.durSteps*unitStep(),n.peak,timbre));
           if(b.labelMap && b.labelMap[step]!==undefined && els.label){
             const txt=b.labelMap[step], d=(this.nextStepTime-ctx.currentTime)*1000;
             setTimeout(()=>{ if(this.running&&els.label) els.label.textContent=txt; },Math.max(0,d));
           }
         }
         this.stepIndex++;
-        this.nextStepTime+=sixteenth();
+        this.nextStepTime+=unitStep();
         if(this.stepIndex>=b.totalSteps){
           this.stepIndex=0;
           const prevKey = els.getKey ? els.getKey() : null;
@@ -2157,7 +2198,8 @@ const chCtl=makeController(buildChords,{
   label:document.getElementById('ch-current'),
   getTimbre:()=>document.getElementById('ch-timbre').value,
   onLoopComplete:()=>{ if(chOrderNav.isAutoMode() && document.getElementById('ch-autoplay').checked) chOrderNav.next(); },
-  getKey:()=>document.getElementById('ch-key').value
+  getKey:()=>document.getElementById('ch-key').value,
+  stepsPerBeat:12 // 3連符（3分割）・16分音符（4分割）の両方を整数ステップで表せる、1拍12分割のグリッド
 });
 const thCtl=makeController(buildThirds,{
   bpm:document.getElementById('th-bpm'),meter:document.getElementById('th-meter'),
@@ -2213,6 +2255,12 @@ document.getElementById('lt-start').onclick=startLT;
 document.getElementById('lt-stop').onclick=stopLT;
 document.getElementById('ch-start').onclick=()=>{ if(chOrderNav.isAutoMode()) chOrderNav.ensureStarted(); chCtl.start(); };
 document.getElementById('ch-stop').onclick=()=>chCtl.stop();
+document.getElementById('ch-playmode').onchange=e=>{
+  const isArp = e.target.value!=='block';
+  document.getElementById('ch-arp-oct-row').style.display = isArp ? '' : 'none';
+  document.getElementById('ch-arp-note').style.display = isArp ? '' : 'none';
+};
+document.getElementById('ch-arp-note').style.display='none';
 document.getElementById('th-start').onclick=()=>thCtl.start();
 document.getElementById('th-stop').onclick=()=>thCtl.stop();
 document.getElementById('cr-start').onclick=()=>crCtl.start();
