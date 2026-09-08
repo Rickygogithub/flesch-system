@@ -114,7 +114,6 @@
         <button data-v="chord">和音</button>
         <button data-v="interval">度数</button>
         <button data-v="keysig">調号</button>
-        <button data-v="parallel-q">平行調</button>
         <button data-v="dominant-q">属調・下属調</button>
         <button data-v="samekey-q">同主調</button>
         <button data-v="relation-mix">関係性ミックス</button>
@@ -169,10 +168,9 @@
       <li>「五線の両端に特化」をオンにすると、1番線・5番線とその、すぐ上下（現在の音部記号における、間違いやすい箇所）だけに、出題を絞り込めます。</li>
       <li>「調号」は♯・♭0〜6個の範囲で出題し、同じ調号を持つ長調・短調の両方を答えます。</li>
       <li>「調性→調号」は、調性から調号の種類と位置を特定する練習です。</li>
-      <li>「平行調」は、示された調性の平行調（同じ調号を共有する、もう一方の長調・短調）を答える練習です。</li>
-      <li>「属調・下属調」は、示された調性の属調（5度上）・下属調（5度下）を、それぞれ調号込みで答える練習です。</li>
-      <li>「同主調」は、示された調性の同主調（主音を共有する、長調⇄短調）を、調号込みで答える練習です。変イ短調・変ニ短調・変ト短調・嬰ハ長調・嬰ト長調・嬰ニ長調は、実務ではほぼ使われない、理論上の調号（♯♭7個以上）になります。</li>
-      <li>「関係性ミックス」は、平行調・属調下属調・同主調のいずれかを毎回ランダムに出題します。何を問われているかを、その都度きちんと確認してから答える力を鍛えます。</li>
+      <li>「属調・下属調」は、示された調号の属調（5度上）・下属調（5度下）を、それぞれ長調・短調両方の調性名と調号込みで答える練習です。</li>
+      <li>「同主調」は、示された調号の長調・短調それぞれの同主調（主音を共有する反対の旋法）を、調号込みで答える練習です。答えが実務ではほぼ使われない調号（♯♭7個以上）になる調は、出題から除外しています。</li>
+      <li>「関係性ミックス」は、「調号」「調性→調号」「属調・下属調」「同主調」の4種類を毎回ランダムに出題します。何を問われているかを、その都度きちんと確認してから答える力を鍛えます。時間がない時は、このモードだけでも一通りの練習になります。</li>
       <li>「記録をリセット」で出題数や正答率などがゼロに戻ります。</li>
     </ul>
   </div>
@@ -775,42 +773,50 @@ function drawKeySig(entry){
   document.getElementById('score').innerHTML=keySigSvg(entry);
 }
 
-// 平行調・属調下属調・同主調モード共通：調性を1つ出題する（entryからランダムに長調/短調のどちらかを選ぶ）
-function buildRelationQuestion(subtype){
-  const entry=pickKeySig();
-  const isMajorQuestion = Math.random()<0.5;
-  const accMap=keySignatureMap(entry.sharps,entry.flats);
-  const questionJa = isMajorQuestion ? entry.major : entry.minor;
-  const questionDe = isMajorQuestion
-    ? germanKeyName(entry.tonicMajor,accMap,true)
-    : germanKeyName(entry.tonicMinor,accMap,false);
-  const idx = KEYSIG_LIST.indexOf(entry);
-  const result={_isRelation:true,_subtype:subtype,_entry:entry,_isMajorQuestion:isMajorQuestion,
-    _questionJa:questionJa,_questionDe:questionDe};
-  if(subtype==='parallel'){
-    result._answerJa = isMajorQuestion ? entry.minor : entry.major;
-    result._answerSig = keySigCountLabel(entry);
-  } else if(subtype==='dominant'){
-    const neighbors=getNeighborKeys(entry);
-    result._dominant=neighbors.dominant; result._subdominant=neighbors.subdominant;
-  } else if(subtype==='samekey'){
-    result._samekeyInfo = isMajorQuestion ? SAME_KEY_DATA[idx].major : SAME_KEY_DATA[idx].minor;
-  }
-  return result;
+// 同主調モード専用：出題側・回答側どちらも実用的な調号（♯♭6個以内）に収まるエントリのみに絞る
+const SAMEKEY_PRACTICAL_INDICES = SAME_KEY_DATA
+  .map((d,i)=>({d,i})).filter(({d})=>!d.major.rare && !d.minor.rare).map(({i})=>i);
+let lastSamekeyIdx = -1;
+function pickSamekeyEntry(){
+  const pool = SAMEKEY_PRACTICAL_INDICES.filter(i=>i!==lastSamekeyIdx);
+  const idx = pool[Math.floor(Math.random()*pool.length)];
+  lastSamekeyIdx = idx;
+  return idx;
 }
-const RELATION_LABELS={parallel:'平行調',dominant:'属調・下属調',samekey:'同主調'};
+// 属調下属調・同主調モード共通：調号（エントリ）を1つ出題する。旋法は指定せず、長調・短調両方の答えを返す。
+function buildRelationQuestion(subtype){
+  if(subtype==='dominant'){
+    const entry=pickKeySig();
+    const neighbors=getNeighborKeys(entry);
+    return {_isRelation:true,_subtype:subtype,_entry:entry,_dominant:neighbors.dominant,_subdominant:neighbors.subdominant};
+  } else { // samekey
+    const idx=pickSamekeyEntry();
+    const entry=KEYSIG_LIST[idx];
+    return {_isRelation:true,_subtype:subtype,_entry:entry,_idx:idx};
+  }
+}
+const RELATION_LABELS={dominant:'属調・下属調',samekey:'同主調'};
+let mixSubMode = null;
+function effectiveMode(){ return mode==='relation-mix' ? mixSubMode : mode; }
+const MIX_POOL = ['keysig','keysig-rev','dominant-q','samekey-q'];
+const MIX_LABELS = {keysig:'調号→調性',['keysig-rev']:'調性→調号',['dominant-q']:'属調・下属調',['samekey-q']:'同主調'};
 function newCard(){
-  if(mode==='keysig'){
+  if(mode==='relation-mix'){
+    mixSubMode = MIX_POOL[Math.floor(Math.random()*MIX_POOL.length)];
+  }
+  const cm = effectiveMode();
+  if(cm==='keysig'){
     const entry=pickKeySig();
     const accMap=keySignatureMap(entry.sharps,entry.flats);
-    const neighbors=getNeighborKeys(entry);
     current={_isKeysig:true,_major:entry.major,_minor:entry.minor,
       _majorGerman:germanKeyName(entry.tonicMajor,accMap,true),
       _minorGerman:germanKeyName(entry.tonicMinor,accMap,false),
-      _baseEntry:entry, _dominant:neighbors.dominant, _subdominant:neighbors.subdominant};
+      _baseEntry:entry};
     revealed=false;
     drawKeySig(entry);
-  } else if(mode==='keysig-rev'){
+    if(mode==='relation-mix') document.getElementById('score').insertAdjacentHTML('beforeend',
+      '<div style="text-align:center;font-size:15px;color:#888;margin-top:6px;">（'+MIX_LABELS[cm]+'は？）</div>');
+  } else if(cm==='keysig-rev'){
     const entry=pickKeySig();
     const isMajorQuestion = Math.random()<0.5;
     const accMap=keySignatureMap(entry.sharps,entry.flats);
@@ -821,21 +827,17 @@ function newCard(){
     current={_isKeysigRev:true,_entry:entry,_questionJa:questionJa,_questionDe:questionDe};
     revealed=false;
     document.getElementById('score').innerHTML =
-      '<div style="text-align:center;padding:40px 0;font-size:28px;font-weight:800;color:#16202b;">'+questionJa+'／'+questionDe+'</div>';
-  } else if(mode==='parallel-q' || mode==='dominant-q' || mode==='samekey-q' || mode==='relation-mix'){
-    const modeToSubtype={'parallel-q':'parallel','dominant-q':'dominant','samekey-q':'samekey'};
-    const subtype = mode==='relation-mix'
-      ? ['parallel','dominant','samekey'][Math.floor(Math.random()*3)]
-      : modeToSubtype[mode];
+      '<div style="text-align:center;padding:40px 0;font-size:28px;font-weight:800;color:#16202b;">'+questionJa+'／'+questionDe+'</div>'+
+      (mode==='relation-mix' ? '<div style="text-align:center;font-size:15px;color:#888;margin-top:6px;">（'+MIX_LABELS[cm]+'は？）</div>' : '');
+  } else if(cm==='dominant-q' || cm==='samekey-q'){
+    const subtype = cm==='dominant-q' ? 'dominant' : 'samekey';
     current=buildRelationQuestion(subtype);
     revealed=false;
     document.getElementById('score').innerHTML = keySigSvg(current._entry);
-    const modeLabelHtml = '<div style="text-align:center;font-size:16px;font-weight:700;color:#16202b;margin-top:4px;">'+
-      (current._isMajorQuestion ? '長調' : '短調')+'</div>';
     const subLabelHtml = mode==='relation-mix'
-      ? '<div style="text-align:center;font-size:15px;color:#888;margin-top:6px;">（'+RELATION_LABELS[subtype]+'は？）</div>'
+      ? '<div style="text-align:center;font-size:15px;color:#888;margin-top:6px;">（'+MIX_LABELS[cm]+'は？）</div>'
       : '';
-    document.getElementById('score').insertAdjacentHTML('beforeend', modeLabelHtml+subLabelHtml);
+    document.getElementById('score').insertAdjacentHTML('beforeend', subLabelHtml);
   } else {
     let pitches;
     if(mode==='single') pitches=[makeNote()];
@@ -850,12 +852,10 @@ function newCard(){
   }
   const ans=document.getElementById('answer');
   ans.className='answer placeholder';
-  ans.innerHTML = mode==='keysig' ? '長調・短調の両方を思い浮かべてから「答えを見る」'
-    : mode==='keysig-rev' ? '調号の種類（♯か♭か）と、その数、そしてどの音につくかを思い浮かべてから「答えを見る」'
-    : mode==='parallel-q' ? '平行調の調性名と調号を思い浮かべてから「答えを見る」'
-    : mode==='dominant-q' ? '属調・下属調の調性名と調号を、それぞれ思い浮かべてから「答えを見る」'
-    : mode==='samekey-q' ? '同主調の調性名と調号を思い浮かべてから「答えを見る」'
-    : mode==='relation-mix' ? '何を問われているかを確認し、調性名と調号を思い浮かべてから「答えを見る」'
+  ans.innerHTML = cm==='keysig' ? '長調・短調の両方を思い浮かべてから「答えを見る」'
+    : cm==='keysig-rev' ? '調号の種類（♯か♭か）と、その数、そしてどの音につくかを思い浮かべてから「答えを見る」'
+    : cm==='dominant-q' ? '属調・下属調それぞれの、長調・短調両方の調性名と調号を思い浮かべてから「答えを見る」'
+    : cm==='samekey-q' ? '同主調（長調⇄短調）の調性名と調号を思い浮かべてから「答えを見る」'
     : mode==='sequence' ? '左から順に、音名を思い浮かべてから「答えを見る」'
     : '音名を思い浮かべてから「答えを見る」';
   document.getElementById('judge').style.display='none';
@@ -880,38 +880,38 @@ function reveal(){
       '<div class="hint">（同じ調号を持つ、もう一方の調：'+
       (current._questionJa===entry.major ? entry.minor : entry.major)+'）</div>';
   } else if(current._isRelation){
+    const cm = current._subtype==='dominant' ? 'dominant-q' : 'samekey-q';
     const subLabelHtml = mode==='relation-mix'
-      ? '<div class="hint" style="margin-bottom:6px;">（'+RELATION_LABELS[current._subtype]+'）</div>' : '';
-    if(current._subtype==='parallel'){
-      const answerIsMajor = !current._isMajorQuestion;
-      const answerTonic = answerIsMajor ? current._entry.tonicMajor : current._entry.tonicMinor;
-      const answerAccMap = keySignatureMap(current._entry.sharps, current._entry.flats);
-      const answerGerman = germanKeyName(answerTonic, answerAccMap, answerIsMajor);
-      document.getElementById('score').innerHTML=keySigSvg(current._entry);
-      ans.innerHTML=subLabelHtml+'<div class="names">'+current._answerJa+'／'+answerGerman+'</div>';
-    } else if(current._subtype==='dominant'){
-      const isMaj=current._isMajorQuestion;
+      ? '<div class="hint" style="margin-bottom:6px;">（'+MIX_LABELS[cm]+'）</div>' : '';
+    if(current._subtype==='dominant'){
       const dom=current._dominant, sub=current._subdominant;
-      const domName = dom ? (isMaj?dom.major:dom.minor) : '範囲外（♯7個以上）';
-      const domGerman = dom ? germanKeyName(isMaj?dom.tonicMajor:dom.tonicMinor, keySignatureMap(dom.sharps,dom.flats), isMaj) : '';
-      const subName = sub ? (isMaj?sub.major:sub.minor) : '範囲外（♭7個以上）';
-      const subGerman = sub ? germanKeyName(isMaj?sub.tonicMajor:sub.tonicMinor, keySignatureMap(sub.sharps,sub.flats), isMaj) : '';
+      const domAccMap = dom ? keySignatureMap(dom.sharps,dom.flats) : null;
+      const domGerMajor = dom ? germanKeyName(dom.tonicMajor,domAccMap,true) : '';
+      const domGerMinor = dom ? germanKeyName(dom.tonicMinor,domAccMap,false) : '';
+      const subAccMap = sub ? keySignatureMap(sub.sharps,sub.flats) : null;
+      const subGerMajor = sub ? germanKeyName(sub.tonicMajor,subAccMap,true) : '';
+      const subGerMinor = sub ? germanKeyName(sub.tonicMinor,subAccMap,false) : '';
       let scoreHtml='<div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;">';
       scoreHtml+='<div><div style="text-align:center;font-size:13px;color:#3d4654;margin-bottom:2px;">属調（5度上）</div>'+(dom?keySigSvg(dom):'<div style="width:300px;height:220px;display:flex;align-items:center;justify-content:center;color:#888;">範囲外</div>')+'</div>';
       scoreHtml+='<div><div style="text-align:center;font-size:13px;color:#3d4654;margin-bottom:2px;">下属調（5度下）</div>'+(sub?keySigSvg(sub):'<div style="width:300px;height:220px;display:flex;align-items:center;justify-content:center;color:#888;">範囲外</div>')+'</div>';
       scoreHtml+='</div>';
       document.getElementById('score').innerHTML=scoreHtml;
       ans.innerHTML=subLabelHtml+
-        '<div class="names">属調：'+domName+(dom?'／'+domGerman:'')+'</div>'+
-        '<div class="names" style="margin-top:6px;">下属調：'+subName+(sub?'／'+subGerman:'')+'</div>';
+        '<div class="names">属調：'+(dom?dom.major+'／'+domGerMajor+'　／　'+dom.minor+'／'+domGerMinor:'範囲外（♯7個以上）')+'</div>'+
+        '<div class="names" style="margin-top:6px;">下属調：'+(sub?sub.major+'／'+subGerMajor+'　／　'+sub.minor+'／'+subGerMinor:'範囲外（♭7個以上）')+'</div>';
     } else if(current._subtype==='samekey'){
-      const info=current._samekeyInfo;
-      const infoGerman = germanKeyName(info.tonic, keySignatureMap(info.sharps,info.flats), !current._isMajorQuestion);
-      document.getElementById('score').innerHTML = info.rare
-        ? '<div style="width:300px;height:220px;margin:0 auto;display:flex;align-items:center;justify-content:center;text-align:center;color:#888;font-size:13px;padding:0 20px;">（♯♭7個以上のため、五線譜での表示は省略します）</div>'
-        : keySigSvg({sharps:info.sharps,flats:info.flats});
-      ans.innerHTML=subLabelHtml+'<div class="names">'+info.label+'／'+infoGerman+'</div>'+
-        (info.rare ? '<div class="hint">（調号：'+sameKeySigLabel(info)+'）</div>' : '');
+      const entry=current._entry, idx=current._idx;
+      const majorInfo=SAME_KEY_DATA[idx].major, minorInfo=SAME_KEY_DATA[idx].minor;
+      const majorGerman=germanKeyName(majorInfo.tonic, keySignatureMap(majorInfo.sharps,majorInfo.flats), false);
+      const minorGerman=germanKeyName(minorInfo.tonic, keySignatureMap(minorInfo.sharps,minorInfo.flats), true);
+      let scoreHtml='<div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;">';
+      scoreHtml+='<div><div style="text-align:center;font-size:13px;color:#3d4654;margin-bottom:2px;">'+entry.major+'の同主調</div>'+keySigSvg({sharps:majorInfo.sharps,flats:majorInfo.flats})+'</div>';
+      scoreHtml+='<div><div style="text-align:center;font-size:13px;color:#3d4654;margin-bottom:2px;">'+entry.minor+'の同主調</div>'+keySigSvg({sharps:minorInfo.sharps,flats:minorInfo.flats})+'</div>';
+      scoreHtml+='</div>';
+      document.getElementById('score').innerHTML=scoreHtml;
+      ans.innerHTML=subLabelHtml+
+        '<div class="names">'+entry.major+'→'+majorInfo.label+'／'+majorGerman+'</div>'+
+        '<div class="names" style="margin-top:6px;">'+entry.minor+'→'+minorInfo.label+'／'+minorGerman+'</div>';
     }
   } else {
     const doremi=current.map(p=>p.nameDoremi).join(' ');
