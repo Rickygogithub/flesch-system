@@ -240,6 +240,7 @@
         <span class="seg" id="seg-dict-type">
           <button data-v="single" class="on">単音</button>
           <button data-v="chord">和音</button>
+          <button data-v="melody">旋律</button>
         </span>
       </div>
       <div class="opt" id="dict-acc-row"><span>臨時記号（♯・♭）</span>
@@ -259,6 +260,15 @@
           <button data-v="on" class="on">混ぜる</button>
           <button data-v="off">なし</button>
         </span>
+      </div>
+      <div class="opt" id="dict-melody-keymode-row" style="display:none"><span>調</span>
+        <span class="seg" id="seg-dict-melody-keymode">
+          <button data-v="known" class="on">調を選ぶ</button>
+          <button data-v="hidden">調を伏せる（主音から判断）</button>
+        </span>
+      </div>
+      <div class="opt" id="dict-melody-key-select-row" style="display:none"><span>調を選択</span>
+        <select id="dict-melody-key-select"></select>
       </div>
       <div class="opt" id="dict-range-row"><span>音域</span>
         <select id="dict-range">
@@ -305,7 +315,8 @@
     <details style="margin-bottom:8px">
       <summary>▶️ ③ 聴音</summary>
       <div class="footnote" style="margin-top:6px">
-        基準音（A=442）に続いて単音または和音（実在する主和音）が鳴ります。音名を思い浮かべたら「答えを見る」で確認し、「✓ 正解」「✗ 間違えた」を選ぶと出題数・正答率・平均回答時間が記録されます。「🔊 もう一度聴く」で何度でも聴き直せます。<br><strong style="color:#b23b3b">※ 臨時記号ありの場合、CesとFesは出題しません（HおよびEと異名同音のため）。</strong>
+        基準音（A=442）に続いて単音または和音（実在する主和音）が鳴ります。音名を思い浮かべたら「答えを見る」で確認し、「✓ 正解」「✗ 間違えた」を選ぶと出題数・正答率・平均回答時間が記録されます。「🔊 もう一度聴く」で何度でも聴き直せます。<br><strong style="color:#b23b3b">※ 臨時記号ありの場合、CesとFesは出題しません（HおよびEと異名同音のため）。</strong><br><br>
+        「旋律」は、4音の短いフレーズ（順次進行中心、時々3度の跳躍）を聴き取る練習です。主音自体に臨時記号がつかない11調に絞り、臨時記号は使わず、その調の音階7音の範囲内だけで生成します（不自然な音型・異名同音を避けるため）。「調を選ぶ」ではドロップダウンで調を指定し、その主音を基準音として1秒鳴らします。「調を伏せる」ではA=442のみを基準音とし、主音自体も自分で判断します。いずれも基準音の後に1秒の無音（脳内で保持する間）を挟んでから、フレーズが始まります。
       </div>
     </details>
 
@@ -376,6 +387,45 @@ function pickKeyForTonicChord(tonicAccMode){
   }
   return pickKey(true); // 混ぜる：既存通り常に14調から選ぶ
 }
+// 旋律モード：指定した調の音階7音（度数1〜8）の文字・臨時記号を返す
+function scaleLettersForKey(entry){
+  const accMap=keySignatureMap(entry.sharps,entry.flats);
+  const startIdx=LIDX[entry.tonic];
+  const seq=[];
+  for(let i=0;i<8;i++){
+    const letter=LETTERS[(startIdx+i)%7];
+    const octaveOffset=Math.floor((startIdx+i)/7);
+    seq.push({letter, acc:accMap[letter]||'', octaveOffset});
+  }
+  return seq;
+}
+// 旋律モード：主音自体に臨時記号がつかない調（11調）に絞った候補
+const MELODY_KEYS = KEYS.filter(k=>!keyTonicHasAccidental(k));
+function dictMakeMelody(){
+  const entry = dictMelodyKeyMode==='known'
+    ? MELODY_KEYS[Number(document.getElementById('dict-melody-key-select').value)]
+    : MELODY_KEYS[Math.floor(Math.random()*MELODY_KEYS.length)];
+  const scale=scaleLettersForKey(entry);
+  // 度数の並び（1〜8）：主音(1)から始め、75%は順次進行、25%は3度の跳躍。
+  // 臨時記号は使わず、その調の音階7音の範囲内だけで生成する（不自然な音型・異名同音を避けるため）。
+  const degs=[1];
+  for(let i=0;i<3;i++){
+    const last=degs[degs.length-1];
+    let step;
+    if(Math.random()<0.75){ step=Math.random()<0.5?1:-1; }
+    else { step=Math.random()<0.5?2:-2; }
+    let next=last+step;
+    if(next<1) next=last+1;
+    if(next>8) next=last-1;
+    degs.push(next);
+  }
+  const baseOctave=4;
+  const notes=degs.map(d=>{
+    const s=scale[d-1];
+    return buildPitch(s.letter, baseOctave+s.octaveOffset, s.acc);
+  });
+  return {notes, key:entry};
+}
 function buildPitch(letter,octave,acc){
   const off=acc==='#'?1:acc==='b'?-1:0;
   const midi=(octave+1)*12+SEMI[letter]+off;
@@ -413,6 +463,8 @@ let useAcc=true, lowMidi=60, highMidi=84, measures=1, contourMode='random';
 let timeSigLabel='4/4', restMin=0, restMax=0, rMeasures=1, rhythmRandom=false;
 let dictType='single', dictUseAcc=true, dictLowMidi=60, dictHighMidi=84; // dictUseAccは単音モード専用。和音は常に14調（下記 pickKey(true) 参照）
 let dictChordSet='tonic'; // 'tonic'（主和音のみ）| 'extended'（転回・属七・減七を含む）
+let dictMelodyKeyMode='known'; // 旋律モード専用：'known'（調を選ぶ＝主音を先に鳴らす）| 'hidden'（調を伏せる）
+let currentDictMelodyKeyKnown=true;
 let dictTonicAcc='on'; // 'tonic'モード専用：主和音の主音自体に臨時記号を含めるか（'on'=混ぜる／'off'=なし）
 let dictMode='normal'; // 'normal' | 'low' | 'mixed' | 'octave1'
 let dictTonicFreq=442; // 現在の出題で使う基準音（Hz）。mixedモードでは出題ごとに221/442を切り替える
@@ -1515,6 +1567,13 @@ function playReferenceAndTarget(){
     // 中央1オクターブモード: 基準音なし、ピタゴラス音律で2秒再生
     const freq = pythFreqFromPitch(currentDictNotes[0]);
     playTone(freq, t0, 3.0);
+  } else if(currentDictNotes.length>1 && dictType==='melody'){
+    // 旋律モード：調を選ぶ場合は主音を、調を伏せる場合はA=442を、基準音として1秒鳴らし、
+    // 1秒の無音（脳内で保持）を挟んでから、4音のフレーズを1音ずつ（0.55秒間隔）ピタゴラス音律で再生する
+    const refFreq = currentDictMelodyKeyKnown ? pythFreqFromPitch(currentDictNotes[0]) : 442;
+    playTone(refFreq, t0, 1.0);
+    let tCursor=t0+1.0+1.0;
+    currentDictNotes.forEach(p=>{ playTone(pythFreqFromPitch(p), tCursor, 0.5); tCursor+=0.55; });
   } else if(currentDictNotes.length>1){
     // 和音モード: 基準音1秒 → 1秒の無音（脳内で保持） → 和音を2秒、減衰なしで再生（純正律）
     playTone(dictTonicFreq, t0, 1.0);
@@ -1553,6 +1612,12 @@ function newDictNote(){
     currentDictNotes=chord;
     currentDictKeyName=chord._key||null;
     currentDictChordType=chord._chordType||null;
+  } else if(dictType==='melody'){
+    const built=dictMakeMelody();
+    currentDictNotes=built.notes;
+    currentDictKeyName=built.key.name;
+    currentDictChordType=null;
+    currentDictMelodyKeyKnown = (dictMelodyKeyMode==='known');
   } else {
     // 単音モード：臨時記号ありならCes/Fes除外済みの半音階プール、なしならダイアトニック音のみ。
     // どちらの場合も「基準音そのもの（A）」を除外する。基準音と同じ音を出題すると、
@@ -1572,7 +1637,11 @@ function newDictNote(){
   dictRevealed=false;
   const placeholder = dictMode==='octave1'
     ? '🔊 出題音が鳴ります（基準音なし）<br>頭の中でA=442を鳴らし、音名を思い浮かべたら「答えを見る」'
-    : '🔊 基準音(A='+dictTonicFreq+')に続いて'+(dictType==='chord'?'和音':'出題音')+'が鳴ります<br>'+(dictType==='chord'?'和音':'音名')+'を思い浮かべたら「答えを見る」';
+    : dictType==='melody'
+      ? (currentDictMelodyKeyKnown
+          ? '🔊 主音（1秒）に続いて、4音のフレーズが鳴ります<br>階名を思い浮かべたら「答えを見る」'
+          : '🔊 基準音(A=442、1秒)に続いて、4音のフレーズが鳴ります（調は伏せています）<br>主音・階名を思い浮かべたら「答えを見る」')
+      : '🔊 基準音(A='+dictTonicFreq+')に続いて'+(dictType==='chord'?'和音':'出題音')+'が鳴ります<br>'+(dictType==='chord'?'和音':'音名')+'を思い浮かべたら「答えを見る」';
   document.getElementById('score').innerHTML='<div class="placeholder">'+placeholder+'</div>';
   document.getElementById('dict-judge').style.display='none';
   document.getElementById('play').style.display='';
@@ -1584,6 +1653,11 @@ function revealDict(){
   dictRevealed=true;
   dictElapsed=(performance.now()-dictStartTime)/1000;
   if(dictType==='chord') drawDictStack(currentDictNotes);
+  else if(dictType==='melody'){
+    const events=currentDictNotes.map(p=>({type:'note',dur:1,pitch:p}));
+    events.push({type:'bar'});
+    drawScore({events});
+  }
   else drawScore({events:[{type:'note',dur:1,pitch:currentDictNotes[0]},{type:'bar'}]});
   const namesDiv=document.createElement('div');
   namesDiv.style.textAlign='center';
@@ -1594,7 +1668,11 @@ function revealDict(){
   const doremi=currentDictNotes.map(p=>p.nameDoremi).join(' ');
   const ger=currentDictNotes.map(p=>p.nameGerman).join(' ');
   let txt=doremi+'　/　'+ger;
-  if(currentDictKeyName) txt+='　|　'+currentDictKeyName+(currentDictChordType?'　'+currentDictChordType:'の主和音');
+  if(dictType==='melody'){
+    if(currentDictKeyName) txt+='　|　'+currentDictKeyName+(currentDictMelodyKeyKnown?'':'（伏せていた調）');
+  } else if(currentDictKeyName){
+    txt+='　|　'+currentDictKeyName+(currentDictChordType?'　'+currentDictChordType:'の主和音');
+  }
   namesDiv.textContent=txt;
   document.getElementById('score').appendChild(namesDiv);
   document.getElementById('play').style.display='none';
@@ -1788,13 +1866,28 @@ document.getElementById('seg-dict-type').addEventListener('click',e=>{const b=e.
 document.getElementById('seg-dict-chordset').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictChordSet=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));syncDictChordSetRow();newDictNote();});
 document.getElementById('seg-dict-tonicacc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictTonicAcc=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
 document.getElementById('seg-dict-acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictUseAcc=b.dataset.v==='on';[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));newDictNote();});
+document.getElementById('seg-dict-melody-keymode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dictMelodyKeyMode=b.dataset.v;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));syncDictChordSetRow();newDictNote();});
+document.getElementById('dict-melody-key-select').addEventListener('change',()=>{newDictNote();});
+// 旋律モードの調セレクトに、主音に臨時記号のない11調を並べる
+(function populateMelodyKeySelect(){
+  const sel=document.getElementById('dict-melody-key-select');
+  MELODY_KEYS.forEach((k,i)=>{
+    const opt=document.createElement('option');
+    opt.value=i; opt.textContent=k.name;
+    sel.appendChild(opt);
+  });
+})();
 // 「和音の種類」は和音モードのときだけ、「臨時記号」は単音モードのときだけ表示する。
-// 臨時記号の選択は単音専用（和音は常に14調）なので、和音モードでは出さない。
+// 臨時記号の選択は単音専用（和音は常に14調、旋律は常に主音に臨時記号のない11調）なので、それ以外では出さない。
 function syncDictChordSetRow(){
   const isChord = dictType==='chord' && dictMode!=='octave1';
+  const isMelody = dictType==='melody' && dictMode!=='octave1';
+  const isSingle = dictType==='single' && dictMode!=='octave1';
   document.getElementById('dict-chordset-row').style.display = isChord ? '' : 'none';
-  document.getElementById('dict-acc-row').style.display = isChord ? 'none' : '';
+  document.getElementById('dict-acc-row').style.display = isSingle ? '' : 'none';
   document.getElementById('dict-tonicacc-row').style.display = (isChord && dictChordSet==='tonic') ? '' : 'none';
+  document.getElementById('dict-melody-keymode-row').style.display = isMelody ? '' : 'none';
+  document.getElementById('dict-melody-key-select-row').style.display = (isMelody && dictMelodyKeyMode==='known') ? '' : 'none';
 }
 document.getElementById('range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);lowMidi=lo;highMidi=hi;newPhrase();};
 document.getElementById('dict-range').onchange=e=>{const [lo,hi]=e.target.value.split(',').map(Number);dictLowMidi=lo;dictHighMidi=hi;newDictNote();};
