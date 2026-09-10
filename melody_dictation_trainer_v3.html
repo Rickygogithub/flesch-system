@@ -643,29 +643,56 @@ function warmupPrepNote(p,x,hollow,dotted){
   s+=`<ellipse cx="${x}" cy="${y}" rx="6" ry="4.4" fill="${hollow?'none':'#16202b'}" stroke="${hollow?'#16202b':'none'}" stroke-width="${hollow?'1.6':'0'}" transform="rotate(-22 ${x} ${y})"/>`;
   if(dotted) s+=drawAugDot(x,y);
   s+=`<text x="${x}" y="${y+30}" font-size="11" font-family="sans-serif" fill="#3d4654" text-anchor="middle">${DOREMI_BASE[p.letter]}</text>`;
-  return {svg:s, x, y, stemTopBase:y-26};
+  // 符幹の向き：五線中央線より上の音は下向き（符頭の左側）、中央線以下は上向き（符頭の右側）
+  const down = stepIndex(p) > 0;
+  const xOff = down ? -5.5 : 5.5;
+  const attachY = down ? y+1 : y-1;
+  const stemTopBase = down ? y+26 : y-26;
+  return {svg:s, x, y, stemTopBase, xOff, attachY, down};
+}
+// 連桁グループ全体の向きを、中央線から最も離れた音を基準に決定（同点なら合計の符号）
+function warmupBeamGroupDown(notesInfo){
+  let bestAbs=-1, bestSign=false, sum=0;
+  notesInfo.forEach(n=>{
+    const si=(120-n.y)/6;
+    sum+=si;
+    const a=Math.abs(si);
+    if(a>bestAbs){ bestAbs=a; bestSign = si>0; }
+  });
+  const tieCount=notesInfo.filter(n=>Math.abs((120-n.y)/6)===bestAbs).length;
+  if(bestAbs===0 || tieCount>1) return sum>0;
+  return bestSign;
 }
 // 連桁（ビーム）でつながれた16分音符のグループを描画（最大4個/1拍ごと）
 function warmupDrawBeamGroup(notesInfo){
   if(notesInfo.length===1) return warmupDrawStem(notesInfo[0]);
+  const down=warmupBeamGroupDown(notesInfo);
+  const xOff=down?-5.5:5.5;
   let s='';
-  const beamY = Math.min(...notesInfo.map(n=>n.stemTopBase));
+  const stemTops=notesInfo.map(n=> down? n.y+26 : n.y-26);
+  const beamY = down ? Math.max(...stemTops) : Math.min(...stemTops);
   notesInfo.forEach(n=>{
-    s+=`<line x1="${n.x+5.5}" y1="${n.y-1}" x2="${n.x+5.5}" y2="${beamY}" stroke="#16202b" stroke-width="1.4"/>`;
+    const attachY = down? n.y+1 : n.y-1;
+    s+=`<line x1="${n.x+xOff}" y1="${attachY}" x2="${n.x+xOff}" y2="${beamY}" stroke="#16202b" stroke-width="1.4"/>`;
   });
-  const x1=notesInfo[0].x+5.5, x2=notesInfo[notesInfo.length-1].x+5.5;
+  const x1=notesInfo[0].x+xOff, x2=notesInfo[notesInfo.length-1].x+xOff;
   s+=`<line x1="${x1}" y1="${beamY}" x2="${x2}" y2="${beamY}" stroke="#16202b" stroke-width="4"/>`;
   return s;
 }
 // 単独の8分音符（旗1本）
 function warmupDrawEighthFlag(n){
-  let s=`<line x1="${n.x+5.5}" y1="${n.y-1}" x2="${n.x+5.5}" y2="${n.stemTopBase}" stroke="#16202b" stroke-width="1.4"/>`;
-  s+=`<path d="M${n.x+5.5},${n.stemTopBase} C${n.x+16},${n.stemTopBase+4} ${n.x+14},${n.stemTopBase+16} ${n.x+5.5},${n.stemTopBase+20}" fill="#16202b"/>`;
+  const x0=n.x+n.xOff;
+  let s=`<line x1="${x0}" y1="${n.attachY}" x2="${x0}" y2="${n.stemTopBase}" stroke="#16202b" stroke-width="1.4"/>`;
+  if(!n.down){
+    s+=`<path d="M${x0},${n.stemTopBase} C${x0+10.5},${n.stemTopBase+4} ${x0+8.5},${n.stemTopBase+16} ${x0},${n.stemTopBase+20}" fill="#16202b"/>`;
+  } else {
+    s+=`<path d="M${x0},${n.stemTopBase} C${x0-10.5},${n.stemTopBase-4} ${x0-8.5},${n.stemTopBase-16} ${x0},${n.stemTopBase-20}" fill="#16202b"/>`;
+  }
   return s;
 }
 // 保続音（白抜き、符尾のみ・旗なし）
 function warmupDrawStem(n){
-  return `<line x1="${n.x+5.5}" y1="${n.y-1}" x2="${n.x+5.5}" y2="${n.stemTopBase}" stroke="#16202b" stroke-width="1.4"/>`;
+  return `<line x1="${n.x+n.xOff}" y1="${n.attachY}" x2="${n.x+n.xOff}" y2="${n.stemTopBase}" stroke="#16202b" stroke-width="1.4"/>`;
 }
 // 16分音符の並びを、4個ずつの連桁グループに分割して描画
 // タイ（同音を結ぶ弧線）
@@ -1031,6 +1058,15 @@ function drawClef(){
      '<circle cx="34" cy="120" r="1.6"/></g>';
 }
 
+// 符幹の向き：五線中央線より上の音は下向き（符頭の左側）、中央線以下は上向き（符頭の右側）が正しい記譜法。
+// 連桁でつながる音符ペアは、中央線からより離れた方の音を基準に、向きを揃える（同点なら合計の符号で判定）。
+function beamStemDown(p1,p2){
+  const s1=stepIndex(p1), s2=stepIndex(p2);
+  const m1=Math.abs(s1), m2=Math.abs(s2);
+  if(m1>m2) return s1>0;
+  if(m2>m1) return s2>0;
+  return (s1+s2)>0;
+}
 function drawScore(phrase){
   const events=phrase.events;
   const noteRestCount=events.filter(e=>e.type==='note'||e.type==='rest').length;
@@ -1042,19 +1078,34 @@ function drawScore(phrase){
   s+=`<rect width="${W}" height="${H}" fill="#fbfbf7"/>`;
   for(const y of lines) s+=`<line x1="10" y1="${y}" x2="${W-10}" y2="${y}" stroke="#16202b" stroke-width="1.3"/>`;
   s+=drawClef();
+  // 事前パス：各音符の符幹の向き（下向きか）を決定。連桁ペアは向きを揃える。
+  const stemDownArr=new Array(events.length).fill(null);
+  for(let i=0;i<events.length;i++){
+    const ev=events[i];
+    if(ev.type!=='note') continue;
+    if(stemDownArr[i]!==null) continue;
+    if(ev.dur===0.5 && ev.beam==='start' && events[i+1] && events[i+1].type==='note' && events[i+1].beam==='end'){
+      const down=beamStemDown(ev.pitch, events[i+1].pitch);
+      stemDownArr[i]=down;
+      stemDownArr[i+1]=down;
+    } else {
+      stemDownArr[i]=stepIndex(ev.pitch)>0;
+    }
+  }
   let x=70;
   let pendingBeamStart=null;
-  events.forEach(ev=>{
+  for(let idx=0; idx<events.length; idx++){
+    const ev=events[idx];
     if(ev.type==='bar'){
       s+=`<line x1="${x+6}" y1="94" x2="${x+6}" y2="146" stroke="#16202b" stroke-width="1.6"/>`;
       x+=16;
-      return;
+      continue;
     }
     if(ev.type==='rest'){
       const yMid=120;
       s+=`<path d="M${x-2},${yMid-9} C${x+6},${yMid-7} ${x-6},${yMid-1} ${x+4},${yMid+1} C${x-4},${yMid+3} ${x+6},${yMid+9} ${x-2},${yMid+11}" stroke="#16202b" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
       x+=36;
-      return;
+      continue;
     }
     const p=ev.pitch;
     const y=120-stepIndex(p)*6;
@@ -1064,17 +1115,20 @@ function drawScore(phrase){
       s+=`<text x="${x-16}" y="${y+6}" font-size="19" font-family="serif" fill="#16202b">${sym}</text>`;
     }
     s+=`<ellipse cx="${x}" cy="${y}" rx="6.5" ry="4.8" fill="#16202b" transform="rotate(-22 ${x} ${y})"/>`;
-    const stemTopY=y-30;
-    s+=`<line x1="${x+6}" y1="${y-1}" x2="${x+6}" y2="${stemTopY}" stroke="#16202b" stroke-width="1.6"/>`;
+    const down=stemDownArr[idx];
+    const xOff=down?-6:6;
+    const attachY=down?y+1:y-1;
+    const stemTopY=down?y+30:y-30;
+    s+=`<line x1="${x+xOff}" y1="${attachY}" x2="${x+xOff}" y2="${stemTopY}" stroke="#16202b" stroke-width="1.6"/>`;
     if(ev.dur===0.5){
-      if(ev.beam==='start'){ pendingBeamStart={x:x+6,y:stemTopY}; }
+      if(ev.beam==='start'){ pendingBeamStart={x:x+xOff,y:stemTopY}; }
       else if(ev.beam==='end' && pendingBeamStart){
-        s+=`<line x1="${pendingBeamStart.x}" y1="${pendingBeamStart.y}" x2="${x+6}" y2="${stemTopY}" stroke="#16202b" stroke-width="4"/>`;
+        s+=`<line x1="${pendingBeamStart.x}" y1="${pendingBeamStart.y}" x2="${x+xOff}" y2="${stemTopY}" stroke="#16202b" stroke-width="4"/>`;
         pendingBeamStart=null;
       }
     }
     x+=36;
-  });
+  }
   s+='</svg>';
   document.getElementById('score').innerHTML=s;
 }
@@ -1384,6 +1438,24 @@ function dictGenerateChordAvoidingRepeat(genFn){
   if(chord) lastDictChordSig=dictChordSignature(chord);
   return chord;
 }
+let lastDictMelodySig=null;
+function dictMelodySignature(built){
+  if(!built) return null;
+  return (built.key && built.key.name || '')+'|'+built.notes.map(p=>p.midi).join(',');
+}
+// 直前の出題と同じ旋律（調・実音すべて一致）が連続しないようにする（和音モードと同じ考え方）。
+// 「調を選ぶ」モードでは調が固定なので、実質的に度数の並びだけで一致判定されることになる。
+function dictGenerateMelodyAvoidingRepeat(){
+  let built=null;
+  for(let i=0;i<20;i++){
+    built=dictMakeMelody();
+    const sig=dictMelodySignature(built);
+    if(sig!==lastDictMelodySig){ lastDictMelodySig=sig; return built; }
+  }
+  // 候補が極端に少なく20回とも直前と同じだった場合は、やむを得ずそのまま採用
+  if(built) lastDictMelodySig=dictMelodySignature(built);
+  return built;
+}
 function dictMakeChord(){
   for(let t=0;t<40;t++){
     // 調は毎回選び直す（固定すると、音域が狭いときにその調では組めず、
@@ -1613,7 +1685,7 @@ function newDictNote(){
     currentDictKeyName=chord._key||null;
     currentDictChordType=chord._chordType||null;
   } else if(dictType==='melody'){
-    const built=dictMakeMelody();
+    const built=dictGenerateMelodyAvoidingRepeat();
     currentDictNotes=built.notes;
     currentDictKeyName=built.key.name;
     currentDictChordType=null;
