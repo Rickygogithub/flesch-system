@@ -387,13 +387,15 @@ function pickKeyForTonicChord(tonicAccMode){
   }
   return pickKey(true); // 混ぜる：既存通り常に14調から選ぶ
 }
-// 旋律モード：指定した調の音階7音（度数1〜8）の文字・臨時記号を返す
-function scaleLettersForKey(entry){
+// 旋律モード：指定した調の音階を、主音からの相対ステップ（0=主音）で、
+// minStep〜maxStepの範囲分の文字・臨時記号を返す。主音の上下オクターブに広げられるよう、
+// 負のステップにも対応（JSの%は負の余りを返すため、((x%7)+7)%7で正の添字に補正）。
+function scaleLettersForKey(entry, minStep, maxStep){
   const accMap=keySignatureMap(entry.sharps,entry.flats);
   const startIdx=LIDX[entry.tonic];
   const seq=[];
-  for(let i=0;i<8;i++){
-    const letter=LETTERS[(startIdx+i)%7];
+  for(let i=minStep;i<=maxStep;i++){
+    const letter=LETTERS[((startIdx+i)%7+7)%7];
     const octaveOffset=Math.floor((startIdx+i)/7);
     seq.push({letter, acc:accMap[letter]||'', octaveOffset});
   }
@@ -405,23 +407,26 @@ function dictMakeMelody(){
   const entry = dictMelodyKeyMode==='known'
     ? MELODY_KEYS[Number(document.getElementById('dict-melody-key-select').value)]
     : MELODY_KEYS[Math.floor(Math.random()*MELODY_KEYS.length)];
-  const scale=scaleLettersForKey(entry);
-  // 度数の並び（1〜8）：主音(1)から始め、75%は順次進行、25%は3度の跳躍。
-  // 臨時記号は使わず、その調の音階7音の範囲内だけで生成する（不自然な音型・異名同音を避けるため）。
-  const degs=[1];
+  // 主音を中心に、上下1オクターブ（相対ステップ-7〜+7）の範囲で音階を用意する。
+  const MIN_STEP=-7, MAX_STEP=7;
+  const scale=scaleLettersForKey(entry, MIN_STEP, MAX_STEP);
+  // 相対ステップの並び：主音(0)から始め、75%は順次進行、25%は3度の跳躍。
+  // 臨時記号は使わず、主音の上下1オクターブの範囲内だけで生成する（不自然な音型・異名同音を避けるため）。
+  // 主音の上下対称に範囲を取ったことで、2音目以降が主音より下がる音型（例：ド→シ→ラ→シ）も出題される。
+  const steps=[0];
   for(let i=0;i<3;i++){
-    const last=degs[degs.length-1];
+    const last=steps[steps.length-1];
     let step;
     if(Math.random()<0.75){ step=Math.random()<0.5?1:-1; }
     else { step=Math.random()<0.5?2:-2; }
     let next=last+step;
-    if(next<1) next=last+1;
-    if(next>8) next=last-1;
-    degs.push(next);
+    if(next<MIN_STEP) next=last+1;
+    if(next>MAX_STEP) next=last-1;
+    steps.push(next);
   }
   const baseOctave=4;
-  const notes=degs.map(d=>{
-    const s=scale[d-1];
+  const notes=steps.map(st=>{
+    const s=scale[st-MIN_STEP];
     return buildPitch(s.letter, baseOctave+s.octaveOffset, s.acc);
   });
   return {notes, key:entry};
