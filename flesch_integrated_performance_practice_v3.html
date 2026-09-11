@@ -125,6 +125,8 @@
         <option value="parallel_left">平行調ペア（左回り）</option>
         <option value="samekey">同主調ペア（右回り）</option>
         <option value="samekey_left">同主調ペア（左回り）</option>
+        <option value="parallel_random">平行調ペア（ランダム）</option>
+        <option value="samekey_random">同主調ペア（ランダム）</option>
         <option value="random">ランダム（26調）</option>
       </select>
     </div>
@@ -201,6 +203,7 @@
         <option value="flat_order">♭順（0→6、次の調で1つずつ増加）</option>
         <option value="circle_right">5度圏 右回り</option>
         <option value="circle_left">5度圏 左回り</option>
+        <option value="random">ランダム（ペアの順不定）</option>
       </select>
     </div>
     <div id="sc-order-box" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid #dde3ec;border-radius:8px;background:#f8f9fb;">
@@ -305,6 +308,7 @@
         <option value="flat_order">♭順（0→6、次の調で1つずつ増加）</option>
         <option value="circle_right">5度圏 右回り</option>
         <option value="circle_left">5度圏 左回り</option>
+        <option value="random">ランダム（ペアの順不定）</option>
       </select>
     </div>
     <div id="ch-order-box" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid #dde3ec;border-radius:8px;background:#f8f9fb;">
@@ -1847,8 +1851,22 @@ const CH_ORDER_FLAT = LT_PAIRS_SAMEKEY_LEFT.slice(0,7).map(([label,code])=>[toCh
 // ②③共通：並び順モードのナビゲーション制御を1つのファクトリで作る（prefix: 'sc'または'ch'）
 // altLists：②専用。「ペアの種類」（平行調／同主調）切り替え用の代替リスト一式（{right,left,sharp,flat}）。
 // ③（和音）は常に同主調ペアのみのため、altListsは渡さず従来通り動作する。
-function makeOrderNav(prefix, rightList, leftList, sharpList, flatList, altLists){
-  const state = { idx:-1 };
+// Fisher-Yatesシャッフル（元配列は変更せず、コピーを返す）
+function fyShuffle(arr){
+  const d=arr.slice();
+  for(let i=d.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+  return d;
+}
+
+// makeOrderNavのランダムモード用：randomBaseは「ペア単位」の元データ（[表示名,長調,短調]の3要素、または[表示名,コード]の2要素）。
+//   main：ペアの種類セレクタが無い場合（③和音）、またはparallel側（②音階）に使う元配列
+//   alt ：②音階のsamekey側に使う元配列（無ければmainを共用）
+// flatten：シャッフル後のペア配列を、そのナビゲーションが使う[表示名,コード]形式の平坦なリストに変換する関数
+//   （②はbuildOrderList26で1ペア→2調に展開、③はペアそのものが1つの選択値なのでそのまま）
+// 平行調・同主調は、それぞれ独立したシャッフル済み山札を持ち、互いに影響しない。
+function makeOrderNav(prefix, rightList, leftList, sharpList, flatList, altLists, randomBase, flatten){
+  const state = { idx:-1, started:false };
+  const randomDecks = { parallel:{deck:[],pos:0}, samekey:{deck:[],pos:0}, single:{deck:[],pos:0} };
   function pairType(){
     const el=document.getElementById(prefix+'-pair-type');
     return el ? el.value : 'parallel';
@@ -1864,14 +1882,41 @@ function makeOrderNav(prefix, rightList, leftList, sharpList, flatList, altLists
     if(m==='flat_order') return F;
     return R;
   }
+  // ランダムモード用：現在のペアの種類（②のparallel/samekey、③はsingle固定）に対応する山札を返す。
+  // 山札が尽きたら（または未生成なら）、元のペア配列を新たにシャッフルして切り直す。
+  function randomKey(){ return altLists ? pairType() : 'single'; }
+  function currentRandomBase(){
+    if(!randomBase) return null;
+    if(altLists && pairType()==='samekey') return randomBase.alt || randomBase.main;
+    return randomBase.main;
+  }
+  function randomDeck(){
+    const rk=randomKey();
+    const st=randomDecks[rk];
+    if(st.pos>=st.deck.length){
+      const base=currentRandomBase();
+      st.deck = flatten(fyShuffle(base));
+      st.pos = 0;
+    }
+    return st;
+  }
   function applyMode(){
     const auto = mode()!=='difficulty';
     document.getElementById(prefix+'-order-box').style.display = auto ? '' : 'none';
     document.getElementById(prefix+'-key-row').style.display = auto ? 'none' : '';
     state.idx=-1;
+    state.started=false;
     document.getElementById(prefix+'-order-key').textContent='「次の調」を押してください';
   }
   function next(){
+    state.started=true;
+    if(mode()==='random' && randomBase){
+      const st=randomDeck();
+      const [label,code]=st.deck[st.pos++];
+      document.getElementById(prefix+'-order-key').textContent=label;
+      document.getElementById(prefix+'-key').value=code;
+      return;
+    }
     const l=list();
     state.idx=(state.idx+1)%l.length;
     const [label,code]=l[state.idx];
@@ -1879,6 +1924,8 @@ function makeOrderNav(prefix, rightList, leftList, sharpList, flatList, altLists
     document.getElementById(prefix+'-key').value=code;
   }
   function prev(){
+    // ランダムモードは山札から引くだけで、順序に意味がないため「前の調」は非対応（①ロングトーンと同じ方針）
+    if(mode()==='random') return;
     const l=list();
     if(state.idx<0) state.idx=0;
     state.idx=(state.idx-1+l.length)%l.length;
@@ -1893,12 +1940,14 @@ function makeOrderNav(prefix, rightList, leftList, sharpList, flatList, altLists
   if(pairTypeEl) pairTypeEl.onchange=applyMode; // ペアの種類を切り替えたら、並び順の状態をリセットする
   // スタート時に、まだ「次の調」が一度も押されていなければ、最初の1回分だけ先に進めておく
   // （手動で先に「次の調」を押していれば、ここでは何もしない）
-  function ensureStarted(){ if(state.idx < 0) next(); }
+  function ensureStarted(){ if(!state.started) next(); }
   return { next, prev, isAutoMode: () => mode() !== 'difficulty', ensureStarted };
 }
 const scOrderNav = makeOrderNav('sc', SC_ORDER_RIGHT, SC_ORDER_LEFT, SC_ORDER_SHARP, SC_ORDER_FLAT,
-  { right: SC_ORDER_RIGHT_SAMEKEY, left: SC_ORDER_LEFT_SAMEKEY, sharp: SC_ORDER_SHARP_SAMEKEY, flat: SC_ORDER_FLAT_SAMEKEY });
-const chOrderNav = makeOrderNav('ch', CH_ORDER_RIGHT, CH_ORDER_LEFT, CH_ORDER_SHARP, CH_ORDER_FLAT);
+  { right: SC_ORDER_RIGHT_SAMEKEY, left: SC_ORDER_LEFT_SAMEKEY, sharp: SC_ORDER_SHARP_SAMEKEY, flat: SC_ORDER_FLAT_SAMEKEY },
+  { main: LT_PAIRS_PARALLEL, alt: LT_PAIRS_SAMEKEY_SC }, buildOrderList26);
+const chOrderNav = makeOrderNav('ch', CH_ORDER_RIGHT, CH_ORDER_LEFT, CH_ORDER_SHARP, CH_ORDER_FLAT,
+  null, { main: LT_PAIRS_SAMEKEY }, (arr)=>arr);
 
 // ランダム用の26調（長調13＋短調13）
 const LT_KEYS_26 = [
@@ -2002,11 +2051,12 @@ function ltSlotApplyResult(){
 
 // 現在の自動モードの状態。deckはランダム用の「重複なしで一巡する山札」。
 // 平行調ペアは主音が2つあるため、pairMajor/pairMinorとside（今どちらを鳴らすか）を持つ。
-const ltAuto = { key:null, idx:-1, deck:[], deckPos:0, pairMajor:null, pairMinor:null, side:'major' };
+const ltAuto = { key:null, idx:-1, deck:[], deckPos:0, pairMajor:null, pairMinor:null, side:'major',
+  pairRandomDecks: { parallel:{deck:[],pos:0}, samekey:{deck:[],pos:0} } };
 
 function ltMode(){ return document.getElementById('lt-mode').value; }
-function ltIsParallelMode(mode){ return mode==='parallel' || mode==='parallel_left'; }
-function ltIsSamekeyMode(mode){ return mode==='samekey' || mode==='samekey_left'; }
+function ltIsParallelMode(mode){ return mode==='parallel' || mode==='parallel_left' || mode==='parallel_random'; }
+function ltIsSamekeyMode(mode){ return mode==='samekey' || mode==='samekey_left' || mode==='samekey_random'; }
 function ltPairList(mode){
   if(mode==='parallel') return LT_PAIRS_PARALLEL;
   if(mode==='parallel_left') return LT_PAIRS_PARALLEL_LEFT;
@@ -2031,11 +2081,23 @@ function ltShuffleDeck(){
   ltAuto.deck=d; ltAuto.deckPos=0;
 }
 
-// 「次の調」：ペアは右回り／左回りに1つ進め、ランダムは山札から1枚引く（一巡したら切り直す）。
+// 「次の調」：ペアは右回り／左回りに1つ進め、ペアのランダムは独立した山札から1組引く（一巡したら切り直す）、
+// 単独ランダムは山札から1枚引く（一巡したら切り直す）。
 function ltNextKey(){
   const mode=ltMode();
   let label;
-  if(mode==='random'){
+  if(mode==='parallel_random' || mode==='samekey_random'){
+    const kind = mode==='parallel_random' ? 'parallel' : 'samekey';
+    const base = kind==='parallel' ? LT_PAIRS_PARALLEL : LT_PAIRS_SAMEKEY;
+    const st = ltAuto.pairRandomDecks[kind];
+    if(st.pos>=st.deck.length){ st.deck=fyShuffle(base); st.pos=0; }
+    const item = st.deck[st.pos++];
+    if(kind==='parallel'){
+      const [lbl,maj,min]=item; label=lbl; ltAuto.pairMajor=maj; ltAuto.pairMinor=min; ltAuto.side='major';
+    }else{
+      const [lbl,code]=item; label=lbl; ltAuto.key=code;
+    }
+  }else if(mode==='random'){
     if(ltAuto.deckPos>=ltAuto.deck.length) ltShuffleDeck();
     const [lbl,code]=ltAuto.deck[ltAuto.deckPos++];
     label=lbl; ltAuto.key=code;
@@ -2053,9 +2115,10 @@ function ltNextKey(){
   document.getElementById('lt-auto-key').textContent=label;
 }
 
-// 「前の調」：平行調ペア・同主調ペア（右回り／左回りとも）のみ対応（ランダムは山札に順序の意味がないため非対応）。
+// 「前の調」：平行調ペア・同主調ペア（右回り／左回りとも）のみ対応（ランダム系は山札に順序の意味がないため非対応）。
 function ltPrevKey(){
   const mode=ltMode();
+  if(mode==='random' || mode==='parallel_random' || mode==='samekey_random') return;
   if(!ltIsParallelMode(mode) && !ltIsSamekeyMode(mode)) return;
   const list = ltPairList(mode);
   if(ltAuto.idx<0) ltAuto.idx=0; // まだ何も選ばれていなければ先頭から
@@ -2086,7 +2149,7 @@ function ltApplyMode(){
   document.getElementById('lt-auto-box').style.display = auto ? '' : 'none';
   document.getElementById('lt-key-row').style.display = auto ? 'none' : '';
   document.getElementById('lt-side-row').style.display = ltIsParallelMode(mode) ? '' : 'none';
-  document.getElementById('lt-prev').style.display = (ltIsParallelMode(mode)||ltIsSamekeyMode(mode)) ? '' : 'none';
+  document.getElementById('lt-prev').style.display = ((ltIsParallelMode(mode)||ltIsSamekeyMode(mode)) && mode!=='parallel_random' && mode!=='samekey_random') ? '' : 'none';
   ltAuto.key=null; ltAuto.idx=-1; ltAuto.deck=[]; ltAuto.deckPos=0;
   ltAuto.pairMajor=null; ltAuto.pairMinor=null; ltAuto.side='major';
   document.getElementById('lt-auto-key').textContent='「次の調」を押してください';
