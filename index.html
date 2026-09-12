@@ -149,6 +149,23 @@
         .tool-button:hover {
             background: #1e4564;
         }
+
+        .tool details summary {
+            list-style: none;
+        }
+        .tool details summary::-webkit-details-marker { display: none; }
+        .tool details summary::after {
+            content: "▸ 詳細";
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 0.8rem;
+            color: #2c5d92;
+            font-weight: 600;
+            vertical-align: middle;
+        }
+        .tool details[open] summary::after {
+            content: "▾ 閉じる";
+        }
         
         .learning-path {
             background: white;
@@ -296,37 +313,40 @@
         
         <div class="learning-path">
             <h2>練習システムの概要</h2>
-            <p style="margin:6px 0 10px;color:#555;font-size:0.95rem;">大きく3つの系統があります。</p>
+            <p style="margin:6px 0 10px;color:#555;font-size:0.95rem;">大きく3つの系統があります。各アプリ名から、下の詳細（機能一覧）に移動できます。</p>
             <p style="margin:0 0 6px;color:#0f1722;font-size:0.95rem;font-weight:700;">① 頭の中で音楽を作る（ソルフェージュ）</p>
             <ul style="margin:0 0 12px 20px;padding:0;color:#555;font-size:0.95rem;line-height:1.9;">
-                <li><b>Score Reading</b>：読譜（単音・和音・度数・調号）</li>
-                <li><b>Melody Dictation Trainer</b>：視唱・リズム・聴音</li>
+                <li><a href="#tool-score-reading" style="color:#2c5d92;"><b>Score Reading</b></a>：読譜の基本、視唱の入り口</li>
+                <li><a href="#tool-mdt" style="color:#2c5d92;"><b>Melody Dictation Trainer</b></a>：視唱・リズム・聴音の練習</li>
             </ul>
             <p style="margin:0 0 6px;color:#0f1722;font-size:0.95rem;font-weight:700;">② 音程を作る</p>
             <p style="margin:0 0 6px;color:#555;font-size:0.95rem;">「正確な基準を作る → その基準で耳を育てる → 複雑な状況でも保てるか試す」という順で使っています。</p>
             <ul style="margin:0 0 12px 20px;padding:0;color:#555;font-size:0.95rem;line-height:1.9;">
-                <li><b>Pure Intonation Tuner</b>：開放弦を正確に合わせる（基準づくり）</li>
-                <li><b>Beautiful Intonation Training</b>：その開放弦との共鳴を頼りに、1オクターブ・長三和音・短三和音という最小単位で耳の基準を作る</li>
-                <li><b>Integrated Performance Practice</b>：3オクターブ・7和音・重音・転調といった複雑な状況の中で、その基準を保てるかを試す</li>
+                <li><a href="#tool-pure-intonation" style="color:#2c5d92;"><b>Pure Intonation Tuner</b></a>：基準づくり（開放弦を正確に合わせる）</li>
+                <li><a href="#tool-beautiful-intonation" style="color:#2c5d92;"><b>Beautiful Intonation Training</b></a>：その基準から、最小単位で耳を育てる</li>
+                <li><a href="#tool-ipp" style="color:#2c5d92;"><b>Integrated Performance Practice</b></a>：複雑な状況の中でも、その基準を保てるかを試す</li>
             </ul>
             <p style="margin:0 0 6px;color:#0f1722;font-size:0.95rem;font-weight:700;">③ 音律を選んで、自分の手で音を確かめる</p>
-            <p style="margin:0 0 6px;color:#555;font-size:0.95rem;">①②はソルフェージュ（耳・声）と楽器練習の系統ですが、その間をつなぐ位置づけとして、鍵盤・パッドを実際に自分の手で押して音を確認する練習も加えました。</p>
+            <p style="margin:0 0 6px;color:#555;font-size:0.95rem;">①②はソルフェージュ（耳・声）と楽器練習の系統ですが、その間をつなぐ位置づけです。</p>
             <ul style="margin:0 0 12px 20px;padding:0;color:#555;font-size:0.95rem;line-height:1.9;">
-                <li><b>Pythagorean / ET / Just Intonation Keyboard</b>：ピタゴラス鍵盤・平均律鍵盤・純正律パッドの3モード。視唱テキストの答え合わせや、複雑な旋律のおおまかな見当づけ、和音を1音ずつ組み立てて響きを確かめる訓練に使う</li>
+                <li><a href="#tool-pythagorean" style="color:#2c5d92;"><b>Pythagorean / ET / Just Intonation Keyboard</b></a>：鍵盤・パッドを自分の手で押して音を確認する</li>
             </ul>
             <p style="margin:0 0 10px;color:#555;font-size:0.95rem;">楽器の練習は長年してきましたが、楽器を持たずに頭の中で音楽を作り、体に明確な指示を出すソルフェージュの訓練は、ほとんどしてきませんでした。これを2ヶ月ほど続けたことと、Integrated Performance Practiceで楽器を弾くだけでなく階名で歌う練習をしたことで、指板上のマッピングができるようになり、演奏が大きく変わりました。この2つの系統は、どちらも欠かせない柱だと感じています。</p>
-            <p style="margin:0;color:#777;font-size:0.9rem;">このほかに、実際のオーケストラ曲の難所を教材にした <b>Orchestra Excerpt</b> を、実験的に作っているところです。</p>
+            <p style="margin:0;color:#777;font-size:0.9rem;">このほかに、実際のオーケストラ曲の難所を教材にした <a href="#tool-orchestra" style="color:#777;"><b>Orchestra Excerpt</b></a> を、実験的に作っているところです。</p>
         </div>
         
         <div class="tools">
             <div class="tool">
+                <details id="tool-score-reading">
+                <summary style="cursor:pointer; list-style:none;">
                 <div class="tool-header">
                     <div class="tool-number">1</div>
                     <div class="tool-title">
-                        <h3>Score Reading</h3>
+                        <h3 style="display:inline;">Score Reading</h3>
                         <span class="version-badge">v3</span>
                     </div>
                 </div>
+                </summary>
                 <p><strong>読譜の基本、視唱の入り口</strong></p>
                 <p>音符や調号を見て答えを思い浮かべ、「答えを見る」で照合する練習です。</p>
                 <ul>
@@ -336,16 +356,20 @@
                     <li>正解音の再生機能</li>
                 </ul>
                 <a class="tool-button" href="score_reading_v3.html" target="_blank" rel="noopener">開始</a>
+                </details>
             </div>
             
             <div class="tool">
+                <details id="tool-mdt">
+                <summary style="cursor:pointer; list-style:none;">
                 <div class="tool-header">
                     <div class="tool-number">2</div>
                     <div class="tool-title">
-                        <h3>Melody Dictation Trainer</h3>
+                        <h3 style="display:inline;">Melody Dictation Trainer</h3>
                         <span class="version-badge">v3</span>
                     </div>
                 </div>
+                </summary>
                 <p><strong>視唱・リズム・聴音の練習</strong></p>
                 <p>声に出して歌う、リズムを叩く、聴いた音を当てる、といった練習です。</p>
                 <ul>
@@ -355,16 +379,20 @@
                     <li>メトロノーム機能</li>
                 </ul>
                 <a class="tool-button" href="melody_dictation_trainer_v3.html" target="_blank" rel="noopener">開始</a>
+                </details>
             </div>
             
             <div class="tool">
+                <details id="tool-pure-intonation">
+                <summary style="cursor:pointer; list-style:none;">
                 <div class="tool-header">
                     <div class="tool-number">3</div>
                     <div class="tool-title">
-                        <h3>Pure Intonation Tuner</h3>
+                        <h3 style="display:inline;">Pure Intonation Tuner</h3>
                         <span class="version-badge">v3</span>
                     </div>
                 </div>
+                </summary>
                 <p><strong>調弦と、音程の基本感覚を確かめる</strong></p>
                 <p>完全5度調弦の習得。各種重音の差音をフラジオにより聞き取る訓練。調弦が狂った状態の音源サンプルもあり。</p>
                 <ul>
@@ -374,16 +402,20 @@
                     <li>3度・4度・6度の重音体験</li>
                 </ul>
                 <a class="tool-button" href="pure_intonation_tuner_v3.html" target="_blank" rel="noopener">開始</a>
+                </details>
             </div>
             
             <div class="tool">
+                <details id="tool-beautiful-intonation">
+                <summary style="cursor:pointer; list-style:none;">
                 <div class="tool-header">
                     <div class="tool-number">4</div>
                     <div class="tool-title">
-                        <h3>Beautiful Intonation Training</h3>
+                        <h3 style="display:inline;">Beautiful Intonation Training</h3>
                         <span class="version-badge">v3</span>
                     </div>
                 </div>
+                </summary>
                 <p><strong>音程づくりの基礎を、開放弦との共鳴で確かめる</strong></p>
                 <p>Pure Intonation Tunerで確認したことを、実際の音階や分散和音の中で試せるようにしたものです。</p>
                 <ul>
@@ -394,16 +426,20 @@
                     <li>フラジオによる差音トレーニング</li>
                 </ul>
                 <a class="tool-button" href="beautiful_intonation_training_v3.html" target="_blank" rel="noopener">開始</a>
+                </details>
             </div>
             
             <div class="tool">
+                <details id="tool-ipp">
+                <summary style="cursor:pointer; list-style:none;">
                 <div class="tool-header">
                     <div class="tool-number">5</div>
                     <div class="tool-title">
-                        <h3>Integrated Performance Practice</h3>
+                        <h3 style="display:inline;">Integrated Performance Practice</h3>
                         <span class="version-badge">v3</span>
                     </div>
                 </div>
+                </summary>
                 <p><strong>読譜・聴音・音程感覚を組み合わせた練習</strong></p>
                 <p>主音・音階・和音・重音などを、拍子やテンポを設定しながら通して練習します。</p>
                 <ul>
@@ -414,16 +450,20 @@
                     <li>拍子・テンポ設定可能</li>
                 </ul>
                 <a class="tool-button" href="flesch_integrated_performance_practice_v3.html" target="_blank" rel="noopener">開始</a>
+                </details>
             </div>
 
             <div class="tool">
+                <details id="tool-orchestra">
+                <summary style="cursor:pointer; list-style:none;">
                 <div class="tool-header">
                     <div class="tool-number">6</div>
                     <div class="tool-title">
-                        <h3>Orchestra Excerpt</h3>
+                        <h3 style="display:inline;">Orchestra Excerpt</h3>
                         <span class="version-badge">v3</span>
                     </div>
                 </div>
+                </summary>
                 <p><strong>実際のオーケストラ・レパートリーの難所訓練</strong></p>
                 <p>抽象的な訓練用の音型ではなく、実際の楽曲（マーラー交響曲第5番など）から抽出した難所を教材とし、視唱・音名認識を実践的な文脈で鍛えます。</p>
                 <ul>
@@ -433,16 +473,20 @@
                     <li>複数の難所（楽章・小節範囲）をグループとして切り替え可能</li>
                 </ul>
                 <a class="tool-button" href="orchestra_excerpt_v3.html" target="_blank" rel="noopener">開始</a>
+                </details>
             </div>
 
             <div class="tool">
+                <details id="tool-pythagorean">
+                <summary style="cursor:pointer; list-style:none;">
                 <div class="tool-header">
                     <div class="tool-number">7</div>
                     <div class="tool-title">
-                        <h3>Pythagorean / ET / Just Intonation Keyboard</h3>
+                        <h3 style="display:inline;">Pythagorean / ET / Just Intonation Keyboard</h3>
                         <span class="version-badge">v1・試験運用中</span>
                     </div>
                 </div>
+                </summary>
                 <p><strong>音律を選んで、自分の手で音を確かめる鍵盤・パッド</strong></p>
                 <p>選んだ調を基準に、ピタゴラス鍵盤・平均律鍵盤・純正律パッドの3モードを切り替えられます。ソルフェージュ（耳・声）と楽器練習の間をつなぐ、身体を使った音の確認手段です。</p>
                 <ul>
@@ -451,6 +495,7 @@
                     <li>純正律パッド：選んだ調の主音を根音に、12度数を純正律比率で鳴らす。押すたびに音が積み重なり、和音を1音ずつ組み立てながら響きを確認できる</li>
                 </ul>
                 <a class="tool-button" href="pythagorean_keyboard_v1.html" target="_blank" rel="noopener">開始</a>
+                </details>
             </div>
         </div>
     </div>
@@ -1072,6 +1117,11 @@
             </div>
             <div id="changelog-daily-panel" style="display:none;">
             <div style="font-size: 0.95rem; line-height: 2; color: #555;" id="changelog-container">
+                <p><strong>2026年9月12日</strong></p>
+                <ul style="margin: 8px 0 16px 20px; padding: 0;">
+                    <li>Score Reading・Melody Dictation Trainer・Pure Intonation Tuner・Beautiful Intonation Training・Integrated Performance Practice・Pythagorean / ET / Just Intonation Keyboardの7アプリ全てについて、UIの説明文を横断的に見直した。機能を継続的に追加してきた結果、同じ内容が複数箇所（冒頭の説明・各モードの補足・末尾の注記など）に重複して書かれている箇所や、操作に影響しない実装の詳細・設計意図まで書き込まれて冗長になっている箇所を洗い出し、簡潔に整理した。</li>
+                    <li>トップページ（index.html）についても、「練習システムの概要」と、各アプリの詳細ボックスの説明が重複していた点を整理。概要は3つの系統とその位置づけの説明に絞り、アプリ名からその詳細ボックスへ直接リンクできるようにした。また、各アプリの詳細ボックスは折りたたみ式にし、普段は見出しだけが表示されるようにした。</li>
+                </ul>
                 <p><strong>2026年9月11日</strong></p>
                 <ul style="margin: 8px 0 16px 20px; padding: 0;">
                     <li>Integrated Performance Practice：①主音モード・②ピタゴラス音階・③和音のすべてに、「ペア単位のランダムモード」を追加。①には「平行調ペア（ランダム）」「同主調ペア（ランダム）」、②の「調の並び順」と③の「調の並び順（同主調ペア）」には「ランダム（ペアの順不定）」を追加した。平行調・同主調はそれぞれ独立したシャッフル済みの山札を持ち、13ペア（②は展開後26調）を一巡するまで同じペアは出題されない。一巡すると自動的に切り直される。ランダムモード中は「前の調」ボタンは非対応（山札に順序の意味がないため）。</li>
